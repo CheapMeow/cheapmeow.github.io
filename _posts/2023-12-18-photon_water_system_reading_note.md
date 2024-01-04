@@ -9,6 +9,7 @@ tags:
   - GDC
 toc: true
 toc_sticky: true
+author_profile: false
 ---
 
 It is an reading note of Photon Water System in GDC2023, related about usage of flow map baking, shallow water equation solving for water surface propagation.
@@ -105,19 +106,15 @@ $$
 \dfrac{Du}{Dt} = -g \nabla (h+H)
 $$
 
-<figure>
-<p align="center">
+<figure class="align-center">
 <img src="/assets/images/photon_water_system_reading_note/height_field.png">
-</p>
 <figcaption align = "center">Fig: Height Field</figcaption>
 </figure>
 
 They split world into grid. Water depth $h$ are stored at cell centers, velocities are stored at edge centers.
 
-<figure>
-<p align="center">
+<figure class="align-center">
 <img src="/assets/images/photon_water_system_reading_note/SWE_grid.png">
-</p>
 <figcaption align = "center">Fig: SWE Grid</figcaption>
 </figure>
 
@@ -158,3 +155,11 @@ And the paper author also gave details about implementation of Stable Fluid:
 ### Surface wave
 
 ### Tessellation
+
+<script src="https://utteranc.es/client.js"
+        repo="CheapMeow/cheapmeow.github.io"
+        issue-term="pathname"
+        theme="github-light"
+        crossorigin="anonymous"
+        async>
+</script>

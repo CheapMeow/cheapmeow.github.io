@@ -1,13 +1,14 @@
 ---
 title: 'UE5 Niagara Advanced Example Reading Note'
 show_date: true
-permalink: /posts/2023/12/ue5_niagara_reading_note_1/
+permalink: /posts/2023/12/ue5_niagara_advanced_reading_note/
 tags:
   - UE5
   - Niagara System
   - Game Effect
 toc: true
 toc_sticky: true
+author_profile: false
 ---
 
 It is an reading note of UE5 Niagara Advanced Example, related about usage of Simulation Stage, Grid 3D, PBD, SDF and so on.
@@ -32,10 +33,8 @@ If you need custom lifetime hook, that is my personal understanding, or in their
 
 That is weird, I can't find `Enable Simulation Stages` in emitter properties, even in their example. So I leave it alone.
 
-<figure>
-<p align="center">
-<img src="/assets/images/ue5_niagara_reading_note_1/cannot_find_enable_sim.png">
-</p>
+<figure style="width: 900px" class="align-center">
+<img src="/assets/images/ue5_niagara_advanced_reading_note/cannot_find_enable_sim.png">
 <figcaption align = "center">Fig: Cannot Find Enable Sim</figcaption>
 </figure>
 
@@ -89,24 +88,18 @@ And vector4 variables can be packed into matrix, pass into material.
 
 More specifically saying, in the example Niagara System, vector4 `depth`, `roughness`, `metallic` are sampled from GBuffer access, then these vector4 variables are packed into matrix, save into `DynamicMaterialParameter`. In `Mesh Renderer` module, `DynamicMaterialParameter` is bind to `DynamicMaterialBinding`. In material, you can unpack your binding of `DynamicMaterialParameter`.
 
-<figure>
-<p align="center">
-<img src="/assets/images/ue5_niagara_reading_note_1/decode_from_gbuffer.png">
-</p>
+<figure style="width: 900px" class="align-center">
+<img src="/assets/images/ue5_niagara_advanced_reading_note/decode_from_gbuffer.png">
 <figcaption align = "center">Fig: Decode from GBuffer</figcaption>
 </figure>
 
-<figure>
-<p align="center">
-<img src="/assets/images/ue5_niagara_reading_note_1/dynamic_para_binding.png">
-</p>
+<figure style="width: 600px" class="align-center">
+<img src="/assets/images/ue5_niagara_advanced_reading_note/dynamic_para_binding.png">
 <figcaption align = "center">Fig: DynamicMaterialBinding in Mesh Renderer</figcaption>
 </figure>
 
-<figure>
-<p align="center">
-<img src="/assets/images/ue5_niagara_reading_note_1/dynamic_para_in_material.png">
-</p>
+<figure style="width: 600px" class="align-center">
+<img src="/assets/images/ue5_niagara_advanced_reading_note/dynamic_para_in_material.png">
 <figcaption align = "center">Fig: Unpack DynamicMaterialParameter in material</figcaption>
 </figure>
 
@@ -142,10 +135,8 @@ Niagarag System: `AttributeReaderRing`
 
 This example shows how to use `Attribute Reader`. I may consider it as a access of other emitter, because when initializing an `Attribute Reader`, you assign a name of emitter. Then in your custom module, you can access certain particle property from assigned emitter by given index.
 
-<figure>
-<p align="center">
-<img src="/assets/images/ue5_niagara_reading_note_1/attribute_reader_index_0.png">
-</p>
+<figure style="width: 900px" class="align-center">
+<img src="/assets/images/ue5_niagara_advanced_reading_note/attribute_reader_index_0.png">
 <figcaption align = "center">Fig: Attribute Reader given index 0</figcaption>
 </figure>
 
@@ -215,10 +206,8 @@ This code from module `Fill Neighbor Grid 3D` is about writting `particle index`
 
     `Exection index` represent the sequence of particles are exected shading in current frame, so it will change over frame.
 
-<figure>
-<p align="center">
-<img src="/assets/images/ue5_niagara_reading_note_1/exection_index.png">
-</p>
+<figure style="width: 600px" class="align-center">
+<img src="/assets/images/ue5_niagara_advanced_reading_note/exection_index.png">
 <figcaption align = "center">Fig: Exection index</figcaption>
 </figure>
 
@@ -427,17 +416,13 @@ Niagara System: `BindCurvesToMaterials`
 
 You can create curve in Niagara System and then bind to material.
 
-<figure>
-<p align="center">
-<img src="/assets/images/ue5_niagara_reading_note_1/niagara_curve.png">
-</p>
+<figure style="width: 600px" class="align-center">
+<img src="/assets/images/ue5_niagara_advanced_reading_note/niagara_curve.png">
 <figcaption align = "center">Fig: Niagara Curve Binding in Niagara System</figcaption>
 </figure>
 
-<figure>
-<p align="center">
-<img src="/assets/images/ue5_niagara_reading_note_1/niagara_curve_material.png">
-</p>
+<figure style="width: 700px" class="align-center">
+<img src="/assets/images/ue5_niagara_advanced_reading_note/niagara_curve_material.png">
 <figcaption align = "center">Fig: Niagara Curve in Material</figcaption>
 </figure>
 
