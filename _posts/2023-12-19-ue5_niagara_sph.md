@@ -755,12 +755,12 @@ If you found your Render Target shows cube-like particle but not sphere, try to 
 
 <figure style="width: 987px" class="align-center">
 <img src="/assets/images/ue5_niagara_sph/draw_depth_input.png">
-<figcaption align = "center">Fig: Bilateral Filtering Input</figcaption>
+<figcaption align = "center">Fig: Draw Depth To Grid 2D Input</figcaption>
 </figure>
 
 <figure style="width: 631px" class="align-center">
 <img src="/assets/images/ue5_niagara_sph/draw_depth_output.png">
-<figcaption align = "center">Fig: Bilateral Filtering Output</figcaption>
+<figcaption align = "center">Fig: Draw Depth To Grid 2D Output</figcaption>
 </figure>
 
 ```hlsl
@@ -939,7 +939,7 @@ From the time I encounter the problem to the time I found the problem disappear,
 
 ## Bilateral Filtering
 
-The module does Bilateral Filtering on depth map stored in Grid 2D. Blur will make your depth map smooth, which will make your normal map look less like particles.
+The module does Bilateral Filtering on depth map stored in Grid 2D. Blur will make your depth map smooth, which will make your normal map look less like particles. Gauss Filterign will blur the whole image, but Bilateral Filtering will preserves sharp edges.
 
 ### Module View
 
@@ -1392,6 +1392,17 @@ I have post a thread in UE forum waiting the answer.
 #### Solution(?)
 
 Don't use `ScatteringCoefficients` node.
+
+#### Problem: Water border shows up ignoring occlusion
+
+In the image above, you will see water border shows up ignoring occlusion，it is because depth map in Render Target appears weird blur margin.
+
+<figure style="width: 315px" class="align-center">
+<img src="/assets/images/ue5_niagara_sph/blur_marigin_of_render_target.png">
+<figcaption align = "center">Fig: Blur Margin of Render Target</figcaption>
+</figure>
+
+Current stage I don't have a solution to deal with this. Maybe a material hack can takes effect.
 
 ## Final Result
 
