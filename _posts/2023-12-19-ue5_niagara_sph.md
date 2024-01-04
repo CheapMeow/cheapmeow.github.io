@@ -19,6 +19,8 @@ It is an implementation note of SPH using UE5 Niagara System, related about usag
 
 Github repository: https://github.com/CheapMeow/UE5-NiagaraSPH
 
+I also learn other's tutorial: https://www.bilibili.com/video/BV1pr4y1v78B
+
 ## SPH Introduction
 
 Basic knowledge about SPH can see other tutorial.
