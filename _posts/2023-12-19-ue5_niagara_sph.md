@@ -15,7 +15,7 @@ header:
   image: /assets/images/ue5_niagara_sph/sph_header_image.png
 ---
 
-It is an implementation note of SPH using UE5 Niagara System, related about usage of Simulation Stage, Grid 3D, renderring using depth buffer and so on.
+It is an implementation note of SPH using UE5 Niagara System, related about usage of Simulation Stage, Grid 3D, screen space renderring using depth buffer and so on.
 
 Github repository: https://github.com/CheapMeow/UE5-NiagaraSPH
 
