@@ -15,7 +15,7 @@ header:
   image: /assets/images/ue5_niagara_sph/sph_header_image.png
 ---
 
-It is an implementation note of SPH using UE5 Niagara System, related about usage of Simulation Stage, Grid 3D, screen space renderring using depth buffer and so on.
+It is an implementation note of SPH using UE5 Niagara System, related about usage of Simulation Stage, Grid 3D, screen space rendering using depth buffer and so on.
 
 Github repository: https://github.com/CheapMeow/UE5-NiagaraSPH
 
@@ -538,7 +538,7 @@ Traditional method of rendering water surface is marching cube method. It genera
 
 Another way is to project all all particles into screen space. A direct idea is using depth buffer, but I think that depth buffer can only tells where the particles are. However, later I learned that normal can be calculated from depth buffer. 
 
-### Another Neighbor Grid 3D Used for Renderring in Screen Space
+### Another Neighbor Grid 3D Used for rendering in Screen Space
 
 At first, project all particles into screen space. More specifically, you create an empty depth buffer, then project each particle's world position into screen space position, and draw a circle with given radius, in the depth buffer, with the particle's depth. For sure, small depth value will override large depth value.
 
@@ -1208,7 +1208,7 @@ So it is engine bug, not my fault.
 
 ### Problem: Render Target has content in Niagara System Preview but no in the level
 
-After I found Render Target doesn't flicker, I put the Niagara System into level. Becuase my WorldGridExtent is very small, which is (6, 6, 6), so I had to scale the Niagara System to (100, 100, 100) size. I had talked before sprite size should also be large, but now we don't need sprite to show where the particles are, we only need a plane to show fluid renderring result, so we can disable sprite renderer in the SPH emitter. But as I continued to make the fluid material, I found that Render Target has content in Niagara System Preview but no in the level.
+After I found Render Target doesn't flicker, I put the Niagara System into level. Becuase my WorldGridExtent is very small, which is (6, 6, 6), so I had to scale the Niagara System to (100, 100, 100) size. I had talked before sprite size should also be large, but now we don't need sprite to show where the particles are, we only need a plane to show fluid rendering result, so we can disable sprite renderer in the SPH emitter. But as I continued to make the fluid material, I found that Render Target has content in Niagara System Preview but no in the level.
 
 <figure style="width: 955px" class="align-center">
 <img src="/assets/images/ue5_niagara_sph/no_content_in_the_level.png">
@@ -1254,9 +1254,9 @@ After this parameter adjustment, I found a way to quickly obtain the appropriate
 
 Enable `Local Space` in Emitter property, then all particles' position are calcuated in local space. In other word, the particles' coordinate follows actor but not world coordinate.
 
-## New An Emitter to Emit Plane for Renderring
+## New An Emitter to Emit Plane for rendering
 
-You should create a plane to show the renderring result. It can be created in Niagara System or in world level. The former looks nice because it hides details into Niagara System itself.
+You should create a plane to show the rendering result. It can be created in Niagara System or in world level. The former looks nice because it hides details into Niagara System itself.
 
 To do this, new an emitter to emit a plane sprite. The sprite lifetime should be long enough, so it can be set as `LoopDuration`
 

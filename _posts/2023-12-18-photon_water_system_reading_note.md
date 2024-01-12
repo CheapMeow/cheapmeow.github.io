@@ -12,15 +12,15 @@ toc_sticky: true
 author_profile: false
 ---
 
-<script type="text/javascript" async
-  src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-MML-AM_CHTML">
-</script>
-
 It is an reading note of Photon Water System in GDC2023, related about usage of flow map baking, shallow water equation solving for water surface propagation.
 
 The article can't cover all details, it just a reading note. Implementation details are so complex that it is recommended to have a look on original source.
 
 [GDCVault Photon Water System](https://www.gdcvault.com/search.php#&category=free&firstfocus=&keyword=photon+water%2Bsystem)
+
+<script type="text/javascript" async
+  src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-MML-AM_CHTML">
+</script>
 
 ## Outline
 
@@ -118,7 +118,7 @@ $$
 <figcaption align = "center">Fig: Height Field</figcaption>
 </figure>
 
-They split world into grid. Water depth $h$ are stored at cell centers, velocities are stored at edge centers.
+They split world into grid. Water depth $$h$$ are stored at cell centers, velocities are stored at edge centers.
 
 <figure style="width: 460px" class="align-center">
 <img src="/assets/images/photon_water_system_reading_note/SWE_grid.png">
