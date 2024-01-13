@@ -629,6 +629,15 @@ Assume we are computing the distance between point pe and triangle Te. Firstly, 
 
 ...
 
+## Chapter 5: Making Fluids Incompressible
+
+### Project
+
+After advection, next we should apply pressure force:
+
+$$u_{n+1} = u - \Delta t \dfrac{1}{\rho}\nabla p$$
+
+
 ## Chapter 7: Particle Methods
 
 ### Advection Troubles on Grids
