@@ -678,6 +678,16 @@ Higher-frequency signals, even though you might resolve them on the grid at a pa
 
 A "perfect" Eulerian scheme would filter out the high-frequency components that can't be reliably resampled at each time step, even as a bad one will allow them to alias as artifacts. The distortions inherent in non-rigid velocity fields mean that as time progresses, some of the lower-frequency components get transferred to higher frequencies—and thus must be destroyed by a good scheme. But note that the fluid flow, after squeezing the field along some axes at some point, may later stretch it back out—transferring higher frequencies down to lower frequencies. However, it's too late if the Eulerian scheme has already filtered them out.
 
+> Is that what the author wants to express? 
+>
+> Becuase in non-rigid velocity fields, some of the lower-frequency components get transferred to higher frequencies.
+> 
+> So researcher that focus on fluid simulation precision should design a eulerian scheme that filter out the high-frequency components.
+> 
+> But for computer graphics, we need to keep high-frequency components as much as possible.
+>
+> So that is why we turn to particles method?
+
 #### Why DNS works well
 
 At small enough length scales, viscosity and other molecular diffusion processes end up dominating advection. That means, : if $$\Delta x$$ is small enough, Eulerian schemes can behave perfectly well since the physics itself is effectively bandlimiting everything, dissipating information at higher frequencies.
