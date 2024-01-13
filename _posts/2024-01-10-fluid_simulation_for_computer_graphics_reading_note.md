@@ -745,7 +745,13 @@ Particles track secondary field such as smoke concentration, foam, bubbles, or o
 
 Primary fluid variables like velocity store in grids.
 
-But in PIC it is not...?
+> But in PIC it is not...?
+>
+> I come up with store velocity on particles firstly but not secondary field.
+>
+> Maybe it is a differences in thinking between me and author.
+>
+> I think when author says "track secondary field" first, he put PIC section to the next. It explains why author doesn't say particles track velocity firstly.
 
 Use kernel function to transfer value from particles to the grid.
 
