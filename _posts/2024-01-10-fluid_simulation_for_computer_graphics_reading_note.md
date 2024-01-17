@@ -633,10 +633,180 @@ Assume we are computing the distance between point pe and triangle Te. Firstly, 
 
 ### Project
 
-After advection, next we should apply pressure force:
+To solve $$\frac{\mathrm{D}\mathbf{u}}{\mathrm{D}t}+\frac{1}{\rho}\nabla p=0$$, use forward euler:
 
-$$u_{n+1} = u - \Delta t \dfrac{1}{\rho}\nabla p$$
+$$\mathbf{u}_{n+1} = \mathbf{u} - \Delta t \dfrac{1}{\rho}\nabla p$$
 
+The solving result should met divergence-free condition:
+
+$$\nabla\cdot\mathbf{u}^{n+1}=0$$
+
+These two equations should be combined to solve pressure, we will see how to discrete them next, and how to substitute one into another.
+
+For the first equation:
+
+$$u_{i+1/2,j,k}^{n+1}=u_{i+1/2,j,k}-\Delta t \dfrac{1}{\rho} \dfrac{p_{i+1,j,k}-p_{i,j,k}}{\Delta x}$$
+
+$$v_{i,j+1/2,k}^{n+1}=v_{i,j+1/2,k}-\Delta t \dfrac{1}{\rho} \dfrac{p_{i,j+1,k}-p_{i,j,k}}{\Delta y}$$
+
+$$w_{i,j,k+1/2}^{n+1}=w_{i,j,k+1/2}-\Delta t \dfrac{1}{\rho} \dfrac{p_{i,j,k+1}-p_{i,j,k}}{\Delta z}$$
+
+For the second equation:
+
+$$\dfrac{u^{n+1}_{i+1/2,j,k}-u^{n+1}_{i-1/2,j,k}}{\Delta x} + \dfrac{v^{n+1}_{i,j+1/2,k}-v^{n+1}_{i,j-1/2,k}}{\Delta y} + \dfrac{w^{n+1}_{i,j,k+1/2}-w^{n+1}_{i,j,k-1/2}}{\Delta z} = 0$$
+
+Assume $$\Delta x = \Delta y = \Delta z$$, substitute the $$u^{n+1},v^{n+1},w^{n+1}$$:
+
+$$
+\begin{align*}
+   & \dfrac{\Delta t}{\rho\Delta x^2}(6p_{i,j,k}-p_{i+1,j,k}-p_{i,j+1,k}-p_{i,j,k+1}-p_{i-1,j,k}-p_{i,j-1,k}-p_{i,j,k-1}) = \\
+    & -(\dfrac{u_{i+1/2,j,k}-u_{i-1/2,j,k}}{\Delta x} + \dfrac{v_{i,j+1/2,k}-v_{i,j-1/2,k}}{\Delta x} + \dfrac{w_{i,j,k+1/2}-w_{i,j,k-1/2}}{\Delta x})
+\end{align*}
+$$
+
+This equation can be written in matrix form as $$Ap=b$$. It is easy to know that A is a sparse matrix. 
+
+This system of linear algebraic equations can be solved using direct or iterative methods. 
+
+Considering that the fluid domain can be large and the direct method computationally expensive, using an iterative method may be a better option. Commonly, efficient iterative methods such as conjugate gradient method is used, and acceleration algorithms include preconditioner method and regional equilibrium decomposition algorithm is also used.
+
+When actually constructing Poisson's equation, boundary conditions also need to be taken into consideration.
+
+### Why is it called projection?
+
+According to Helmholtz-Hodge Decomposition, states that any vector field $$\mathrm{\mathbf{w}}$$ can uniquely be decomposed into a divergence-free vector field adding with a gredient of a scalar field.
+
+$$\mathrm{\mathbf{w}} = \mathrm{\mathbf{u}} + \nabla q.$$
+
+Where $$\nabla \cdot \mathrm{\mathbf{u}} = 0$$.
+
+Poisson equation can be derived from this equation by multiplying both sides by "$$\nabla$$".
+
+$$\nabla \cdot \mathrm{\mathbf{w}} = \nabla^2 q.$$
+
+So now we can say the Poisson eq is equivalent to Helmholtz-Hodge Decomposition, while the Helmholtz-Hodge Decomposition can be written as projection:
+
+$$\mathrm{\mathbf{u}} = \mathrm{\mathbf{P}} \mathrm{\mathbf{w}} = \mathrm{\mathbf{w}} - \nabla q.$$
+
+Where $$\mathrm{\mathbf{P}}$$ satisfies $$\mathrm{\mathbf{P}} \mathrm{\mathbf{u}} = \mathrm{\mathbf{u}}$$, $$\mathrm{\mathbf{P}} \nabla q = 0$$.
+
+So you can see, solving Poisson eq is projecting velocity field to pressure field.
+
+<figure style="width: 513px" class="align-center">
+<img src="/assets/images/fluid_sim_reading_note/velocity_projection.png">
+<figcaption align = "center">Fig: Velocity Projection. Taken from "Stable Fluid"</figcaption>
+</figure>
+
+### Method without projection
+
+If you don't project velocity field to pressure filed, only solve the divergence-free condition, there is simpler algorithm.
+
+Take 2D as an example,
+
+we need to accomplish $$\dfrac{u^{n+1}_{i+1/2,j,k}-u^{n+1}_{i-1/2,j,k}}{\Delta x} + \dfrac{v^{n+1}_{i,j+1/2,k}-v^{n+1}_{i,j-1/2,k}}{\Delta y} = 0$$.
+
+It can be shorten as:
+
+$$u_{i+1/2,j,k}-u_{i-1/2,j,k} + v_{i,j+1/2,k}-v_{i,j-1/2,k} = 0$$
+
+A quick way is calculating the difference, and distribute it onto the four velocity.
+
+```python
+d = u[i+1][j] - u[i][j] + v[i][j+1] - v[i][j]
+
+u[i][j] += d/4
+u[i+1][j] -= d/4
+v[i][j] += d/4
+v[i][j+1] -= d/4
+```
+
+#### Wall Condition
+
+Considering the wall condition. Wall cell doesn't have velocity, but if using MAC grid, velocity is defined in cell faces.
+
+So the border between wall and fluid has velocity. 
+
+Essentially, distributing `d` is distributing additional flux of the cell to cell face, to make the cell 0 flux.
+
+But there isn't flux from wall or to wall, so things change:
+
+##### Boolean flag
+
+Set $$s = 1$$ represent fluid, $$s = 0$$ represent wall.
+
+```python
+d = u[i+1][j] - u[i][j] + v[i][j+1] - v[i][j]
+s = s[i+1][j] + s[i-1][j] + s[i][j+1] + s[i][j-1]
+
+u[i][j] += d * s[i-1][j] / s
+u[i+1][j] -= d * s[i+1][j] / s
+v[i][j] += d * s[i][j-1] / s
+v[i][j+1] -= d * s[i][j+1] / s
+```
+
+Here we may access cells out of boundary. A solution is adding border cells.
+
+The current four velocity values being processed, have overlapping value with previous four velocity values. It means that right after you make current four velocity values divergence-free, the previous may get divergence again.
+
+So you should repeat it over and over again, until the whole field coverge.
+
+```python
+while velocity field doesn't converge:
+    d = u[i+1][j] - u[i][j] + v[i][j+1] - v[i][j]
+    s = s[i+1][j] + s[i-1][j] + s[i][j+1] + s[i][j-1]
+
+    u[i][j] += d * s[i-1][j] / s
+    u[i+1][j] -= d * s[i+1][j] / s
+    v[i][j] += d * s[i][j-1] / s
+    v[i][j+1] -= d * s[i][j+1] / s
+```
+
+##### Copying value
+
+Set $$s = 0$$ for border cells is one method, another method is copying neighbor fluid cell value to border cell.
+
+#### Drift problem
+
+The method has drift problem, it is common problem of velocity based particles method.
+
+> It is what I see in other's tutorial video.
+>
+> I didn't see the related statement about "drift" in other book?
+
+It means that the method can only see collision of opposite motion. It can't recognize collision of two particles with parallel velocity.
+
+<figure style="width: 600px" class="align-center">
+<img src="/assets/images/fluid_sim_reading_note/velocity_based_particles_method_drift_problem.svg">
+<figcaption align = "center">Fig: Drift problem</figcaption>
+</figure>
+
+> In my personal view, it is because the method only rely on flux to seperate particles. If some particles move in parallel but the flux is 0, then they won't be affected by divergence-free solving step. But if two particles move in opposite direction, they must result in flux changes.
+
+##### Solution
+
+There are two solutions.
+
+One is checking collision of all particles pairs. Obviously, it is very slow.
+
+Another is computing particles density $$d$$ at the center of each cell.
+
+```python
+clear rho for all particles
+
+for all particles:
+    rho1 += w1
+    rho2 += w2
+    rho3 += w3
+    rho4 += w4
+```
+
+Then considering density when computing delta flux.
+
+```python
+d = u[i+1][j] - u[i][j] + v[i][j+1] - v[i][j] + k (rho - rho_rest)
+```
+
+> It may be a approximation of Possion equation?
 
 ## Chapter 7: Particle Methods
 
@@ -768,6 +938,44 @@ My understanding is seeding should be related with delta time and grid size.
 ### Particle-in-Cell Methods
 
 Pressure projection to keep the velocity field divergence-free globally couples all the velocities together.
+
+#### From Grid to Particle
+
+For 2D, bilinear interpolation
+
+For 3D, trilinear interpolation
+
+Caution: For 2D as an example, if one grid velocity is undefined (the cell is not fluid), then in your bilinear interpolation, you only average three points. In other word, if $$q_4$$ is undefined, then right calcuation is $$q_p = \dfrac{q_1 + q_2 + q_3}{w_1 + w_2 + w_3}$$ but not $$q_p = \dfrac{q_1 + q_2 + q_3 + 0}{w_1 + w_2 + w_3 + w_4}$$.
+
+Because undefined is not 0.
+
+If you are using MAC grid, then grid position is not integer, it has an offset about h/2 from integer.
+
+#### From Particles to Grid
+
+Many particles may contributes the same one grid velocity,
+
+but we are iterating all particles, so we should accumulate q and weight during the loop,
+
+and calculate result in the last.
+
+```cpp
+clear q and r for all cells
+
+for all particles:
+    q1 = q1 + w1 * qp
+    q2 = q2 + w2 * qp
+    q3 = q3 + w3 * qp
+    q4 = q4 + w4 * qp
+
+    r1 = r1 + w1
+    r2 = r2 + w2
+    r3 = r3 + w3
+    r4 = r4 + w4
+
+for all cells:
+    q = q / r
+```
 
 #### PIC
 
