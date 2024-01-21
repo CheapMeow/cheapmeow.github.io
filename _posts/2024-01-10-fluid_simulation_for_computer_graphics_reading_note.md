@@ -672,6 +672,18 @@ Considering that the fluid domain can be large and the direct method computation
 
 When actually constructing Poisson's equation, boundary conditions also need to be taken into consideration.
 
+> It is my understanding when I read the book firstly.
+>
+> After I read other's, I found that forward Euler is to find fucture state `n+1` with current state `n`, and backward Euler is to update current state `n` with known fucture state `n+1`.
+>
+> So that is why each elements in forward Euler can be calcuated parallelly, but each elements in backward Euler are coupled. In forward Euler, if you want to predict a point, you only need to fetch its neighbor points' old value. These old value are read-only. But in backward Euler, to update a point, the neighbor you fetch is also required to be writed when updating other points.
+>
+> Elements are coupled means that you should solve a $$Ax=b$$ problem.
+>
+> As for pressure solving, The forward-style method would take the current density error to compute pressure. So, in backward sense, we would deduce the pressure by saying that this still-unknown pressure will make the density error to zero. The zero density error means that the density should remain constant, and that leads to $$\nabla\cdot\mathbf{u}^{n+1}=0$$
+>
+> So it is natural to substitute $$\mathbf{u}_{n+1} = \mathbf{u} - \Delta t \dfrac{1}{\rho}\nabla p$$ into $$\nabla\cdot\mathbf{u}^{n+1}=0$$.
+
 ### Why is it called projection?
 
 According to Helmholtz-Hodge Decomposition, states that any vector field $$\mathrm{\mathbf{w}}$$ can uniquely be decomposed into a divergence-free vector field adding with a gredient of a scalar field.
