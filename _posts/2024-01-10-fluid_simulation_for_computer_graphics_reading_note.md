@@ -456,6 +456,11 @@ The weighting coefficients may be negative.
 
 ### SDF
 
+<figure style="width: 567px" class="align-center">
+<img src="/assets/images/fluid_sim_reading_note/sdf_field.png">
+<figcaption align = "center">Fig: SDF Field. Taken from "Fluid Engine Development"</figcaption>
+</figure>
+
 $$\vert\vert \nabla \phi(x) \vert\vert = 1$$.
 
 + outside the geometry, $$-\nabla \phi(x)$$ is the unit-length vector pointing towards the closest point on the surface
@@ -467,6 +472,60 @@ $$\vert\vert \nabla \phi(x) \vert\vert = 1$$.
 This means $$x - \phi(x)\nabla \phi(x)$$ is the closest point on the surface for any point $$x$$.
 
 SDF can also be defined as $$\phi(x) = 0$$ at boundary.
+
+SDF can handle topological change easily. To merge two surface, just get minimum value of two SDF.
+
+<figure style="width: 595px" class="align-center">
+<img src="/assets/images/fluid_sim_reading_note/sdf_topology.png">
+<figcaption align = "center">Fig: SDF Topology. Taken from "Fluid Engine Development"</figcaption>
+</figure>
+
+#### Reinitializing SDF
+
+After advection, the SDF field can not keep its distance property. So we should recover it. Luckily, only the SDF value on the surface is correct. So the reinitializeing can start from surface.
+
+<figure style="width: 626px" class="align-center">
+<img src="/assets/images/fluid_sim_reading_note/sdf_reinitialize.png">
+<figcaption align = "center">Fig: SDF Reinitializing. Taken from "Fluid Engine Development"</figcaption>
+</figure>
+
+Here we prove why the value on the surface is correct.
+
+We can use the advection equation (Equation 3.23) with extra source term to model this propagation problem.
+
+$$\dfrac{\partial{\phi}}{\partial{\tau}}+\mathbf{u} \cdot \nabla \phi = 1$$
+
+$$\tau$$ is pseudo-time, because it is not physics simulation but more like a geometric postprocessing.
+
+If source term in right hand side is 0, it means $$\phi$$ is only carried by the vector field $$\mathbf{u}$$. If a constant $$c$$ is assigned, it means $$c$$ is added to $$\phi$$ when it travels one distance unit along $$\mathbf{u}$$.
+
+Thus, setting the right-hand side to 1 means we will assign the traveled distance to $$\phi$$.
+
+We have discuss the gredient of $$\phi$$ before, we know that if we assign $$\phi$$ as distance, then the gredient is 1, it means when $$\phi$$ travels one distance unit in space along the steepest direction, the value of $$\phi$$ increase 1.
+
+So if we assign gredient of $$\phi$$ as direction of reinitializing velocity, then the advection equation will fit its physical meaning.
+ 
+In other word, substitute
+
+$$\mathbf{u} = \dfrac{\nabla \phi}{\vert \nabla \phi \vert}$$
+
+into advection equation, get
+
+$$\dfrac{\partial{\phi}}{\partial{\tau}}+\dfrac{\nabla \phi}{\vert \nabla \phi \vert} \cdot \nabla \phi = 1$$
+
+which can be further simplified to 
+
+$$\dfrac{\partial{\phi}}{\partial{\tau}}+(\vert \nabla \phi \vert - 1) = 0$$
+
+Reinitialize outward from the surface, the direction is the same as the gradient, $$\mathbf{u} = \dfrac{\nabla \phi}{\vert \nabla \phi \vert}$$.
+
+On the contrary, reinitialize inward from the surface, we have $$\mathbf{u} = -\dfrac{\nabla \phi}{\vert \nabla \phi \vert}$$. Similarly, we have
+
+$$\dfrac{\partial{\phi}}{\partial{\tau}}-(\vert \nabla \phi \vert - 1) = 0$$
+
+In summary, reinitializing equation is
+
+$$\dfrac{\partial{\phi}}{\partial{\tau}}+sign(\phi)(\vert \nabla \phi \vert - 1) = 0$$
 
 #### Medial Axis
 
