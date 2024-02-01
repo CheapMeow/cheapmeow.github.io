@@ -369,6 +369,8 @@ stability condition: to make update stable
 
 CFL number: a parameter in CFL condition
 
+CFL number represents the maximum number of grid cells the information can propagate
+
 If a method unconditionally unstable but fit CFL condition, it will still covergence to accurate result.
 
 #### Diffusion
@@ -1220,7 +1222,18 @@ Where $$\theta$$ means we do linearly interpolating between $$\phi_{i,j,k}$$ and
 
 $$\theta = \dfrac{\phi_{i,j,k}}{\phi_{i,j,k} - \phi_{i+1,j,k}}$$
 
-Solve $$p^G_{i+1,j,k}$$ and then substitute it into update eq, that is all.
+Solve $$p^G_{i+1,j,k}$$:
+
+$$p^G_{i+1,j,k} = \dfrac{(\theta-1)p_{i,j,k}}{\theta}$$
+
+and then substitute it into update eq:
+
+$$\begin{align*}
+u_{i+1/2,j,k}^{n+1} & = u_{i+1/2,j,k} - \dfrac{\Delta t}{\rho_{i+1/2,j,k}}\dfrac{\dfrac{(\theta-1)p_{i,j,k}}{\theta}-p_{i,j,k}}{\Delta x} \\
+& = u_{i+1/2,j,k} + \dfrac{\Delta t}{\rho}\dfrac{1}{\theta}\dfrac{p_{i,j,k}}{\Delta x}
+\end{align*}$$
+
+that is all.
 
 <figure style="width: 600px" class="align-center">
 <img src="/assets/images/fluid_sim_reading_note/ghost_fluid_method.svg">
