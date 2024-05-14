@@ -1,7 +1,7 @@
 ---
-title: '动态反射学习'
+title: 'C++动态反射学习'
 show_date: true
-permalink: /posts/2024/05/dynamic_reflection/
+permalink: /posts/2024/05/cpp_dynamic_reflection/
 tags:
   - Cpp
   - Reflection
@@ -11,7 +11,7 @@ toc_sticky: true
 author_profile: false
 ---
 
-## 动态反射学习
+## C++动态反射学习
 
 ### Piccolo 中的动态反射
 
@@ -924,3 +924,11 @@ public:
 只是在写代码的时候多写 cast 而已，可以接受
 
 那么大的自由度也没必要
+
+<script src="https://utteranc.es/client.js"
+        repo="CheapMeow/cheapmeow.github.io"
+        issue-term="pathname"
+        theme="github-light"
+        crossorigin="anonymous"
+        async>
+</script>
