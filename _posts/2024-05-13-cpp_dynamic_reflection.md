@@ -589,6 +589,68 @@ static Json write(const T& instance)
 
 怎么说呢……这个不对称看上去令人强迫症犯了……
 
+#### ReflectionPtr 和 ReflectionInstance 用于类型擦除
+
+一些反射教程中没有这两个东西
+
+他们的示例在做反射的时候，会传入原本被反射的类型，例如
+
+```cpp
+auto foo_t = reflect::GetByName("Foo");
+Foo f;
+// Test member variables
+auto name_var = foo_t.GetMemberVar("name");
+name_var.SetValue(f, std::string {"taichi"});
+```
+
+问题来了，如果我只能这么用的话，那就说明我代码里面已经知道了 `Foo f`，那我还要这个反射干嘛，我直接对 `Foo` 操作不就行了
+
+所以需要有一个东西把任意类型的对象的类型都擦了，假设只留下 `void*` 然后业务逻辑只接受 `void*` 的数据，在对这些数据进行操作的时候，根据配套传入的 `string` 动态获得处理这些数据的函数，才对
+
+Piccolo 这里的 `ReflectionPtr` 和 `ReflectionInstance` 就是用来做类型擦除的
+
+当然，类型擦除被用在很多地方，这里所说的类型擦除和别的地方的不一样，这里是为了泛化与反射相关的业务逻辑，别的地方比如调用反射出来的函数的时候，内部做参数的转型
+
+#### ReflectionPtr 和 ReflectionInstance 的设计
+
+其实我一直在想一件事情，就是 `ReflectionPtr` 和 `ReflectionInstance` 这个具体怎么实现类型擦除的设计，真的有必要吗
+
+`ReflectionInstance` 是类型信息 + `void*` 类型的数据
+
+`ReflectionPtr` 是类型信息 + `T*` 类型的数据
+
+我感觉它们的功能重合了欸。这样就有点混淆。多余的是 `ReflectionInstance`，他完全可以用 `ReflectionPtr<void>` 代替
+
+而且在自定义类型的时候将 `ReflectionPtr` 和 `ReflectionInstance` 显式写在定义里面，总感觉有一种侵入式的丑陋
+
+```cpp
+// object.h
+
+class GObject : public std::enable_shared_from_this<GObject>
+{
+    typedef std::unordered_set<std::string> TypeNameSet;
+
+    // ...
+    
+protected:
+    GObjectID   m_id {k_invalid_gobject_id};
+    std::string m_name;
+    std::string m_definition_url;
+
+    // we have to use the ReflectionPtr due to that the components need to be reflected 
+    // in editor, and it's polymorphism
+    std::vector<Reflection::ReflectionPtr<Component>> m_components;
+};
+```
+
+最后还是想通了
+
+他这里说，在 gameobject 里面使用 `ReflectionPtr` 的意义是，编辑器的 UI 需要反射信息，所以要用一个反射结构来存类型信息，同时我们还需要这个指针是有一个类型 `T` 的，以便我们在不一定是 UI 而可以是其他地方，使用到 `Component` 的多态性
+
+再加上基类指针的类型擦除功能，总共三个用途，`ReflectionPtr<T>` 的设计确实是很有价值的
+
+这里的侵入也是不可避免的。你想要多态，就会擦类型，擦了类型，你就没办法获得派生类的名字，就没法在反射数据库里面找到派生类，所以为了兼得两者，你必须要在存基类指针的时候也存类型信息
+
 ### Taichi Graphics cpp reflection
 
 [https://www.bilibili.com/video/BV1MY4y1c7hU](https://www.bilibili.com/video/BV1MY4y1c7hU)
@@ -917,13 +979,310 @@ public:
 
 但是这样总归是一个需要维护的地方，位于转换表中的东西可以从接口的角度来看可以隐式转换，不在表里面的就不行，行为不统一，还要维护，不如不搞
 
-#### 总结
-
 现在我完全理解了，如果想要使用这样的反射，还真的就要接受这个规则，就是接受这个无法做隐式类型转换的规则
 
 只是在写代码的时候多写 cast 而已，可以接受
 
 那么大的自由度也没必要
+
+### 使用 annotate 属性和 libclang 分析 AST 做代码生成
+
+现在要解析 annotation，生成注册反射类的代码。原理上宏是可以完成这种任务，但是我感觉太丑，而且这样的话，反射就侵入式太重了。
+
+虽然 annotation 也算侵入了，但是感觉，更轻量一点。如果写宏的话，人脑就要展开宏，虽然现在 IDE 也会展开
+
+#### 链接 libclang
+
+我之前在想怎么单纯依赖于 submodule，哪怕是这个 submodule 从某个地方把 llvm 发布版本下载过来的
+
+比如这个 [https://github.com/deech/libclang-static-build?tab=readme-ov-file#windows-10](https://github.com/deech/libclang-static-build?tab=readme-ov-file#windows-10)
+
+搞了一下，还有动态库静态库，release 和 debug 之间的不匹配，也不知道他下载过来的发布版本是怎么构建出来的
+
+不想去研究了，感觉麻烦
+
+这种大型工具还是让用户安装吧。规定用户需要设置一个环境变量 `LLVM_DIR`，存储 LLVM 发布版本的根目录，然后直接链接
+
+```cmake
+target_link_libraries(<Your Target Name> PUBLIC $ENV{LLVM_DIR}/lib/libclang.lib)
+target_include_directories(<Your Target Name> PUBLIC $ENV{LLVM_DIR}/include)
+```
+
+#### annotate 属性
+
+一些更痛苦的事情是，如果想坚持使用属性这个东西，非标准的属性会被编译器删除，所以查看 AST 的时候都看不到
+
+所以你没有办法做
+
+```cpp
+[[Reflectable]]
+int x = 1;
+```
+
+有两个解决办法，要么改 clang 的代码，参考 [https://www.cs.cmu.edu/~seth/llvm/llvmannotation.html](https://www.cs.cmu.edu/~seth/llvm/llvmannotation.html)，然后自己编译一遍 llvm
+
+但是这样的话，你写出来的代码只有你自己的 clang 能编译通过
+
+如果是想要把自己修改版本的 llvm 发布出来的话，维护也是一个问题
+
+考虑到团队合作的话，别人能不能接受你自己编译的这个 llvm 是个问题……当然你可以把你自己的 llvm 的构建放到一个服务器上，让别人从这个服务器下载发布版本，但是这其中又会有静态库和动态库，debug 和 release 等问题，需要发布的 llvm 的库文件的这些设置与引擎的构建设置匹配才行。可能具体我也不太懂为什么，总之就是还是有坑
+
+或者是想办法把自定义属性的参数都转成字符串给 `annotate` 这个属性。`annotate` 是标准里面的，所以能处理
+
+这一种写法还挺好的 [https://zhuanlan.zhihu.com/p/669360731](https://zhuanlan.zhihu.com/p/669360731)
+
+再参考虚幻那种格式
+
+```cpp
+#define reflectable_class(...)    clang::annotate("reflectable_class;" #__VA_ARGS__)
+#define reflectable_struct(...)   clang::annotate("reflectable_struct;" #__VA_ARGS__)
+#define reflectable_field(...)    clang::annotate("reflectable_field;" #__VA_ARGS__)
+#define reflectable_function(...) clang::annotate("reflectable_function;" #__VA_ARGS__)
+
+struct [[reflectable_struct()]] Foo
+{
+    [[reflectable_field(blueprint_read_write)]]
+    int x = 1;
+
+    [[reflectable_function(blueprint_callable, category = "Hello")]]
+    void print();
+};
+```
+
+达成了跟虚幻差不多的格式，虽然看上去没什么稀奇的。虚幻是自己写了一套分析代码的工具 UHT，它与属性相关的宏在编译的时候是被忽略的
+
+```cpp
+// ObjectMacros.h
+
+// These macros wrap metadata parsed by the Unreal Header Tool, and are otherwise
+// ignored when code containing them is compiled by the C++ compiler
+#define UPROPERTY(...)
+#define UFUNCTION(...)
+#define USTRUCT(...)
+#define UMETA(...)
+#define UPARAM(...)
+#define UENUM(...)
+#define UDELEGATE(...)
+#define RIGVM_METHOD(...)
+```
+
+虚幻的解析文件的方法在 `FHeaderParser::ParseHeader`
+
+#### libclang
+
+libclang 的使用方法是提供一个遍历 AST 每一个节点时的回调函数，例如
+
+```cpp
+#include <clang-c/Index.h> // This is libclang.
+#include <iostream>
+
+using namespace std;
+
+ostream& operator<<(ostream& stream, const CXString& str)
+{
+    stream << clang_getCString(str);
+    clang_disposeString(str);
+    return stream;
+}
+
+int main()
+{
+    CXIndex           index = clang_createIndex(0, 0);
+    CXTranslationUnit unit  = clang_parseTranslationUnit(
+        index, "header.hpp", nullptr, 0, nullptr, 0, CXTranslationUnit_None);
+    if (unit == nullptr)
+    {
+        cerr << "Unable to parse translation unit. Quitting." << endl;
+        exit(-1);
+    }
+
+    CXCursor cursor = clang_getTranslationUnitCursor(unit);
+    clang_visitChildren(
+        cursor,
+        [](CXCursor c, CXCursor parent, CXClientData client_data) {
+            cout << "Cursor '" << clang_getCursorSpelling(c) << "' of kind '"
+                 << clang_getCursorKindSpelling(clang_getCursorKind(c)) << "'\n";
+            return CXChildVisit_Recurse;
+        },
+        nullptr);
+
+    clang_disposeTranslationUnit(unit);
+    clang_disposeIndex(index);
+}
+```
+
+其中 `clang_visitChildren` 这里就是遍历每一个节点的时候都会调用传入的回调函数
+
+但是我们可能会有一些复杂的匹配条件，来决定回调函数在这个节点是否被调用
+
+使用它来处理之前的属性示例，得到
+
+```
+Cursor 'Foo' of kind 'StructDecl'
+Cursor 'reflectable_struct;' of kind 'attribute(annotate)'
+Cursor 'x' of kind 'FieldDecl'
+Cursor 'reflectable_field;blueprint_read_write' of kind 'attribute(annotate)'
+Cursor '' of kind 'IntegerLiteral'
+Cursor 'print' of kind 'CXXMethod'
+Cursor 'reflectable_function;blueprint_callable, category = "Hello"' of kind 'attribute(annotate)'
+```
+
+一个最简单的查找 annotation 属性的方式
+
+```cpp
+#include <clang-c/Index.h> // This is libclang.
+#include <iostream>
+#include <sstream>
+#include <string>
+#include <vector>
+
+// Helper function to convert CXString to std::string
+std::string toStdString(CXString cxStr)
+{
+    std::string result = clang_getCString(cxStr);
+    clang_disposeString(cxStr);
+    return result;
+}
+
+std::vector<std::string> split(std::string text, char delim)
+{
+    std::string              line;
+    std::vector<std::string> vec;
+    std::stringstream        ss(text);
+    while (std::getline(ss, line, delim))
+    {
+        vec.push_back(line);
+    }
+    return vec;
+}
+
+int main()
+{
+    CXIndex           index = clang_createIndex(0, 0);
+    CXTranslationUnit unit  = clang_parseTranslationUnit(
+        index, "header.hpp", nullptr, 0, nullptr, 0, CXTranslationUnit_None);
+    if (unit == nullptr)
+    {
+        std::cerr << "Unable to parse translation unit. Quitting." << std::endl;
+        exit(-1);
+    }
+
+    CXCursor cursor = clang_getTranslationUnitCursor(unit);
+    clang_visitChildren(
+        cursor,
+        [](CXCursor c, CXCursor parent, CXClientData client_data) {
+            std::vector<std::string>* fields = static_cast<std::vector<std::string>*>(client_data);
+
+            if (clang_getCursorKind(c) == CXCursor_AnnotateAttr)
+            {
+                std::vector<std::string> annotations = split(toStdString(clang_getCursorSpelling(c)), ';');
+                if (annotations.size() == 0)
+                    return CXChildVisit_Recurse;
+
+                if (annotations[0] == "reflectable_class")
+                    std::cout << annotations[1] << std::endl;
+                else if (annotations[0] == "reflectable_struct")
+                    std::cout << annotations[1] << std::endl;
+            }
+
+            return CXChildVisit_Recurse;
+        },
+        nullptr);
+
+    clang_disposeTranslationUnit(unit);
+    clang_disposeIndex(index);
+}
+```
+
+虽然现在确定了 libclang 能够找到这个属性，但是还是不知道怎么建立属性和他所修饰的成员变量之间的关系
+
+所以还是输出 AST 才能看到节点之间的关系
+
+以下是反射示例的 AST 的部分输出，可以看到 `AnnotateAttr` 是 `CXXRecordDecl` `FieldDecl` `CXXMethodDecl` 的子节点
+
+```
+PS ...> clang -Xclang -ast-dump header.hpp
+...
+`-CXXRecordDecl 0x197c6538cf8 <header.hpp:6:1, line:13:1> line:6:36 struct Foo definition
+  |-DefinitionData pass_in_registers aggregate standard_layout trivially_copyable literal has_constexpr_non_copy_move_ctor can_const_default_init
+  | |-DefaultConstructor exists non_trivial constexpr needs_implicit defaulted_is_constexpr
+  | |-CopyConstructor simple trivial has_const_param needs_implicit implicit_has_const_param
+  | |-MoveConstructor exists simple trivial needs_implicit
+  | |-CopyAssignment simple trivial has_const_param needs_implicit implicit_has_const_param
+  | |-MoveAssignment exists simple trivial needs_implicit
+  | `-Destructor simple irrelevant trivial needs_implicit
+  |-AnnotateAttr 0x197c6538e18 <line:2:35, col:85> "reflectable_struct;"
+  |-CXXRecordDecl 0x197c6538ec0 <line:6:1, col:36> col:36 implicit struct Foo
+  |-FieldDecl 0x197c6538fb0 <line:9:5, col:13> col:9 x 'int'
+  | |-IntegerLiteral 0x197c6539328 <col:13> 'int' 1
+  | `-AnnotateAttr 0x197c6539008 <line:3:35, col:84> "reflectable_field;blueprint_read_write"
+  `-CXXMethodDecl 0x197c65391a0 <line:12:5, col:16> col:10 print 'void ()'
+    `-AnnotateAttr 0x197c6539248 <line:4:35, col:87> "reflectable_function;blueprint_callable, category = "Hello""
+```
+
+所以我们需要获得父节点
+
+`clang_getCursorSemanticParent` 和 `clang_getCursorLexicalParent` 都不顶用，它们获得父节点的逻辑不一样，具体我也不懂
+
+`clang_visitChildren` 的回调函数的参数里面直接就有 parent，我之前没注意到，直接用这个就可以了
+
+```cpp
+    clang_visitChildren(
+        cursor,
+        [](CXCursor c, CXCursor parent, CXClientData client_data) {
+            std::vector<std::string>* fields = static_cast<std::vector<std::string>*>(client_data);
+
+            if (clang_getCursorKind(c) == CXCursor_AnnotateAttr)
+            {
+                std::vector<std::string> annotations = split(toStdString(clang_getCursorSpelling(c)), ';');
+                if (annotations.size() == 0)
+                    return CXChildVisit_Recurse;
+
+                if (annotations[0] == "reflectable_class")
+                {
+                    if (clang_getCursorKind(parent) == CXCursor_ClassDecl)
+                    {
+                        std::cout << "CXCursor_ClassDecl" << std::endl;
+                    }
+                }
+                else if (annotations[0] == "reflectable_struct")
+                {
+                    std::cout << toStdString(clang_getCursorSpelling(parent)) << std::endl;
+                    if (clang_getCursorKind(parent) == CXCursor_StructDecl)
+                    {
+                        std::cout << "CXCursor_StructDecl" << std::endl;
+                    }
+                }
+            }
+
+            return CXChildVisit_Recurse;
+        },
+        nullptr);
+```
+
+#### clang_visitChildren 回调里面的用户数据指针
+
+因为 clang_visitChildren 是 C 接口，所以并没有 C++ 标准的东西
+
+用的参数是函数指针，不能存储状态
+
+所以需要最后一个 `CXClientData client_data` 来存储用户提供的数据指针
+
+如果你有多个数据的话……那就打包成结构体吧
+
+lambda 只有在不捕获的时候才能退化成函数指针，std::function 也转不了函数指针，根本原因就是因为函数指针是没有上下文的，所以 `CXClientData client_data` 这里始终是绕不开的
+
+#### 生成文件
+
+思路是，先构建代码生成器，然后生成代码，获取源码文件列表 + 生成代码列表，填到 CMakeLists.txt 里面，然后再构建 Runtime 和 Editor
+
+因为每处理一个新文件，就要在 include 和函数体两个位置更新，我一开始使用 `tellp` `seekp` 的组合，但是后面我搞不懂它为什么会产生 bug，为什么移动输出位置之后，输出一行会直接消除掉下面的两三行
+
+为了省心，还是使用 `std::stringstream` 吧
+
+#### 为 libclang 提供编译选项
+
+libclang 读取头文件的时候，如果后缀是 `.h` 那么会认为是 C 文件。这样，就会发生解析错误。为了不修改头文件的后缀的同时，还能让 libclang 知道这是 C++，要传入 `-xc++` 编译选项
 
 <script src="https://utteranc.es/client.js"
         repo="CheapMeow/cheapmeow.github.io"
