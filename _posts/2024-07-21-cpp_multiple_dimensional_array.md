@@ -235,6 +235,8 @@ auto                          end_time     = std::chrono::high_resolution_clock:
 std::chrono::duration<double> elapsed_time = end_time - start_time;
 ```
 
+## 性能测试结果
+
 测试结果如下，在 512^3 的数组大小下进行测试，以保证单次执行的粒度
 
 <table>
