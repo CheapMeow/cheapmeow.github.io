@@ -13,6 +13,8 @@ author_profile: false
 
 开发 CFD 求解器的时候，需要使用三维数组来表示结构网格。我希望这个三维数组的内存是连续的，所以我分配了三维空间大小的线性内存。需要使用三维坐标来访问数组时，人为计算一维索引。这自然就引出了一个问题：这样做会带来性能损失吗？如果有，损失多少？
 
+测试代码见 [https://github.com/CheapMeow/test-mdspan](https://github.com/CheapMeow/test-mdspan)
+
 ## 不同的实现
 
 第一个最简单的实现就是，分配一维连续数组，三维坐标转化为一维索引
