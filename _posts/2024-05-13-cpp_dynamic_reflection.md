@@ -651,6 +651,79 @@ protected:
 
 这里的侵入也是不可避免的。你想要多态，就会擦类型，擦了类型，你就没办法获得派生类的名字，就没法在反射数据库里面找到派生类，所以为了兼得两者，你必须要在存基类指针的时候也存类型信息
 
+#### ReflectionPtr 内使用智能指针
+
+因为 `ReflectionPtr<T>` 最初设计的是，内部存一个 `T*` 指针
+
+所以他没有资源管理的能力，所以 Piccolo 包了一些宏来做
+
+```cpp
+#define PICCOLO_REFLECTION_NEW(name, ...) Reflection::ReflectionPtr(#name, new name(__VA_ARGS__));
+#define PICCOLO_REFLECTION_DELETE(value) \
+    if (value) \
+    { \
+        delete value.operator->(); \
+        value.getPtrReference() = nullptr; \
+    }
+#define PICCOLO_REFLECTION_DEEP_COPY(type, dst_ptr, src_ptr) \
+    *static_cast<type*>(dst_ptr) = *static_cast<type*>(src_ptr.getPtr());
+```
+
+使用例子
+
+```cpp
+// camera.h
+
+REFLECTION_TYPE(CameraComponentRes)
+CLASS(CameraComponentRes, Fields)
+{
+    REFLECTION_BODY(CameraComponentRes);
+
+public:
+    Reflection::ReflectionPtr<CameraParameter> m_parameter;
+
+    CameraComponentRes() = default;
+    CameraComponentRes(const CameraComponentRes& res);
+
+    ~CameraComponentRes();
+};
+
+// camera.cpp
+
+namespace Piccolo
+{
+    CameraComponentRes::CameraComponentRes(const CameraComponentRes& res)
+    {
+        const std::string& camera_type_name = res.m_parameter.getTypeName();
+        if (camera_type_name == "FirstPersonCameraParameter")
+        {
+            m_parameter = PICCOLO_REFLECTION_NEW(FirstPersonCameraParameter);
+            PICCOLO_REFLECTION_DEEP_COPY(FirstPersonCameraParameter, m_parameter, res.m_parameter);
+        }
+        else if (camera_type_name == "ThirdPersonCameraParameter")
+        {
+            m_parameter = PICCOLO_REFLECTION_NEW(ThirdPersonCameraParameter);
+            PICCOLO_REFLECTION_DEEP_COPY(ThirdPersonCameraParameter, m_parameter, res.m_parameter);
+        }
+        else if (camera_type_name == "FreeCameraParameter")
+        {
+            m_parameter = PICCOLO_REFLECTION_NEW(FreeCameraParameter);
+            PICCOLO_REFLECTION_DEEP_COPY(FreeCameraParameter, m_parameter, res.m_parameter);
+        }
+        else
+        {
+            LOG_ERROR("invalid camera type");
+        }
+    }
+
+    CameraComponentRes::~CameraComponentRes() { PICCOLO_REFLECTION_DELETE(m_parameter); }
+} // namespace Piccolo
+```
+
+我感觉这样子确实有点麻烦了，不如直接在 `ReflectionPtr` 里面用智能指针
+
+既然用了智能指针，那么与不同类型之间的拷贝赋值运算符和移动赋值运算符就不需要了，毕竟智能指针本身是不支持这件事情的
+
 ### Taichi Graphics cpp reflection
 
 [https://www.bilibili.com/video/BV1MY4y1c7hU](https://www.bilibili.com/video/BV1MY4y1c7hU)
