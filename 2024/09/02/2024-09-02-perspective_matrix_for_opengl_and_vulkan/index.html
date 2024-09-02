@@ -34,6 +34,10 @@
   <link rel="stylesheet" href="//at.alicdn.com/t/font_1886449_67xjft27j1l.css" />
   <!-- 代码块风格 -->
   
+    
+<link rel="stylesheet" href="/css/figcaption/mac-block.css">
+
+  
 
   <!-- jquery3.3.1 -->
   
@@ -73,7 +77,7 @@
         <img src="/images/avatar.png" alt="">
       
     </a>
-    <div class="nickname"><a href="/">Oranges</a></div>
+    <div class="nickname"><a href="/">CheapMeow</a></div>
   </div>
   <div class="navbar">
     <ul>
@@ -185,152 +189,427 @@
           
       </div>
       <div class="markdown-body">
-        <p>Vulkan 只是屏幕坐标系和别人不一样。世界空间，view 空间的手性是用户定义的，想怎么做都行，只要最终保证传入 Vulkan 的 NDC 坐标的手性是对的。也就是说，你可以在计算投影矩阵的时候，注意要转换手性。</p>
-<p>如果没有推导过投影矩阵，就可能不会理解到世界空间，view 空间的手性和 NDC 的手性可以毫无关系——毕竟你不知道有矩阵可以转换手性。</p>
+        <p>Vulkan 只是屏幕坐标系和别人不一样。世界空间，view
+空间的手性是用户定义的，想怎么做都行，只要最终保证传入 Vulkan 的 NDC
+坐标的手性是对的。也就是说，你可以在计算投影矩阵的时候，注意要转换手性。</p>
+<p>如果没有推导过投影矩阵，就可能不会理解到世界空间，view 空间的手性和
+NDC 的手性可以毫无关系——毕竟你不知道有矩阵可以转换手性。</p>
 <script type="text/javascript" async
   src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-MML-AM_CHTML">
 </script>
-
-<h2 id="深度的约定"><a href="#深度的约定" class="headerlink" title="深度的约定"></a>深度的约定</h2><p>创建 <code>vk::PipelineDepthStencilStateCreateInfo</code> 时，我们一般会传入 <code>vk::CompareOp::eLessOrEqual</code> 到 <code>depthCompareOp</code>，表示传入的深度比存储的深度更小时，就通过了测试，写入新的深度。这就表明近处的物体会遮挡远处的物体，符合了 z 的正值越大表示深度越深的习惯。</p>
-<p>用户可以定义用 z 的正值越大表示深度越深，或者是负值越大表示深度越深，也就是说，用户可以定义用 z 轴垂于屏幕朝内或者朝外来表示深度的正半轴</p>
-<p>理论上来说，你不知道 NDC 的 z 轴朝向，你单单讨论屏幕空间的 x 和 y 之间的关系，你是没办法说 NDC 空间的手性的手性如何</p>
-<p>于是当我们看到某些帖子在说 Vulkan 与 OpenGL 的区别在于 y 轴反了，那是默认 z 轴垂于屏幕朝内表示深度的正半轴</p>
-<h2 id="推导透视矩阵时可能遇到的困难"><a href="#推导透视矩阵时可能遇到的困难" class="headerlink" title="推导透视矩阵时可能遇到的困难"></a>推导透视矩阵时可能遇到的困难</h2><h3 id="物理过程"><a href="#物理过程" class="headerlink" title="物理过程"></a>物理过程</h3><p>首先要知道变换过程是怎么样的</p>
+<h2 id="深度的约定">深度的约定</h2>
+<p>创建 <code>vk::PipelineDepthStencilStateCreateInfo</code>
+时，我们一般会传入 <code>vk::CompareOp::eLessOrEqual</code> 到
+<code>depthCompareOp</code>，表示传入的深度比存储的深度更小时，就通过了测试，写入新的深度。这就表明近处的物体会遮挡远处的物体，符合了
+z 的正值越大表示深度越深的习惯。</p>
+<p>用户可以定义用 z
+的正值越大表示深度越深，或者是负值越大表示深度越深，也就是说，用户可以定义用
+z 轴垂于屏幕朝内或者朝外来表示深度的正半轴</p>
+<p>理论上来说，你不知道 NDC 的 z 轴朝向，你单单讨论屏幕空间的 x 和 y
+之间的关系，你是没办法说 NDC 空间的手性的手性如何</p>
+<p>于是当我们看到某些帖子在说 Vulkan 与 OpenGL 的区别在于 y
+轴反了，那是默认 z 轴垂于屏幕朝内表示深度的正半轴</p>
+<h2 id="推导透视矩阵时可能遇到的困难">推导透视矩阵时可能遇到的困难</h2>
+<h3 id="物理过程">物理过程</h3>
+<p>首先要知道变换过程是怎么样的</p>
 <div style="overflow-x: scroll">
 <div style="width: 1800px">
-<img src="/images/reason_of_perspective_matrix_is_different_from_opengl/opengl_pipeline.drawio.svg"></img>
+<p><img src="/images/reason_of_perspective_matrix_is_different_from_opengl/opengl_pipeline.drawio.svg"></img></p>
 </div>
 </div>
-
-<h3 id="物理量的定义"><a href="#物理量的定义" class="headerlink" title="物理量的定义"></a>物理量的定义</h3><p>不同的文章对某一个物理量的定义可能不同，但是他们又使用了相同的符号，结果就导致最终的表达式可能差了一个负号</p>
-<p>比如 games101 的推导中，视图空间是右手系，近平面的坐标为 n，远平面的坐标为 f。这说明 n,f 都是负数</p>
-<p>但是在 LearnOpenGL 推荐的贴子 <a target="_blank" rel="noopener" href="https://www.songho.ca/opengl/gl_projectionmatrix.html">https://www.songho.ca/opengl/gl_projectionmatrix.html</a> 中，他视图空间是右手系，但定义 n,f 为正，那么近平面的坐标为 -n，远平面的坐标为 -f</p>
-<h3 id="NDC-深度范围与-z-轴反转"><a href="#NDC-深度范围与-z-轴反转" class="headerlink" title="NDC 深度范围与 z 轴反转"></a>NDC 深度范围与 z 轴反转</h3><p>某些细节会影响结果，但是一般的教程不会强调这些细节，因为他们默认你都知道。比如假设近平面的坐标为 n，远平面的坐标为 f 都是负数，那么他要转换到 [-1, 1]，是 n 对应 -1 还是 f 对应 -1？或者是转换到 [0, 1]？都有可能。</p>
-<h3 id="变换到-clip-空间中的坐标的齐次坐标-w-的符号"><a href="#变换到-clip-空间中的坐标的齐次坐标-w-的符号" class="headerlink" title="变换到 clip 空间中的坐标的齐次坐标 w 的符号"></a>变换到 clip 空间中的坐标的齐次坐标 w 的符号</h3><p>在推导挤压平截头体的矩阵的时候，齐次坐标的位置可以用 z 或者 -z，都不影响结果，但是结果矩阵会所有元素差一个负号。最终因为要做透视除法，所以每个元素多出来的一个负号和 w 的负号相抵，所以不会导致变换到裁剪空间的结果不同。</p>
+<h3 id="物理量的定义">物理量的定义</h3>
+<p>不同的文章对某一个物理量的定义可能不同，但是他们又使用了相同的符号，结果就导致最终的表达式可能差了一个负号</p>
+<p>比如 games101 的推导中，视图空间是右手系，近平面的坐标为
+n，远平面的坐标为 f。这说明 n,f 都是负数</p>
+<p>但是在 LearnOpenGL 推荐的贴子 <a
+target="_blank" rel="noopener" href="https://www.songho.ca/opengl/gl_projectionmatrix.html">https://www.songho.ca/opengl/gl_projectionmatrix.html</a>
+中，他视图空间是右手系，但定义 n,f 为正，那么近平面的坐标为
+-n，远平面的坐标为 -f</p>
+<h3 id="ndc-深度范围与-z-轴反转">NDC 深度范围与 z 轴反转</h3>
+<p>某些细节会影响结果，但是一般的教程不会强调这些细节，因为他们默认你都知道。比如假设近平面的坐标为
+n，远平面的坐标为 f 都是负数，那么他要转换到 [-1, 1]，是 n 对应 -1 还是
+f 对应 -1？或者是转换到 [0, 1]？都有可能。</p>
+<h3 id="变换到-clip-空间中的坐标的齐次坐标-w-的符号">变换到 clip
+空间中的坐标的齐次坐标 w 的符号</h3>
+<p>在推导挤压平截头体的矩阵的时候，齐次坐标的位置可以用 z 或者
+-z，都不影响结果，但是结果矩阵会所有元素差一个负号。最终因为要做透视除法，所以每个元素多出来的一个负号和
+w 的负号相抵，所以不会导致变换到裁剪空间的结果不同。</p>
 <p>但是这会导致公式中的符号不同，所以可能令人困惑</p>
-<h3 id="为什么-OpenGL-中相机在-eye-空间中看向-z-轴"><a href="#为什么-OpenGL-中相机在-eye-空间中看向-z-轴" class="headerlink" title="为什么 OpenGL 中相机在 eye 空间中看向 -z 轴"></a>为什么 OpenGL 中相机在 eye 空间中看向 -z 轴</h3><p>OpenGL 推导透视矩阵时，相机在 eye 空间中是看向 -z 轴，所以视锥体的近平面坐标和远平面坐标都是负数，这是推导透视矩阵公式的基础。那么为什么是看向 -z 轴而不是 +z 轴呢？</p>
-<p>glm 默认的 <code>lookAt</code> 调用的是 <code>glm::lookAtRH</code></p>
-<p>OpenGL 中的构建 view 矩阵的堆栈（来自 <a target="_blank" rel="noopener" href="https://learnopengl.com/">https://learnopengl.com/</a>）</p>
+<h3 id="为什么-opengl-中相机在-eye-空间中看向--z-轴">为什么 OpenGL
+中相机在 eye 空间中看向 -z 轴</h3>
+<p>OpenGL 推导透视矩阵时，相机在 eye 空间中是看向 -z
+轴，所以视锥体的近平面坐标和远平面坐标都是负数，这是推导透视矩阵公式的基础。那么为什么是看向
+-z 轴而不是 +z 轴呢？</p>
+<p>glm 默认的 <code>lookAt</code> 调用的是
+<code>glm::lookAtRH</code></p>
+<p>OpenGL 中的构建 view 矩阵的堆栈（来自 <a
+target="_blank" rel="noopener" href="https://learnopengl.com/">https://learnopengl.com/</a>）</p>
 <figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">glm::mat4 view = camera.<span class="built_in">GetViewMatrix</span>();</span><br></pre></td></tr></table></figure>
-
 <figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="function">glm::mat4 <span class="title">GetViewMatrix</span><span class="params">()</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="keyword">return</span> glm::<span class="built_in">lookAt</span>(Position, Position + Front, Up);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
 <figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="type">void</span> <span class="title">updateCameraVectors</span><span class="params">()</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="comment">// calculate the new Front vector</span></span><br><span class="line">    glm::vec3 front;</span><br><span class="line">    front.x = <span class="built_in">cos</span>(glm::<span class="built_in">radians</span>(Yaw)) * <span class="built_in">cos</span>(glm::<span class="built_in">radians</span>(Pitch));</span><br><span class="line">    front.y = <span class="built_in">sin</span>(glm::<span class="built_in">radians</span>(Pitch));</span><br><span class="line">    front.z = <span class="built_in">sin</span>(glm::<span class="built_in">radians</span>(Yaw)) * <span class="built_in">cos</span>(glm::<span class="built_in">radians</span>(Pitch));</span><br><span class="line">    Front = glm::<span class="built_in">normalize</span>(front);</span><br><span class="line">    <span class="comment">// also re-calculate the Right and Up vector</span></span><br><span class="line">    Right = glm::<span class="built_in">normalize</span>(glm::<span class="built_in">cross</span>(Front, WorldUp));  <span class="comment">// normalize the vectors, because their length gets closer to 0 the more you look up or down which results in slower movement.</span></span><br><span class="line">    Up    = glm::<span class="built_in">normalize</span>(glm::<span class="built_in">cross</span>(Right, Front));</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>于是我们知道了，传入 <code>lookAtRH</code> 的期望是摄像机看向 <code>Front</code> 的指向</p>
-<p>但是为什么反而在 eye 空间中却看向 -z 轴呢？按道理来说，乘以 view 矩阵之后，整个世界都被转到相机面向物体的坐标系中了呀？现在你推导透视矩阵时反而认为相机背向物体？</p>
+<p>于是我们知道了，传入 <code>lookAtRH</code> 的期望是摄像机看向
+<code>Front</code> 的指向</p>
+<p>但是为什么反而在 eye 空间中却看向 -z 轴呢？按道理来说，乘以 view
+矩阵之后，整个世界都被转到相机面向物体的坐标系中了呀？现在你推导透视矩阵时反而认为相机背向物体？</p>
 <p>所以这个事情还是要看 <code>lookAtRH</code> 是怎么做的</p>
 <figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">template</span>&lt;<span class="keyword">typename</span> T, qualifier Q&gt;</span></span><br><span class="line"><span class="function">GLM_FUNC_QUALIFIER mat&lt;4, 4, T, Q&gt; <span class="title">lookAtRH</span><span class="params">(vec&lt;<span class="number">3</span>, T, Q&gt; <span class="type">const</span>&amp; eye, vec&lt;<span class="number">3</span>, T, Q&gt; <span class="type">const</span>&amp; center, vec&lt;<span class="number">3</span>, T, Q&gt; <span class="type">const</span>&amp; up)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">  <span class="function">vec&lt;3, T, Q&gt; <span class="type">const</span> <span class="title">f</span><span class="params">(normalize(center - eye))</span></span>;</span><br><span class="line">  <span class="function">vec&lt;3, T, Q&gt; <span class="type">const</span> <span class="title">s</span><span class="params">(normalize(cross(f, up)))</span></span>;</span><br><span class="line">  <span class="function">vec&lt;3, T, Q&gt; <span class="type">const</span> <span class="title">u</span><span class="params">(cross(s, f))</span></span>;</span><br><span class="line"></span><br><span class="line">  <span class="function">mat&lt;4, 4, T, Q&gt; <span class="title">Result</span><span class="params">(<span class="number">1</span>)</span></span>;</span><br><span class="line">  Result[<span class="number">0</span>][<span class="number">0</span>] = s.x;</span><br><span class="line">  Result[<span class="number">1</span>][<span class="number">0</span>] = s.y;</span><br><span class="line">  Result[<span class="number">2</span>][<span class="number">0</span>] = s.z;</span><br><span class="line">  Result[<span class="number">0</span>][<span class="number">1</span>] = u.x;</span><br><span class="line">  Result[<span class="number">1</span>][<span class="number">1</span>] = u.y;</span><br><span class="line">  Result[<span class="number">2</span>][<span class="number">1</span>] = u.z;</span><br><span class="line">  Result[<span class="number">0</span>][<span class="number">2</span>] =-f.x;</span><br><span class="line">  Result[<span class="number">1</span>][<span class="number">2</span>] =-f.y;</span><br><span class="line">  Result[<span class="number">2</span>][<span class="number">2</span>] =-f.z;</span><br><span class="line">  Result[<span class="number">3</span>][<span class="number">0</span>] =-<span class="built_in">dot</span>(s, eye);</span><br><span class="line">  Result[<span class="number">3</span>][<span class="number">1</span>] =-<span class="built_in">dot</span>(u, eye);</span><br><span class="line">  Result[<span class="number">3</span>][<span class="number">2</span>] = <span class="built_in">dot</span>(f, eye);</span><br><span class="line">  <span class="keyword">return</span> Result;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
 <p>可以看出，其实返回的 view 空间的 z 轴是 -front</p>
-<p>但是明明 front 是指向物体的，所以 view 变换之后，摄像机就背向了物体，摄像机的 -z 指向物体</p>
+<p>但是明明 front 是指向物体的，所以 view
+变换之后，摄像机就背向了物体，摄像机的 -z 指向物体</p>
 <p>所以这就说明了 lookAt 矩阵表示的 z 轴他不一定是传入的 front</p>
-<h3 id="lookAt-怎么与透视矩阵对应"><a href="#lookAt-怎么与透视矩阵对应" class="headerlink" title="lookAt 怎么与透视矩阵对应"></a>lookAt 怎么与透视矩阵对应</h3><p>我不止一次看到别人推荐这个网站 <a target="_blank" rel="noopener" href="https://www.songho.ca/opengl/gl_projectionmatrix.html">https://www.songho.ca/opengl/gl_projectionmatrix.html</a>，然后引用这句话</p>
+<h3 id="lookat-怎么与透视矩阵对应">lookAt 怎么与透视矩阵对应</h3>
+<p>我不止一次看到别人推荐这个网站 <a
+target="_blank" rel="noopener" href="https://www.songho.ca/opengl/gl_projectionmatrix.html">https://www.songho.ca/opengl/gl_projectionmatrix.html</a>，然后引用这句话</p>
 <blockquote>
-<p>Note that the eye coordinates are defined in the right-handed coordinate system, but NDC uses the left-handed coordinate system. That is, the camera at the origin is looking along -Z axis in eye space, but it is looking along +Z axis in NDC.</p>
+<p>Note that the eye coordinates are defined in the right-handed
+coordinate system, but NDC uses the left-handed coordinate system. That
+is, the camera at the origin is looking along -Z axis in eye space, but
+it is looking along +Z axis in NDC.</p>
 </blockquote>
-<p>他的意思似乎是，因为 NDC 是左手系，view 空间（eye 空间）是右手系，所以 x 和 y 轴不变的话，就可以认为两者的 z 轴是反的。那么假设视锥体都在一个固定的 NDC 正 z 的地方，那么我在 NDC 中需要看向这个视锥体，所以我在 view 空间中才需要让我的摄像机看向 -z 方向而不是 +z</p>
+<p>他的意思似乎是，因为 NDC 是左手系，view 空间（eye
+空间）是右手系，所以 x 和 y 轴不变的话，就可以认为两者的 z
+轴是反的。那么假设视锥体都在一个固定的 NDC 正 z 的地方，那么我在 NDC
+中需要看向这个视锥体，所以我在 view 空间中才需要让我的摄像机看向 -z
+方向而不是 +z</p>
 <p>当然这是一个倒因为果……并不是因为透视矩阵是这样，视图矩阵才是这样</p>
-<p>而是因为首先你知道了，经过 lookAt 之后，摄像机看向了 -z，所以透视矩阵中注意对 z 反转，使得 NDC 中摄像机看向 +z</p>
-<p>网上大部分教程以及评论都默认你右手系并且用的是 <code>glm::lookAt</code>，这确保了摄像机在 eye 空间中却看向 -z 轴</p>
-<p>原则上你用什么 lookAt 都可以，但是你对应的投影矩阵的公式也要跟着变</p>
+<p>而是因为首先你知道了，经过 lookAt 之后，摄像机看向了
+-z，所以透视矩阵中注意对 z 反转，使得 NDC 中摄像机看向 +z</p>
+<p>网上大部分教程以及评论都默认你右手系并且用的是
+<code>glm::lookAt</code>，这确保了摄像机在 eye 空间中却看向 -z 轴</p>
+<p>原则上你用什么 lookAt
+都可以，但是你对应的投影矩阵的公式也要跟着变</p>
 <p>现在大家用的都是 glm 的 lookAt，所以我觉得还是入乡随俗</p>
-<h2 id="从-Games101-的公式开始"><a href="#从-Games101-的公式开始" class="headerlink" title="从 Games101 的公式开始"></a>从 Games101 的公式开始</h2><p>先假设世界空间，视图空间是右手系</p>
-<p>视图空间中有一个正交长方体的左平面的坐标为 l，右平面的坐标为 r，上平面的坐标为 t，下平面的坐标为 b，近平面的坐标为 n，远平面的坐标为 f</p>
+<h2 id="从-games101-的公式开始">从 Games101 的公式开始</h2>
+<p>先假设世界空间，视图空间是右手系</p>
+<p>视图空间中有一个正交长方体的左平面的坐标为 l，右平面的坐标为
+r，上平面的坐标为 t，下平面的坐标为 b，近平面的坐标为 n，远平面的坐标为
+f</p>
 <p>现在希望转成一个 NDC 标准坐标</p>
 <p>那么 games101 是</p>
-<p>$$<br>M_{ortho}&#x3D;\left(\begin{array}{cccc}<br>\frac{2}{r-l} &amp; 0 &amp; 0 &amp; 0\<br>0 &amp; \frac{2}{t-b} &amp; 0 &amp; 0\<br>0 &amp; 0 &amp; \frac{2}{n-f} &amp; 0\<br>0 &amp; 0 &amp; 0 &amp; 1<br>\end{array}\right)\left(\begin{array}{cccc}<br>1 &amp; 0 &amp; 0 &amp; -\frac{r+l}{2}\<br>0 &amp; 1 &amp; 0 &amp; -\frac{t+b}{2}\<br>0 &amp; 0 &amp; 1 &amp; -\frac{n+f}{2}\<br>0 &amp; 0 &amp; 0 &amp; 1<br>\end{array}\right)<br>$$</p>
-<p>注意，这个公式把 [f, n] 转成 [-1, 1] 的，那么原来是 f 比 n 小，现在也是 -1 比 1 小，所以没有改变手性</p>
+<p><span class="math display">\[
+M_{ortho}=\left(\begin{array}{cccc}
+\frac{2}{r-l} &amp; 0 &amp; 0 &amp; 0\\
+0 &amp; \frac{2}{t-b} &amp; 0 &amp; 0\\
+0 &amp; 0 &amp; \frac{2}{n-f} &amp; 0\\
+0 &amp; 0 &amp; 0 &amp; 1
+\end{array}\right)\left(\begin{array}{cccc}
+1 &amp; 0 &amp; 0 &amp; -\frac{r+l}{2}\\
+0 &amp; 1 &amp; 0 &amp; -\frac{t+b}{2}\\
+0 &amp; 0 &amp; 1 &amp; -\frac{n+f}{2}\\
+0 &amp; 0 &amp; 0 &amp; 1
+\end{array}\right)
+\]</span></p>
+<p>注意，这个公式把 [f, n] 转成 [-1, 1] 的，那么原来是 f 比 n
+小，现在也是 -1 比 1 小，所以没有改变手性</p>
 <p>frustum 的关系式是</p>
-<p>$$<br>x’ &#x3D; n&#x2F;z*x<br>$$</p>
-<p>$$<br>y’ &#x3D; n&#x2F;z*y<br>$$</p>
-<p>因此设计一个 frustum 挤压成正交长方体的矩阵，使得变换出来的 $$x,y,w$$ 的部分与这个关系式对应。对应的方法就是使得齐次坐标 $$w$$ 的位置放关系式的分母，也就是 $$z$$</p>
-<p>$$M_{persp2ortho} &#x3D; \left(\begin{array}{cccc}<br>n &amp; 0 &amp; 0 &amp; 0\<br>0 &amp; n &amp; 0 &amp; 0\<br>a_1 &amp; a_2 &amp; a_3 &amp; a_4\<br>0 &amp; 0 &amp; 1 &amp; 0<br>\end{array}\right)$$</p>
-<p>$$M_{persp2ortho}\left(\begin{array}{c}<br>x\<br>y\<br>z\<br>1<br>\end{array}\right)&#x3D;\left(\begin{array}{c}<br>nx\<br>ny\<br>?\<br>z<br>\end{array}\right)$$</p>
+<p><span class="math display">\[
+x&#39; = n/z*x
+\]</span></p>
+<p><span class="math display">\[
+y&#39; = n/z*y
+\]</span></p>
+<p>因此设计一个 frustum 挤压成正交长方体的矩阵，使得变换出来的 <span
+class="math display">\[x,y,w\]</span>
+的部分与这个关系式对应。对应的方法就是使得齐次坐标 <span
+class="math display">\[w\]</span> 的位置放关系式的分母，也就是 <span
+class="math display">\[z\]</span></p>
+<p><span class="math display">\[M_{persp2ortho} =
+\left(\begin{array}{cccc}
+n &amp; 0 &amp; 0 &amp; 0\\
+0 &amp; n &amp; 0 &amp; 0\\
+a_1 &amp; a_2 &amp; a_3 &amp; a_4\\
+0 &amp; 0 &amp; 1 &amp; 0
+\end{array}\right)\]</span></p>
+<p><span class="math display">\[M_{persp2ortho}\left(\begin{array}{c}
+x\\
+y\\
+z\\
+1
+\end{array}\right)=\left(\begin{array}{c}
+nx\\
+ny\\
+?\\
+z
+\end{array}\right)\]</span></p>
 <p>为了求解未知数，有两个关系，一个是近平面上的点在压缩时不变，另一个是远平面的中心点在压缩时不变</p>
 <p>单独看“近平面上的点在压缩时不变”，这使得</p>
-<p>$$M_{persp2ortho}\left(\begin{array}{c}<br>x\<br>y\<br>n\<br>1<br>\end{array}\right)&#x3D;\left(\begin{array}{c}<br>nx\<br>ny\<br>n^2\<br>n<br>\end{array}\right)$$</p>
+<p><span class="math display">\[M_{persp2ortho}\left(\begin{array}{c}
+x\\
+y\\
+n\\
+1
+\end{array}\right)=\left(\begin{array}{c}
+nx\\
+ny\\
+n^2\\
+n
+\end{array}\right)\]</span></p>
 <p>对任意 x,y 成立</p>
-<p>那么可以证出 $$a_1,a_2$$ 都是 0，因为 $$n^2$$ 与 $$x,y$$ 无关</p>
+<p>那么可以证出 <span class="math display">\[a_1,a_2\]</span> 都是
+0，因为 <span class="math display">\[n^2\]</span> 与 <span
+class="math display">\[x,y\]</span> 无关</p>
 <p>那么取近平面的中心点不变和远平面的中心点不变，得到两个式子</p>
-<p>$$M_{persp2ortho}\left(\begin{array}{c}<br>0\<br>0\<br>n\<br>1<br>\end{array}\right)&#x3D;\left(\begin{array}{c}<br>0\<br>0\<br>n^2\<br>n<br>\end{array}\right)$$</p>
-<p>$$M_{persp2ortho}\left(\begin{array}{c}<br>0\<br>0\<br>f\<br>1<br>\end{array}\right)&#x3D;\left(\begin{array}{c}<br>0\<br>0\<br>f^2\<br>f<br>\end{array}\right)$$</p>
+<p><span class="math display">\[M_{persp2ortho}\left(\begin{array}{c}
+0\\
+0\\
+n\\
+1
+\end{array}\right)=\left(\begin{array}{c}
+0\\
+0\\
+n^2\\
+n
+\end{array}\right)\]</span></p>
+<p><span class="math display">\[M_{persp2ortho}\left(\begin{array}{c}
+0\\
+0\\
+f\\
+1
+\end{array}\right)=\left(\begin{array}{c}
+0\\
+0\\
+f^2\\
+f
+\end{array}\right)\]</span></p>
 <p>即</p>
-<p>$$a_3 n + a_4 &#x3D; n^2$$<br>$$a_3 f + a_4 &#x3D; f^2$$</p>
+<p><span class="math display">\[a_3 n + a_4 = n^2\]</span> <span
+class="math display">\[a_3 f + a_4 = f^2\]</span></p>
 <p>解得</p>
-<p>$$a_3 &#x3D; n+f, a_4 &#x3D; -nf$$</p>
+<p><span class="math display">\[a_3 = n+f, a_4 = -nf\]</span></p>
 <p>最终结果</p>
-<p>$$M_{persp2ortho} &#x3D; \left(\begin{array}{cccc}<br>n &amp; 0 &amp; 0 &amp; 0\<br>0 &amp; n &amp; 0 &amp; 0\<br>0 &amp; 0 &amp; f+n &amp; -f,n\<br>0 &amp; 0 &amp; 1 &amp; 0<br>\end{array}\right)$$</p>
+<p><span class="math display">\[M_{persp2ortho} =
+\left(\begin{array}{cccc}
+n &amp; 0 &amp; 0 &amp; 0\\
+0 &amp; n &amp; 0 &amp; 0\\
+0 &amp; 0 &amp; f+n &amp; -f\,n\\
+0 &amp; 0 &amp; 1 &amp; 0
+\end{array}\right)\]</span></p>
 <p>两者相乘可以得到</p>
-<p>$$M_{proj} &#x3D; M_{ortho} * M_{persp2ortho} &#x3D; \left(\begin{array}{cccc}<br>\frac{2,n}{r-l} &amp; 0 &amp; \frac{l+r}{l-r} &amp; 0\<br>0 &amp; \frac{2,n}{t-b} &amp; \frac{b+t}{b-t} &amp; 0\<br>0 &amp; 0 &amp; -\frac{f+n}{f-n} &amp; \frac{2,f,n}{f-n}\<br>0 &amp; 0 &amp; 1 &amp; 0<br>\end{array}\right)$$</p>
+<p><span class="math display">\[M_{proj} = M_{ortho} * M_{persp2ortho} =
+\left(\begin{array}{cccc}
+\frac{2\,n}{r-l} &amp; 0 &amp; \frac{l+r}{l-r} &amp; 0\\
+0 &amp; \frac{2\,n}{t-b} &amp; \frac{b+t}{b-t} &amp; 0\\
+0 &amp; 0 &amp; -\frac{f+n}{f-n} &amp; \frac{2\,f\,n}{f-n}\\
+0 &amp; 0 &amp; 1 &amp; 0
+\end{array}\right)\]</span></p>
 <p>进行这个投影变换之后，原来是右手坐标的视图空间变为右手坐标的裁剪空间</p>
-<h2 id="考虑-OpenGL"><a href="#考虑-OpenGL" class="headerlink" title="考虑 OpenGL"></a>考虑 OpenGL</h2><p>OpenGL 的公式中要求 n,f 都是距离，所以都是正值</p>
+<h2 id="考虑-opengl">考虑 OpenGL</h2>
+<p>OpenGL 的公式中要求 n,f 都是距离，所以都是正值</p>
 <p>那么近平面是 -n，远平面是 -f</p>
 <p>又要求变换之后是左手系，也就是 [-n, -f] 变换到 [-1, 1]</p>
 <p>那么正交投影矩阵</p>
-<p>$$M_{ortho}&#x3D;\left(\begin{array}{cccc}<br>\frac{2}{r-l} &amp; 0 &amp; 0 &amp; 0\<br>0 &amp; \frac{2}{t-b} &amp; 0 &amp; 0\<br>0 &amp; 0 &amp; \frac{2}{n-f} &amp; 0\<br>0 &amp; 0 &amp; 0 &amp; 1<br>\end{array}\right)\left(\begin{array}{cccc}<br>1 &amp; 0 &amp; 0 &amp; -\frac{r+l}{2}\<br>0 &amp; 1 &amp; 0 &amp; -\frac{t+b}{2}\<br>0 &amp; 0 &amp; 1 &amp; \frac{f+n}{2}\<br>0 &amp; 0 &amp; 0 &amp; 1<br>\end{array}\right)$$</p>
+<p><span class="math display">\[M_{ortho}=\left(\begin{array}{cccc}
+\frac{2}{r-l} &amp; 0 &amp; 0 &amp; 0\\
+0 &amp; \frac{2}{t-b} &amp; 0 &amp; 0\\
+0 &amp; 0 &amp; \frac{2}{n-f} &amp; 0\\
+0 &amp; 0 &amp; 0 &amp; 1
+\end{array}\right)\left(\begin{array}{cccc}
+1 &amp; 0 &amp; 0 &amp; -\frac{r+l}{2}\\
+0 &amp; 1 &amp; 0 &amp; -\frac{t+b}{2}\\
+0 &amp; 0 &amp; 1 &amp; \frac{f+n}{2}\\
+0 &amp; 0 &amp; 0 &amp; 1
+\end{array}\right)\]</span></p>
 <p>frustum 的关系式是</p>
-<p>$$x’ &#x3D; -n&#x2F;z<em>x$$<br>$$y’ &#x3D; -n&#x2F;z</em>y$$</p>
+<p><span class="math display">\[x&#39; = -n/z*x\]</span> <span
+class="math display">\[y&#39; = -n/z*y\]</span></p>
 <p>因为这里的 z 是负值，所以要加负号表示距离</p>
 <p>设计压缩矩阵</p>
-<p>$$M_{persp2ortho} &#x3D; \left(\begin{array}{cccc}<br>-n &amp; 0 &amp; 0 &amp; 0\<br>0 &amp; -n &amp; 0 &amp; 0\<br>0 &amp; 0 &amp; a_3 &amp; a_4\<br>0 &amp; 0 &amp; 1 &amp; 0<br>\end{array}\right)$$</p>
-<p>$$M_{persp2ortho}\left(\begin{array}{c}<br>x\<br>y\<br>z\<br>1<br>\end{array}\right)&#x3D;\left(\begin{array}{c}<br>-nx\<br>-ny\<br>?\<br>z<br>\end{array}\right)$$</p>
+<p><span class="math display">\[M_{persp2ortho} =
+\left(\begin{array}{cccc}
+-n &amp; 0 &amp; 0 &amp; 0\\
+0 &amp; -n &amp; 0 &amp; 0\\
+0 &amp; 0 &amp; a_3 &amp; a_4\\
+0 &amp; 0 &amp; 1 &amp; 0
+\end{array}\right)\]</span></p>
+<p><span class="math display">\[M_{persp2ortho}\left(\begin{array}{c}
+x\\
+y\\
+z\\
+1
+\end{array}\right)=\left(\begin{array}{c}
+-nx\\
+-ny\\
+?\\
+z
+\end{array}\right)\]</span></p>
 <p>那么取近平面的中心点不变和远平面的中心点不变，得到两个式子</p>
-<p>$$M_{persp2ortho}\left(\begin{array}{c}<br>0\<br>0\<br>-n\<br>1<br>\end{array}\right)&#x3D;\left(\begin{array}{c}<br>0\<br>0\<br>n^2\<br>-n<br>\end{array}\right)$$</p>
-<p>$$M_{persp2ortho}\left(\begin{array}{c}<br>0\<br>0\<br>-f\<br>1<br>\end{array}\right)&#x3D;\left(\begin{array}{c}<br>0\<br>0\<br>f^2\<br>-f<br>\end{array}\right)$$</p>
+<p><span class="math display">\[M_{persp2ortho}\left(\begin{array}{c}
+0\\
+0\\
+-n\\
+1
+\end{array}\right)=\left(\begin{array}{c}
+0\\
+0\\
+n^2\\
+-n
+\end{array}\right)\]</span></p>
+<p><span class="math display">\[M_{persp2ortho}\left(\begin{array}{c}
+0\\
+0\\
+-f\\
+1
+\end{array}\right)=\left(\begin{array}{c}
+0\\
+0\\
+f^2\\
+-f
+\end{array}\right)\]</span></p>
 <p>即</p>
-<p>$$-a_3 n + a_4 &#x3D; n^2$$<br>$$-a_3 f + a_4 &#x3D; f^2$$</p>
+<p><span class="math display">\[-a_3 n + a_4 = n^2\]</span> <span
+class="math display">\[-a_3 f + a_4 = f^2\]</span></p>
 <p>解得</p>
-<p>$$a_3 &#x3D; -(n+f), a_4 &#x3D; -nf$$</p>
+<p><span class="math display">\[a_3 = -(n+f), a_4 = -nf\]</span></p>
 <p>最终结果</p>
-<p>$$M_{persp2ortho} &#x3D; \left(\begin{array}{cccc}<br>-n &amp; 0 &amp; 0 &amp; 0\<br>0 &amp; -n &amp; 0 &amp; 0\<br>0 &amp; 0 &amp; -(f+n) &amp; -f,n\<br>0 &amp; 0 &amp; 1 &amp; 0<br>\end{array}\right)$$</p>
+<p><span class="math display">\[M_{persp2ortho} =
+\left(\begin{array}{cccc}
+-n &amp; 0 &amp; 0 &amp; 0\\
+0 &amp; -n &amp; 0 &amp; 0\\
+0 &amp; 0 &amp; -(f+n) &amp; -f\,n\\
+0 &amp; 0 &amp; 1 &amp; 0
+\end{array}\right)\]</span></p>
 <p>两者相乘可以得到</p>
-<p>$$M_{proj} &#x3D; M_{ortho} * M_{persp2ortho} &#x3D; \left(\begin{array}{cccc}<br>\frac{2,n}{l-r} &amp; 0 &amp; \frac{l+r}{l-r} &amp; 0\<br>0 &amp; \frac{2,n}{b-t} &amp; \frac{b+t}{b-t} &amp; 0\<br>0 &amp; 0 &amp; \frac{f+n}{f-n} &amp; \frac{2,f,n}{f-n}\<br>0 &amp; 0 &amp; 1 &amp; 0<br>\end{array}\right)$$</p>
+<p><span class="math display">\[M_{proj} = M_{ortho} * M_{persp2ortho} =
+\left(\begin{array}{cccc}
+\frac{2\,n}{l-r} &amp; 0 &amp; \frac{l+r}{l-r} &amp; 0\\
+0 &amp; \frac{2\,n}{b-t} &amp; \frac{b+t}{b-t} &amp; 0\\
+0 &amp; 0 &amp; \frac{f+n}{f-n} &amp; \frac{2\,f\,n}{f-n}\\
+0 &amp; 0 &amp; 1 &amp; 0
+\end{array}\right)\]</span></p>
 <p>但是还是和 OpenGL 的公式搭不上</p>
-<p>$$M_{proj} &#x3D; M_{ortho} * M_{persp2ortho} &#x3D; \left(\begin{array}{cccc}<br>\frac{2,n}{r-l} &amp; 0 &amp; \frac{l+r}{r-l} &amp; 0\<br>0 &amp; \frac{2,n}{t-b} &amp; \frac{b+t}{t-b} &amp; 0\<br>0 &amp; 0 &amp; -\frac{f+n}{f-n} &amp; -\frac{2,f,n}{f-n}\<br>0 &amp; 0 &amp; -1 &amp; 0<br>\end{array}\right)$$</p>
+<p><span class="math display">\[M_{proj} = M_{ortho} * M_{persp2ortho} =
+\left(\begin{array}{cccc}
+\frac{2\,n}{r-l} &amp; 0 &amp; \frac{l+r}{r-l} &amp; 0\\
+0 &amp; \frac{2\,n}{t-b} &amp; \frac{b+t}{t-b} &amp; 0\\
+0 &amp; 0 &amp; -\frac{f+n}{f-n} &amp; -\frac{2\,f\,n}{f-n}\\
+0 &amp; 0 &amp; -1 &amp; 0
+\end{array}\right)\]</span></p>
 <p>观察发现我自己推出来的矩阵乘以 -1 就是 OpenGL 的公式</p>
 <p>于是说……这两个矩阵的结果会是一样的吗</p>
-<p>之后看了 <a target="_blank" rel="noopener" href="https://www.zhyingkun.com/perspective/perspective/">https://www.zhyingkun.com/perspective/perspective/</a></p>
+<p>之后看了 <a
+target="_blank" rel="noopener" href="https://www.zhyingkun.com/perspective/perspective/">https://www.zhyingkun.com/perspective/perspective/</a></p>
 <p>才确认了别人也遇到了这个问题，并且他们会是一样的</p>
 <p>重新推一下，frustum 的关系式是</p>
-<p>$$x’ &#x3D; n&#x2F;(-z)*x$$<br>$$y’ &#x3D; n&#x2F;(-z)*y$$</p>
+<p><span class="math display">\[x&#39; = n/(-z)*x\]</span> <span
+class="math display">\[y&#39; = n/(-z)*y\]</span></p>
 <p>设计压缩矩阵</p>
-<p>$$M_{persp2ortho} &#x3D; \left(\begin{array}{cccc}<br>n &amp; 0 &amp; 0 &amp; 0\<br>0 &amp; n &amp; 0 &amp; 0\<br>0 &amp; 0 &amp; a_3 &amp; a_4\<br>0 &amp; 0 &amp; -1 &amp; 0<br>\end{array}\right)$$</p>
-<p>$$M_{persp2ortho}\left(\begin{array}{c}<br>x\<br>y\<br>z\<br>1<br>\end{array}\right)&#x3D;\left(\begin{array}{c}<br>nx\<br>ny\<br>?\<br>-z<br>\end{array}\right)$$</p>
+<p><span class="math display">\[M_{persp2ortho} =
+\left(\begin{array}{cccc}
+n &amp; 0 &amp; 0 &amp; 0\\
+0 &amp; n &amp; 0 &amp; 0\\
+0 &amp; 0 &amp; a_3 &amp; a_4\\
+0 &amp; 0 &amp; -1 &amp; 0
+\end{array}\right)\]</span></p>
+<p><span class="math display">\[M_{persp2ortho}\left(\begin{array}{c}
+x\\
+y\\
+z\\
+1
+\end{array}\right)=\left(\begin{array}{c}
+nx\\
+ny\\
+?\\
+-z
+\end{array}\right)\]</span></p>
 <p>那么取近平面的中心点不变和远平面的中心点不变，得到两个式子</p>
-<p>$$M_{persp2ortho}\left(\begin{array}{c}<br>0\<br>0\<br>-n\<br>1<br>\end{array}\right)&#x3D;\left(\begin{array}{c}<br>0\<br>0\<br>-n^2\<br>n<br>\end{array}\right)$$</p>
-<p>$$M_{persp2ortho}\left(\begin{array}{c}<br>0\<br>0\<br>-f\<br>1<br>\end{array}\right)&#x3D;\left(\begin{array}{c}<br>0\<br>0\<br>-f^2\<br>f<br>\end{array}\right)$$</p>
+<p><span class="math display">\[M_{persp2ortho}\left(\begin{array}{c}
+0\\
+0\\
+-n\\
+1
+\end{array}\right)=\left(\begin{array}{c}
+0\\
+0\\
+-n^2\\
+n
+\end{array}\right)\]</span></p>
+<p><span class="math display">\[M_{persp2ortho}\left(\begin{array}{c}
+0\\
+0\\
+-f\\
+1
+\end{array}\right)=\left(\begin{array}{c}
+0\\
+0\\
+-f^2\\
+f
+\end{array}\right)\]</span></p>
 <p>即</p>
-<p>$$-a_3 n + a_4 &#x3D; -n^2$$<br>$$-a_3 f + a_4 &#x3D; -f^2$$</p>
+<p><span class="math display">\[-a_3 n + a_4 = -n^2\]</span> <span
+class="math display">\[-a_3 f + a_4 = -f^2\]</span></p>
 <p>解得</p>
-<p>$$a_3 &#x3D; n+f, a_4 &#x3D; nf$$</p>
+<p><span class="math display">\[a_3 = n+f, a_4 = nf\]</span></p>
 <p>最终结果</p>
-<p>$$M_{persp2ortho} &#x3D; \left(\begin{array}{cccc}<br>n &amp; 0 &amp; 0 &amp; 0\<br>0 &amp; n &amp; 0 &amp; 0\<br>0 &amp; 0 &amp; f+n &amp; f,n\<br>0 &amp; 0 &amp; -1 &amp; 0<br>\end{array}\right)$$</p>
-<p>That’s all. 可以看到投影矩阵和之前的差在乘以一个负号，最终算出来的就是 OpenGL 的公式了。</p>
+<p><span class="math display">\[M_{persp2ortho} =
+\left(\begin{array}{cccc}
+n &amp; 0 &amp; 0 &amp; 0\\
+0 &amp; n &amp; 0 &amp; 0\\
+0 &amp; 0 &amp; f+n &amp; f\,n\\
+0 &amp; 0 &amp; -1 &amp; 0
+\end{array}\right)\]</span></p>
+<p>That's all.
+可以看到投影矩阵和之前的差在乘以一个负号，最终算出来的就是 OpenGL
+的公式了。</p>
 <p>glm 的函数</p>
 <figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">template</span>&lt;<span class="keyword">typename</span> T&gt;</span></span><br><span class="line"><span class="function">GLM_FUNC_QUALIFIER mat&lt;4, 4, T, defaultp&gt; <span class="title">perspectiveRH_NO</span><span class="params">(T fovy, T aspect, T zNear, T zFar)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">  <span class="built_in">assert</span>(<span class="built_in">abs</span>(aspect - std::numeric_limits&lt;T&gt;::<span class="built_in">epsilon</span>()) &gt; <span class="built_in">static_cast</span>&lt;T&gt;(<span class="number">0</span>));</span><br><span class="line"></span><br><span class="line">  T <span class="type">const</span> tanHalfFovy = <span class="built_in">tan</span>(fovy / <span class="built_in">static_cast</span>&lt;T&gt;(<span class="number">2</span>));</span><br><span class="line"></span><br><span class="line">  <span class="function">mat&lt;4, 4, T, defaultp&gt; <span class="title">Result</span><span class="params">(<span class="keyword">static_cast</span>&lt;T&gt;(<span class="number">0</span>))</span></span>;</span><br><span class="line">  Result[<span class="number">0</span>][<span class="number">0</span>] = <span class="built_in">static_cast</span>&lt;T&gt;(<span class="number">1</span>) / (aspect * tanHalfFovy);</span><br><span class="line">  Result[<span class="number">1</span>][<span class="number">1</span>] = <span class="built_in">static_cast</span>&lt;T&gt;(<span class="number">1</span>) / (tanHalfFovy);</span><br><span class="line">  Result[<span class="number">2</span>][<span class="number">2</span>] = - (zFar + zNear) / (zFar - zNear);</span><br><span class="line">  Result[<span class="number">2</span>][<span class="number">3</span>] = - <span class="built_in">static_cast</span>&lt;T&gt;(<span class="number">1</span>);</span><br><span class="line">  Result[<span class="number">3</span>][<span class="number">2</span>] = - (<span class="built_in">static_cast</span>&lt;T&gt;(<span class="number">2</span>) * zFar * zNear) / (zFar - zNear);</span><br><span class="line">  <span class="keyword">return</span> Result;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
 <p>Matlab 代入我推的公式</p>
 <figure class="highlight matlab"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line">syms zNear zFar width height fovy aspect;  </span><br><span class="line"></span><br><span class="line"><span class="comment">% world space is right hand</span></span><br><span class="line"><span class="comment">% zNear &gt; 0, zFar &gt; 0</span></span><br><span class="line">n = zNear;  </span><br><span class="line">f = zFar;  </span><br><span class="line"></span><br><span class="line">tanHalfFovy = <span class="built_in">tan</span>(fovy/<span class="number">2</span>);  </span><br><span class="line">height = <span class="number">2</span> * n * tanHalfFovy;</span><br><span class="line">width = aspect * height;  </span><br><span class="line">  </span><br><span class="line">r = width/<span class="number">2</span>;  </span><br><span class="line">l = -width/<span class="number">2</span>;</span><br><span class="line">t = height/<span class="number">2</span>;  </span><br><span class="line">b = -height/<span class="number">2</span>;  </span><br><span class="line">  </span><br><span class="line">Mortho = [<span class="number">2</span>/(r-l) <span class="number">0</span> <span class="number">0</span> <span class="number">0</span>; <span class="number">0</span> <span class="number">2</span>/(t-b) <span class="number">0</span> <span class="number">0</span>; <span class="number">0</span> <span class="number">0</span> <span class="number">2</span>/(n-f) <span class="number">0</span>; <span class="number">0</span> <span class="number">0</span> <span class="number">0</span> <span class="number">1</span>] * [<span class="number">1</span> <span class="number">0</span> <span class="number">0</span> -(r+l)/<span class="number">2</span>; <span class="number">0</span> <span class="number">1</span> <span class="number">0</span> -(t+b)/<span class="number">2</span>; <span class="number">0</span> <span class="number">0</span> <span class="number">1</span> (n+f)/<span class="number">2</span>; <span class="number">0</span> <span class="number">0</span> <span class="number">0</span> <span class="number">1</span>];</span><br><span class="line">Mortho = simplify(Mortho);</span><br><span class="line">Mpersp2ortho = [n <span class="number">0</span> <span class="number">0</span> <span class="number">0</span>; <span class="number">0</span> n <span class="number">0</span> <span class="number">0</span>; <span class="number">0</span> <span class="number">0</span> (n+f) n*f; <span class="number">0</span> <span class="number">0</span> <span class="number">-1</span> <span class="number">0</span>];</span><br><span class="line">Mproj = Mortho * Mpersp2ortho;</span><br><span class="line">Mproj = simplify(Mproj)</span><br><span class="line"></span><br></pre></td></tr></table></figure>
-
 <p>得到的结果一样</p>
-<p>$$M_{proj} &#x3D; \left(\begin{array}{cccc}<br>\frac{1}{\mathrm{aspect},\tan \left(\frac{\mathrm{fovy}}{2}\right)} &amp; 0 &amp; 0 &amp; 0\<br>0 &amp; \frac{1}{\tan \left(\frac{\mathrm{fovy}}{2}\right)} &amp; 0 &amp; 0\<br>0 &amp; 0 &amp; -\frac{\mathrm{zFar}+\mathrm{zNear}}{\mathrm{zFar}-\mathrm{zNear}} &amp; -\frac{2,\mathrm{zFar},\mathrm{zNear}}{\mathrm{zFar}-\mathrm{zNear}}\<br>0 &amp; 0 &amp; -1 &amp; 0<br>\end{array}\right)$$</p>
+<p><span class="math display">\[M_{proj} = \left(\begin{array}{cccc}
+\frac{1}{\mathrm{aspect}\,\tan \left(\frac{\mathrm{fovy}}{2}\right)}
+&amp; 0 &amp; 0 &amp; 0\\
+0 &amp; \frac{1}{\tan \left(\frac{\mathrm{fovy}}{2}\right)} &amp; 0
+&amp; 0\\
+0 &amp; 0 &amp;
+-\frac{\mathrm{zFar}+\mathrm{zNear}}{\mathrm{zFar}-\mathrm{zNear}} &amp;
+-\frac{2\,\mathrm{zFar}\,\mathrm{zNear}}{\mathrm{zFar}-\mathrm{zNear}}\\
+0 &amp; 0 &amp; -1 &amp; 0
+\end{array}\right)\]</span></p>
 <p>这就是所谓的齐次坐标里面放 z 还是 -z 会导致的公式的不同</p>
 <p>这一点不会导致结果不同</p>
-<h2 id="用于-Vulkan-的透视矩阵"><a href="#用于-Vulkan-的透视矩阵" class="headerlink" title="用于 Vulkan 的透视矩阵"></a>用于 Vulkan 的透视矩阵</h2><p>视图矩阵是右手系，正交长方体的左平面的坐标为 l，右平面的坐标为 r，上平面的坐标为 t，下平面的坐标为 b，近平面的坐标为 -n，远平面的坐标为 -f。转换之后 NDC 坐标还是右手系。</p>
+<h2 id="用于-vulkan-的透视矩阵">用于 Vulkan 的透视矩阵</h2>
+<p>视图矩阵是右手系，正交长方体的左平面的坐标为 l，右平面的坐标为
+r，上平面的坐标为 t，下平面的坐标为 b，近平面的坐标为 -n，远平面的坐标为
+-f。转换之后 NDC 坐标还是右手系。</p>
 <p>n, f 为正</p>
 <p>[b, t] 映射到 [1, -1], [-n, -f] 映射到 [0, 1]</p>
-<p>$$<br>M_{ortho}&#x3D;\left(\begin{array}{cccc}<br>\frac{2}{r-l} &amp; 0 &amp; 0 &amp; 0\<br>0 &amp; \frac{2}{b-t} &amp; 0 &amp; 0\<br>0 &amp; 0 &amp; \frac{1}{n-f} &amp; 0\<br>0 &amp; 0 &amp; 0 &amp; 1<br>\end{array}\right)\left(\begin{array}{cccc}<br>1 &amp; 0 &amp; 0 &amp; -\frac{r+l}{2}\<br>0 &amp; 1 &amp; 0 &amp; -\frac{t+b}{2}\<br>0 &amp; 0 &amp; 1 &amp; n\<br>0 &amp; 0 &amp; 0 &amp; 1<br>\end{array}\right)<br>$$</p>
+<p><span class="math display">\[
+M_{ortho}=\left(\begin{array}{cccc}
+\frac{2}{r-l} &amp; 0 &amp; 0 &amp; 0\\
+0 &amp; \frac{2}{b-t} &amp; 0 &amp; 0\\
+0 &amp; 0 &amp; \frac{1}{n-f} &amp; 0\\
+0 &amp; 0 &amp; 0 &amp; 1
+\end{array}\right)\left(\begin{array}{cccc}
+1 &amp; 0 &amp; 0 &amp; -\frac{r+l}{2}\\
+0 &amp; 1 &amp; 0 &amp; -\frac{t+b}{2}\\
+0 &amp; 0 &amp; 1 &amp; n\\
+0 &amp; 0 &amp; 0 &amp; 1
+\end{array}\right)
+\]</span></p>
 <p>沿用之前推 OpenGL 推出来的压缩矩阵</p>
-<p>$$M_{persp2ortho} &#x3D; \left(\begin{array}{cccc}<br>n &amp; 0 &amp; 0 &amp; 0\<br>0 &amp; n &amp; 0 &amp; 0\<br>0 &amp; 0 &amp; f+n &amp; f,n\<br>0 &amp; 0 &amp; -1 &amp; 0<br>\end{array}\right)$$</p>
+<p><span class="math display">\[M_{persp2ortho} =
+\left(\begin{array}{cccc}
+n &amp; 0 &amp; 0 &amp; 0\\
+0 &amp; n &amp; 0 &amp; 0\\
+0 &amp; 0 &amp; f+n &amp; f\,n\\
+0 &amp; 0 &amp; -1 &amp; 0
+\end{array}\right)\]</span></p>
 <p>Matlab 代入</p>
 <figure class="highlight matlab"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line">syms zNear zFar width height fovy aspect;  </span><br><span class="line"></span><br><span class="line"><span class="comment">% world space is right hand</span></span><br><span class="line"><span class="comment">% zNear &gt; 0, zFar &gt; 0</span></span><br><span class="line">n = zNear;  </span><br><span class="line">f = zFar;  </span><br><span class="line"></span><br><span class="line">tanHalfFovy = <span class="built_in">tan</span>(fovy/<span class="number">2</span>);  </span><br><span class="line">height = <span class="number">2</span> * n * tanHalfFovy;</span><br><span class="line">width = aspect * height;  </span><br><span class="line">  </span><br><span class="line">r = width/<span class="number">2</span>;  </span><br><span class="line">l = -width/<span class="number">2</span>;</span><br><span class="line">t = height/<span class="number">2</span>;  </span><br><span class="line">b = -height/<span class="number">2</span>;  </span><br><span class="line">  </span><br><span class="line">Mortho = [<span class="number">2</span>/(r-l) <span class="number">0</span> <span class="number">0</span> <span class="number">0</span>; <span class="number">0</span> <span class="number">2</span>/(b-t) <span class="number">0</span> <span class="number">0</span>; <span class="number">0</span> <span class="number">0</span> <span class="number">1</span>/(n-f) <span class="number">0</span>; <span class="number">0</span> <span class="number">0</span> <span class="number">0</span> <span class="number">1</span>] * [<span class="number">1</span> <span class="number">0</span> <span class="number">0</span> -(r+l)/<span class="number">2</span>; <span class="number">0</span> <span class="number">1</span> <span class="number">0</span> -(t+b)/<span class="number">2</span>; <span class="number">0</span> <span class="number">0</span> <span class="number">1</span> n; <span class="number">0</span> <span class="number">0</span> <span class="number">0</span> <span class="number">1</span>];</span><br><span class="line">Mortho = simplify(Mortho);</span><br><span class="line">Mpersp2ortho = [n <span class="number">0</span> <span class="number">0</span> <span class="number">0</span>; <span class="number">0</span> n <span class="number">0</span> <span class="number">0</span>; <span class="number">0</span> <span class="number">0</span> (n+f) n*f; <span class="number">0</span> <span class="number">0</span> <span class="number">-1</span> <span class="number">0</span>];</span><br><span class="line">Mproj = Mortho * Mpersp2ortho;</span><br><span class="line">Mproj = simplify(Mproj)</span><br></pre></td></tr></table></figure>
-
 <p>Matlab 结果</p>
-<p>$$M_{proj} &#x3D; \left(\begin{array}{cccc}<br>\frac{1}{\mathrm{aspect},\tan \left(\frac{\mathrm{fovy}}{2}\right)} &amp; 0 &amp; 0 &amp; 0\<br>0 &amp; -\frac{1}{\tan \left(\frac{\mathrm{fovy}}{2}\right)} &amp; 0 &amp; 0\<br>0 &amp; 0 &amp; -\frac{\mathrm{zFar}}{\mathrm{zFar}-\mathrm{zNear}} &amp; -\frac{\mathrm{zFar},\mathrm{zNear}}{\mathrm{zFar}-\mathrm{zNear}}\<br>0 &amp; 0 &amp; -1 &amp; 0<br>\end{array}\right)$$</p>
-<p>得到的结果与 <code>perspectiveRH_ZO</code> 确实仅仅在 [1][1] 差一个负号</p>
+<p><span class="math display">\[M_{proj} = \left(\begin{array}{cccc}
+\frac{1}{\mathrm{aspect}\,\tan \left(\frac{\mathrm{fovy}}{2}\right)}
+&amp; 0 &amp; 0 &amp; 0\\
+0 &amp; -\frac{1}{\tan \left(\frac{\mathrm{fovy}}{2}\right)} &amp; 0
+&amp; 0\\
+0 &amp; 0 &amp; -\frac{\mathrm{zFar}}{\mathrm{zFar}-\mathrm{zNear}}
+&amp;
+-\frac{\mathrm{zFar}\,\mathrm{zNear}}{\mathrm{zFar}-\mathrm{zNear}}\\
+0 &amp; 0 &amp; -1 &amp; 0
+\end{array}\right)\]</span></p>
+<p>得到的结果与 <code>perspectiveRH_ZO</code> 确实仅仅在 [1][1]
+差一个负号</p>
 <figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">template</span>&lt;<span class="keyword">typename</span> T&gt;</span></span><br><span class="line"><span class="function">GLM_FUNC_QUALIFIER mat&lt;4, 4, T, defaultp&gt; <span class="title">perspectiveRH_ZO</span><span class="params">(T fovy, T aspect, T zNear, T zFar)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">  <span class="built_in">assert</span>(<span class="built_in">abs</span>(aspect - std::numeric_limits&lt;T&gt;::<span class="built_in">epsilon</span>()) &gt; <span class="built_in">static_cast</span>&lt;T&gt;(<span class="number">0</span>));</span><br><span class="line"></span><br><span class="line">  T <span class="type">const</span> tanHalfFovy = <span class="built_in">tan</span>(fovy / <span class="built_in">static_cast</span>&lt;T&gt;(<span class="number">2</span>));</span><br><span class="line"></span><br><span class="line">  <span class="function">mat&lt;4, 4, T, defaultp&gt; <span class="title">Result</span><span class="params">(<span class="keyword">static_cast</span>&lt;T&gt;(<span class="number">0</span>))</span></span>;</span><br><span class="line">  Result[<span class="number">0</span>][<span class="number">0</span>] = <span class="built_in">static_cast</span>&lt;T&gt;(<span class="number">1</span>) / (aspect * tanHalfFovy);</span><br><span class="line">  Result[<span class="number">1</span>][<span class="number">1</span>] = <span class="built_in">static_cast</span>&lt;T&gt;(<span class="number">1</span>) / (tanHalfFovy);</span><br><span class="line">  Result[<span class="number">2</span>][<span class="number">2</span>] = zFar / (zNear - zFar);</span><br><span class="line">  Result[<span class="number">2</span>][<span class="number">3</span>] = - <span class="built_in">static_cast</span>&lt;T&gt;(<span class="number">1</span>);</span><br><span class="line">  Result[<span class="number">3</span>][<span class="number">2</span>] = -(zFar * zNear) / (zFar - zNear);</span><br><span class="line">  <span class="keyword">return</span> Result;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
 <script src="https://utteranc.es/client.js"
         repo="CheapMeow/cheapmeow.github.io"
         issue-term="pathname"
@@ -338,12 +617,13 @@
         crossorigin="anonymous"
         async>
 </script>
+
       </div>
       
         <div class="prev-or-next">
           <div class="post-foot-next">
             
-              <a href="/2024/09/02/hello-world/" target="_self">
+              <a href="/2024/09/02/test/" target="_self">
                 <i class="iconfont icon-chevronleft"></i>
                 <span>Prev</span>
               </a>
@@ -381,11 +661,6 @@
           </div>
           <div class="post-foot-prev">
             
-              <a href="/2024/09/02/test/" target="_self">
-                <span>Next</span>
-                <i class="iconfont icon-chevronright"></i>
-              </a>
-            
           </div>
         </div>
       
@@ -398,7 +673,9 @@
     <div class="title">Contents</div>
     <div class="catalog-content">
       
-        <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%B7%B1%E5%BA%A6%E7%9A%84%E7%BA%A6%E5%AE%9A"><span class="toc-text">深度的约定</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%8E%A8%E5%AF%BC%E9%80%8F%E8%A7%86%E7%9F%A9%E9%98%B5%E6%97%B6%E5%8F%AF%E8%83%BD%E9%81%87%E5%88%B0%E7%9A%84%E5%9B%B0%E9%9A%BE"><span class="toc-text">推导透视矩阵时可能遇到的困难</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E7%89%A9%E7%90%86%E8%BF%87%E7%A8%8B"><span class="toc-text">物理过程</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E7%89%A9%E7%90%86%E9%87%8F%E7%9A%84%E5%AE%9A%E4%B9%89"><span class="toc-text">物理量的定义</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#NDC-%E6%B7%B1%E5%BA%A6%E8%8C%83%E5%9B%B4%E4%B8%8E-z-%E8%BD%B4%E5%8F%8D%E8%BD%AC"><span class="toc-text">NDC 深度范围与 z 轴反转</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%8F%98%E6%8D%A2%E5%88%B0-clip-%E7%A9%BA%E9%97%B4%E4%B8%AD%E7%9A%84%E5%9D%90%E6%A0%87%E7%9A%84%E9%BD%90%E6%AC%A1%E5%9D%90%E6%A0%87-w-%E7%9A%84%E7%AC%A6%E5%8F%B7"><span class="toc-text">变换到 clip 空间中的坐标的齐次坐标 w 的符号</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%B8%BA%E4%BB%80%E4%B9%88-OpenGL-%E4%B8%AD%E7%9B%B8%E6%9C%BA%E5%9C%A8-eye-%E7%A9%BA%E9%97%B4%E4%B8%AD%E7%9C%8B%E5%90%91-z-%E8%BD%B4"><span class="toc-text">为什么 OpenGL 中相机在 eye 空间中看向 -z 轴</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#lookAt-%E6%80%8E%E4%B9%88%E4%B8%8E%E9%80%8F%E8%A7%86%E7%9F%A9%E9%98%B5%E5%AF%B9%E5%BA%94"><span class="toc-text">lookAt 怎么与透视矩阵对应</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BB%8E-Games101-%E7%9A%84%E5%85%AC%E5%BC%8F%E5%BC%80%E5%A7%8B"><span class="toc-text">从 Games101 的公式开始</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E8%80%83%E8%99%91-OpenGL"><span class="toc-text">考虑 OpenGL</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%94%A8%E4%BA%8E-Vulkan-%E7%9A%84%E9%80%8F%E8%A7%86%E7%9F%A9%E9%98%B5"><span class="toc-text">用于 Vulkan 的透视矩阵</span></a></li></ol>
+        <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%B7%B1%E5%BA%A6%E7%9A%84%E7%BA%A6%E5%AE%9A"><span class="toc-text">深度的约定</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%8E%A8%E5%AF%BC%E9%80%8F%E8%A7%86%E7%9F%A9%E9%98%B5%E6%97%B6%E5%8F%AF%E8%83%BD%E9%81%87%E5%88%B0%E7%9A%84%E5%9B%B0%E9%9A%BE"><span class="toc-text">推导透视矩阵时可能遇到的困难</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E7%89%A9%E7%90%86%E8%BF%87%E7%A8%8B"><span class="toc-text">物理过程</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E7%89%A9%E7%90%86%E9%87%8F%E7%9A%84%E5%AE%9A%E4%B9%89"><span class="toc-text">物理量的定义</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#ndc-%E6%B7%B1%E5%BA%A6%E8%8C%83%E5%9B%B4%E4%B8%8E-z-%E8%BD%B4%E5%8F%8D%E8%BD%AC"><span class="toc-text">NDC 深度范围与 z 轴反转</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%8F%98%E6%8D%A2%E5%88%B0-clip-%E7%A9%BA%E9%97%B4%E4%B8%AD%E7%9A%84%E5%9D%90%E6%A0%87%E7%9A%84%E9%BD%90%E6%AC%A1%E5%9D%90%E6%A0%87-w-%E7%9A%84%E7%AC%A6%E5%8F%B7"><span class="toc-text">变换到 clip
+空间中的坐标的齐次坐标 w 的符号</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%B8%BA%E4%BB%80%E4%B9%88-opengl-%E4%B8%AD%E7%9B%B8%E6%9C%BA%E5%9C%A8-eye-%E7%A9%BA%E9%97%B4%E4%B8%AD%E7%9C%8B%E5%90%91--z-%E8%BD%B4"><span class="toc-text">为什么 OpenGL
+中相机在 eye 空间中看向 -z 轴</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#lookat-%E6%80%8E%E4%B9%88%E4%B8%8E%E9%80%8F%E8%A7%86%E7%9F%A9%E9%98%B5%E5%AF%B9%E5%BA%94"><span class="toc-text">lookAt 怎么与透视矩阵对应</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BB%8E-games101-%E7%9A%84%E5%85%AC%E5%BC%8F%E5%BC%80%E5%A7%8B"><span class="toc-text">从 Games101 的公式开始</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E8%80%83%E8%99%91-opengl"><span class="toc-text">考虑 OpenGL</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%94%A8%E4%BA%8E-vulkan-%E7%9A%84%E9%80%8F%E8%A7%86%E7%9F%A9%E9%98%B5"><span class="toc-text">用于 Vulkan 的透视矩阵</span></a></li></ol>
       
     </div>
   </div>
