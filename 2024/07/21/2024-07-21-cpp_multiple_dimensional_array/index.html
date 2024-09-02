@@ -53,6 +53,9 @@
 <script src="/js/fancybox.js"></script>
 
 
+  <!-- katex -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.9.0/katex.min.css">
+
   
 
   
@@ -189,11 +192,9 @@
           
       </div>
       <div class="markdown-body">
-        <p>开发 CFD
-求解器的时候，需要使用三维数组来表示结构网格。我希望这个三维数组的内存是连续的，所以我分配了三维空间大小的线性内存。需要使用三维坐标来访问数组时，人为计算一维索引。这自然就引出了一个问题：这样做会带来性能损失吗？如果有，损失多少？</p>
-<p>测试代码见 <a
-target="_blank" rel="noopener" href="https://github.com/CheapMeow/test-mdspan">https://github.com/CheapMeow/test-mdspan</a></p>
-<h2 id="不同的实现">不同的实现</h2>
+        <p>开发 CFD 求解器的时候，需要使用三维数组来表示结构网格。我希望这个三维数组的内存是连续的，所以我分配了三维空间大小的线性内存。需要使用三维坐标来访问数组时，人为计算一维索引。这自然就引出了一个问题：这样做会带来性能损失吗？如果有，损失多少？</p>
+<p>测试代码见 <a target="_blank" rel="noopener" href="https://github.com/CheapMeow/test-mdspan">https://github.com/CheapMeow/test-mdspan</a></p>
+<h2 id="不同的实现"><a class="markdownIt-Anchor" href="#不同的实现"></a> 不同的实现</h2>
 <p>第一个最简单的实现就是，分配一维连续数组，三维坐标转化为一维索引</p>
 <figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title class_">field3_1dp</span></span><br><span class="line">&#123;</span><br><span class="line"><span class="keyword">protected</span>:</span><br><span class="line">    <span class="type">unsigned</span> <span class="type">int</span> Nx, Ny, Nz;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">    <span class="type">double</span>* value = <span class="literal">nullptr</span>;</span><br><span class="line">    <span class="built_in">field3_1dp</span>(<span class="type">unsigned</span> <span class="type">int</span> _Nx, <span class="type">unsigned</span> <span class="type">int</span> _Ny, <span class="type">unsigned</span> <span class="type">int</span> _Nz)</span><br><span class="line">        : <span class="built_in">Nx</span>(_Nx)</span><br><span class="line">        , <span class="built_in">Ny</span>(_Ny)</span><br><span class="line">        , <span class="built_in">Nz</span>(_Nz)</span><br><span class="line">    &#123;</span><br><span class="line">        value = <span class="keyword">new</span> <span class="type">double</span>[Nx * Ny * Nz];</span><br><span class="line"></span><br><span class="line">        <span class="keyword">for</span> (<span class="type">unsigned</span> <span class="type">int</span> i = <span class="number">0</span>; i &lt; Nx * Ny * Nz; i++)</span><br><span class="line">            value[i] = <span class="number">0.</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    ~<span class="built_in">field3_1dp</span>() &#123; <span class="keyword">delete</span>[] value; &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="type">double</span>&amp; <span class="title">operator</span><span class="params">()</span><span class="params">(<span class="type">unsigned</span> <span class="type">int</span> i, <span class="type">unsigned</span> <span class="type">int</span> j, <span class="type">unsigned</span> <span class="type">int</span> k)</span> </span>&#123; <span class="keyword">return</span> value[i * Ny * Nz + j * Nz + k]; &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="type">int</span> <span class="title">SizeX</span><span class="params">()</span> </span>&#123; <span class="keyword">return</span> Nx; &#125;</span><br><span class="line">    <span class="function"><span class="type">int</span> <span class="title">SizeY</span><span class="params">()</span> </span>&#123; <span class="keyword">return</span> Ny; &#125;</span><br><span class="line">    <span class="function"><span class="type">int</span> <span class="title">SizeZ</span><span class="params">()</span> </span>&#123; <span class="keyword">return</span> Nz; &#125;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
 <p>为了加速一维索引的计算，可以使用模板来将维度参数固定为字面值</p>
@@ -206,177 +207,85 @@ target="_blank" rel="noopener" href="https://github.com/CheapMeow/test-mdspan">h
 <p>Kokkos 有一个 <code>mdspan</code> 实现来达成类似的效果。</p>
 <figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title class_">field3_mdspan</span></span><br><span class="line">&#123;</span><br><span class="line"><span class="keyword">protected</span>:</span><br><span class="line">    <span class="type">unsigned</span> <span class="type">int</span>                                     Nx, Ny, Nz;</span><br><span class="line">    <span class="type">double</span>*                                          value;</span><br><span class="line">    Kokkos::mdspan&lt;<span class="type">double</span>, Kokkos::dextents&lt;<span class="type">int</span>, <span class="number">3</span>&gt;&gt; m_mdspan;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">    <span class="built_in">field3_mdspan</span>(<span class="type">unsigned</span> <span class="type">int</span> _Nx, <span class="type">unsigned</span> <span class="type">int</span> _Ny, <span class="type">unsigned</span> <span class="type">int</span> _Nz)</span><br><span class="line">        : <span class="built_in">Nx</span>(_Nx)</span><br><span class="line">        , <span class="built_in">Ny</span>(_Ny)</span><br><span class="line">        , <span class="built_in">Nz</span>(_Nz)</span><br><span class="line">        , <span class="built_in">value</span>(<span class="keyword">new</span> <span class="type">double</span>[Nx * Ny * Nz])</span><br><span class="line">        , <span class="built_in">m_mdspan</span>(value, Nx, Ny, Nz)</span><br><span class="line">    &#123;&#125;</span><br><span class="line"></span><br><span class="line">    ~<span class="built_in">field3_mdspan</span>() &#123; <span class="keyword">delete</span>[] value; &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="type">double</span>&amp; <span class="title">operator</span><span class="params">()</span><span class="params">(<span class="type">int</span> i, <span class="type">int</span> j, <span class="type">int</span> k)</span> </span>&#123; <span class="keyword">return</span> m_mdspan[i, j, k]; &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="type">int</span> <span class="title">SizeX</span><span class="params">()</span> </span>&#123; <span class="keyword">return</span> Nx; &#125;</span><br><span class="line">    <span class="function"><span class="type">int</span> <span class="title">SizeY</span><span class="params">()</span> </span>&#123; <span class="keyword">return</span> Ny; &#125;</span><br><span class="line">    <span class="function"><span class="type">int</span> <span class="title">SizeZ</span><span class="params">()</span> </span>&#123; <span class="keyword">return</span> Nz; &#125;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
 <p>使用一个常见的对流计算函数来做测试，这是一个例子</p>
-<p>因为不同的类的访问可能是 <code>(i, j, k)</code> 或者
-<code>[i, j, k]</code> 或者
-<code>[i][j][k]</code>，所以我并没有写模板函数，而是每个类都写了对应的函数</p>
+<p>因为不同的类的访问可能是 <code>(i, j, k)</code> 或者 <code>[i, j, k]</code> 或者 <code>[i][j][k]</code>，所以我并没有写模板函数，而是每个类都写了对应的函数</p>
 <figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// Function to calculate convection term u * ∇u + v * ∇v + w * ∇w</span></span><br><span class="line"><span class="function"><span class="type">void</span> <span class="title">calculate_convection_3dp_raw</span><span class="params">(<span class="type">double</span>***    u,</span></span></span><br><span class="line"><span class="params"><span class="function">                                  <span class="type">double</span>***    v,</span></span></span><br><span class="line"><span class="params"><span class="function">                                  <span class="type">double</span>***    w,</span></span></span><br><span class="line"><span class="params"><span class="function">                                  <span class="type">double</span>***    conv_u,</span></span></span><br><span class="line"><span class="params"><span class="function">                                  <span class="type">double</span>***    conv_v,</span></span></span><br><span class="line"><span class="params"><span class="function">                                  <span class="type">double</span>***    conv_w,</span></span></span><br><span class="line"><span class="params"><span class="function">                                  <span class="type">unsigned</span> <span class="type">int</span> Nx,</span></span></span><br><span class="line"><span class="params"><span class="function">                                  <span class="type">unsigned</span> <span class="type">int</span> Ny,</span></span></span><br><span class="line"><span class="params"><span class="function">                                  <span class="type">unsigned</span> <span class="type">int</span> Nz)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="keyword">for</span> (<span class="type">unsigned</span> <span class="type">int</span> i = <span class="number">1</span>; i &lt; Nx - <span class="number">1</span>; ++i)</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="keyword">for</span> (<span class="type">unsigned</span> <span class="type">int</span> j = <span class="number">1</span>; j &lt; Ny - <span class="number">1</span>; ++j)</span><br><span class="line">        &#123;</span><br><span class="line">            <span class="keyword">for</span> (<span class="type">unsigned</span> <span class="type">int</span> k = <span class="number">1</span>; k &lt; Nz - <span class="number">1</span>; ++k)</span><br><span class="line">            &#123;</span><br><span class="line">                <span class="type">double</span> dudx = (u[i + <span class="number">1</span>][j][k] - u[i - <span class="number">1</span>][j][k]) / <span class="number">2.0</span>;</span><br><span class="line">                <span class="type">double</span> dudy = (u[i][j + <span class="number">1</span>][k] - u[i][j - <span class="number">1</span>][k]) / <span class="number">2.0</span>;</span><br><span class="line">                <span class="type">double</span> dudz = (u[i][j][k + <span class="number">1</span>] - u[i][j][k - <span class="number">1</span>]) / <span class="number">2.0</span>;</span><br><span class="line"></span><br><span class="line">                <span class="type">double</span> dvdx = (v[i + <span class="number">1</span>][j][k] - v[i - <span class="number">1</span>][j][k]) / <span class="number">2.0</span>;</span><br><span class="line">                <span class="type">double</span> dvdy = (v[i][j + <span class="number">1</span>][k] - v[i][j - <span class="number">1</span>][k]) / <span class="number">2.0</span>;</span><br><span class="line">                <span class="type">double</span> dvdz = (v[i][j][k + <span class="number">1</span>] - v[i][j][k - <span class="number">1</span>]) / <span class="number">2.0</span>;</span><br><span class="line"></span><br><span class="line">                <span class="type">double</span> dwdx = (w[i + <span class="number">1</span>][j][k] - w[i - <span class="number">1</span>][j][k]) / <span class="number">2.0</span>;</span><br><span class="line">                <span class="type">double</span> dwdy = (w[i][j + <span class="number">1</span>][k] - w[i][j - <span class="number">1</span>][k]) / <span class="number">2.0</span>;</span><br><span class="line">                <span class="type">double</span> dwdz = (w[i][j][k + <span class="number">1</span>] - w[i][j][k - <span class="number">1</span>]) / <span class="number">2.0</span>;</span><br><span class="line"></span><br><span class="line">                conv_u[i][j][k] = u[i][j][k] * dudx + v[i][j][k] * dudy + w[i][j][k] * dudz;</span><br><span class="line">                conv_v[i][j][k] = u[i][j][k] * dvdx + v[i][j][k] * dvdy + w[i][j][k] * dvdz;</span><br><span class="line">                conv_w[i][j][k] = u[i][j][k] * dwdx + v[i][j][k] * dwdy + w[i][j][k] * dwdz;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 <p>计算效率的过程为</p>
 <figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// Measure the time for 100 iterations of convection calculation</span></span><br><span class="line"><span class="type">const</span> <span class="type">int</span> num_iterations = <span class="number">20</span>;</span><br><span class="line"><span class="keyword">auto</span>      start_time     = std::chrono::high_resolution_clock::<span class="built_in">now</span>();</span><br><span class="line"></span><br><span class="line"><span class="keyword">for</span> (<span class="type">int</span> iter = <span class="number">0</span>; iter &lt; num_iterations; ++iter)</span><br><span class="line">&#123;</span><br><span class="line">    <span class="built_in">calculate_convection_1dp</span>(u, v, w, conv_u, conv_v, conv_w);</span><br><span class="line">    std::cout &lt;&lt; <span class="string">&quot;iter = &quot;</span> &lt;&lt; iter &lt;&lt; std::endl;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">auto</span>                          end_time     = std::chrono::high_resolution_clock::<span class="built_in">now</span>();</span><br><span class="line">std::chrono::duration&lt;<span class="type">double</span>&gt; elapsed_time = end_time - start_time;</span><br></pre></td></tr></table></figure>
-<h2 id="性能测试结果">性能测试结果</h2>
+<h2 id="性能测试结果"><a class="markdownIt-Anchor" href="#性能测试结果"></a> 性能测试结果</h2>
 <p>测试结果如下，在 512^3 的数组大小下进行测试，以保证单次执行的粒度</p>
 <table>
-<tr>
-<td rowspan="2" align="center">
-platform
-</td>
-<td rowspan="2" align="center">
-complier
-</td>
-<td colspan="6" align="center">
-time(s)
-</td>
-</tr>
-<tr>
-<td align="center">
-field3_1dp
-</td>
-<td align="center">
-field3_1dp_t
-</td>
-<td align="center">
-field3_3dp
-</td>
-<td align="center">
-field3_r
-</td>
-<td align="center">
-field3_map
-</td>
-<td align="center">
-field3_mdspan
-</td>
-</tr>
-<tr>
-<td rowspan="3" align="center">
-windows
-</td>
-<td align="center">
-msvc
-</td>
-<td align="center">
-6.1776
-</td>
-<td align="center">
-3.916
-</td>
-<td align="center">
-1.37877
-</td>
-<td align="center">
-1.03
-</td>
-<td align="center">
-6.43983
-</td>
-<td align="center">
-6.26672
-</td>
-</tr>
-<tr>
-<td align="center">
-g++
-</td>
-<td align="center">
-5.63062
-</td>
-<td align="center">
-4.18603
-</td>
-<td align="center">
-1.12186
-</td>
-<td align="center">
-1.06282
-</td>
-<td align="center">
-5.05098
-</td>
-<td align="center">
-5.11213
-</td>
-</tr>
-<tr>
-<td align="center">
-clang++
-</td>
-<td align="center">
-3.14699
-</td>
-<td align="center">
-1.68778
-</td>
-<td align="center">
-1.19851
-</td>
-<td align="center">
-1.13926
-</td>
-<td align="center">
-1.99766
-</td>
-<td align="center">
-1.93895
-</td>
-</tr>
-<tr>
-<td rowspan="2" align="center">
-linux
-</td>
-<td align="center">
-g++
-</td>
-<td align="center">
-1.90795
-</td>
-<td align="center">
-1.86067
-</td>
-<td align="center">
-1.42331
-</td>
-<td align="center">
-1.42438
-</td>
-<td align="center">
-1.87503
-</td>
-<td align="center">
-1.92114
-</td>
-</tr>
-<tr>
-<td align="center">
-clang++
-</td>
-<td align="center">
-1.03195
-</td>
-<td align="center">
-0.96762
-</td>
-<td align="center">
-1.10214
-</td>
-<td align="center">
-1.0981
-</td>
-<td align="center">
-1.04556
-</td>
-<td align="center">
-1.0522
-</td>
-</tr>
+    <tr>
+        <td rowspan="2" align="center">platform</td>
+        <td rowspan="2" align="center">complier</td>
+        <td colspan="6" align="center">time(s)</td>
+    </tr>
+    <tr>
+        <td align="center">field3_1dp</td>
+        <td align="center">field3_1dp_t</td>
+        <td align="center">field3_3dp</td>
+        <td align="center">field3_r</td>
+        <td align="center">field3_map</td>
+        <td align="center">field3_mdspan</td>
+    </tr>
+    <tr>
+        <td rowspan="3" align="center">windows</td>
+        <td align="center">msvc</td>
+        <td align="center">6.1776</td>
+        <td align="center">3.916</td>
+        <td align="center">1.37877</td>
+        <td align="center">1.03</td>
+        <td align="center">6.43983</td>
+        <td align="center">6.26672</td>
+    </tr>
+    <tr>
+        <td align="center">g++</td>
+        <td align="center">5.63062</td>
+        <td align="center">4.18603</td>
+        <td align="center">1.12186</td>
+        <td align="center">1.06282</td>
+        <td align="center">5.05098</td>
+        <td align="center">5.11213</td>
+    </tr>
+    <tr>
+        <td align="center">clang++</td>
+        <td align="center">3.14699</td>
+        <td align="center">1.68778</td>
+        <td align="center">1.19851</td>
+        <td align="center">1.13926</td>
+        <td align="center">1.99766</td>
+        <td align="center">1.93895</td>
+    </tr>
+    <tr>
+        <td rowspan="2" align="center">linux</td>
+        <td align="center">g++</td>
+        <td align="center">1.90795</td>
+        <td align="center">1.86067</td>
+        <td align="center">1.42331</td>
+        <td align="center">1.42438</td>
+        <td align="center">1.87503</td>
+        <td align="center">1.92114</td>
+    </tr>
+    <tr>
+        <td align="center">clang++</td>
+        <td align="center">1.03195</td>
+        <td align="center">0.96762</td>
+        <td align="center">1.10214</td>
+        <td align="center">1.0981</td>
+        <td align="center">1.04556</td>
+        <td align="center">1.0522</td>
+    </tr>
 </table>
 <p>这里并没有给出硬件参数和编译器版本</p>
 <p>这说明：</p>
-<ol type="1">
-<li><p>操作系统、编译器类型与性能具有很大关系</p></li>
-<li><p>clang 在 linux
-上的表现最好，使得不同实现版本的性能表现趋于一致。这同时也证明了，将三维索引映射到一维内存索引的策略是有意义的</p></li>
+<ol>
+<li>
+<p>操作系统、编译器类型与性能具有很大关系</p>
+</li>
+<li>
+<p>clang 在 linux 上的表现最好，使得不同实现版本的性能表现趋于一致。这同时也证明了，将三维索引映射到一维内存索引的策略是有意义的</p>
+</li>
 </ol>
-<p>这个测试表明了操作系统、编译器类型对性能具有不可忽视的影响，如果可能的话，可以尝试更改编译器来查看性能差异。例如编译
-MPI 程序时也可以更换到 clang 编译。</p>
+<p>这个测试表明了操作系统、编译器类型对性能具有不可忽视的影响，如果可能的话，可以尝试更改编译器来查看性能差异。例如编译 MPI 程序时也可以更换到 clang 编译。</p>
 <figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">mpicxx -cxx=clang++ main.cpp -O3 -I3rdparty/mdspan/include -march=native -o main_mpicxx_warpper</span><br></pre></td></tr></table></figure>
 <script src="https://utteranc.es/client.js"
         repo="CheapMeow/cheapmeow.github.io"
@@ -385,7 +294,6 @@ MPI 程序时也可以更换到 clang 编译。</p>
         crossorigin="anonymous"
         async>
 </script>
-
       </div>
       
         <div class="prev-or-next">
@@ -446,7 +354,7 @@ MPI 程序时也可以更换到 clang 编译。</p>
     <div class="title">Contents</div>
     <div class="catalog-content">
       
-        <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%8D%E5%90%8C%E7%9A%84%E5%AE%9E%E7%8E%B0"><span class="toc-text">不同的实现</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%80%A7%E8%83%BD%E6%B5%8B%E8%AF%95%E7%BB%93%E6%9E%9C"><span class="toc-text">性能测试结果</span></a></li></ol>
+        <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%8D%E5%90%8C%E7%9A%84%E5%AE%9E%E7%8E%B0"><span class="toc-text"> 不同的实现</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%80%A7%E8%83%BD%E6%B5%8B%E8%AF%95%E7%BB%93%E6%9E%9C"><span class="toc-text"> 性能测试结果</span></a></li></ol>
       
     </div>
   </div>
