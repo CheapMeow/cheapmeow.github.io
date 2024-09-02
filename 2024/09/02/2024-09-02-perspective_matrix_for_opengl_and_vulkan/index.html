@@ -161,7 +161,7 @@
       <div class="post-attach">
         <span class="post-pubtime">
           <i class="iconfont icon-updatetime mr-10" title="Update time"></i>
-          2024-09-02 22:14:25
+          2024-09-02 23:25:54
         </span>
         
               <span class="post-tags">
@@ -191,11 +191,6 @@
       <div class="markdown-body">
         <p>Vulkan 只是屏幕坐标系和别人不一样。世界空间，view 空间的手性是用户定义的，想怎么做都行，只要最终保证传入 Vulkan 的 NDC 坐标的手性是对的。也就是说，你可以在计算投影矩阵的时候，注意要转换手性。</p>
 <p>如果没有推导过投影矩阵，就可能不会理解到世界空间，view 空间的手性和 NDC 的手性可以毫无关系——毕竟你不知道有矩阵可以转换手性。</p>
-<h2 id="深度的约定">深度的约定</h2>
-<p>创建 <code>vk::PipelineDepthStencilStateCreateInfo</code> 时，我们一般会传入 <code>vk::CompareOp::eLessOrEqual</code> 到 <code>depthCompareOp</code>，表示传入的深度比存储的深度更小时，就通过了测试，写入新的深度。这就表明近处的物体会遮挡远处的物体，符合了 z 的正值越大表示深度越深的习惯。</p>
-<p>用户可以定义用 z 的正值越大表示深度越深，或者是负值越大表示深度越深，也就是说，用户可以定义用 z 轴垂于屏幕朝内或者朝外来表示深度的正半轴</p>
-<p>理论上来说，你不知道 NDC 的 z 轴朝向，你单单讨论屏幕空间的 x 和 y 之间的关系，你是没办法说 NDC 空间的手性的手性如何</p>
-<p>于是当我们看到某些帖子在说 Vulkan 与 OpenGL 的区别在于 y 轴反了，那是默认 z 轴垂于屏幕朝内表示深度的正半轴</p>
 <h2 id="推导透视矩阵时可能遇到的困难">推导透视矩阵时可能遇到的困难</h2>
 <h3 id="物理过程">物理过程</h3>
 <p>首先要知道变换过程是怎么样的</p>
@@ -208,6 +203,11 @@
 <p>不同的文章对某一个物理量的定义可能不同，但是他们又使用了相同的符号，结果就导致最终的表达式可能差了一个负号</p>
 <p>比如 games101 的推导中，视图空间是右手系，近平面的坐标为 n，远平面的坐标为 f。这说明 n,f 都是负数</p>
 <p>但是在 LearnOpenGL 推荐的贴子 <a target="_blank" rel="noopener" href="https://www.songho.ca/opengl/gl_projectionmatrix.html">https://www.songho.ca/opengl/gl_projectionmatrix.html</a> 中，他视图空间是右手系，但定义 n,f 为正，那么近平面的坐标为 -n，远平面的坐标为 -f</p>
+<h3 id="深度的约定">深度的约定</h3>
+<p>创建 <code>vk::PipelineDepthStencilStateCreateInfo</code> 时，我们一般会传入 <code>vk::CompareOp::eLessOrEqual</code> 到 <code>depthCompareOp</code>，表示传入的深度比存储的深度更小时，就通过了测试，写入新的深度。这就表明近处的物体会遮挡远处的物体，符合了 z 的正值越大表示深度越深的习惯。</p>
+<p>用户可以定义用 z 的正值越大表示深度越深，或者是负值越大表示深度越深，也就是说，用户可以定义用 z 轴垂于屏幕朝内或者朝外来表示深度的正半轴</p>
+<p>理论上来说，你不知道 NDC 的 z 轴朝向，你单单讨论屏幕空间的 x 和 y 之间的关系，你是没办法说 NDC 空间的手性的手性如何</p>
+<p>于是当我们看到某些帖子在说 Vulkan 与 OpenGL 的区别在于 y 轴反了，那是默认 z 轴垂于屏幕朝内表示深度的正半轴</p>
 <h3 id="NDC-深度范围与-z-轴反转">NDC 深度范围与 z 轴反转</h3>
 <p>某些细节会影响结果，但是一般的教程不会强调这些细节，因为他们默认你都知道。比如假设近平面的坐标为 n，远平面的坐标为 f 都是负数，那么他要转换到 [-1, 1]，是 n 对应 -1 还是 f 对应 -1？或者是转换到 [0, 1]？都有可能。</p>
 <h3 id="变换到-clip-空间中的坐标的齐次坐标-w-的符号">变换到 clip 空间中的坐标的齐次坐标 w 的符号</h3>
@@ -359,7 +359,7 @@
           <div class="post-attach">
             <span class="post-pubtime">
               <i class="iconfont icon-updatetime mr-10" title="Update time"></i>
-              2024-09-02 22:14:25
+              2024-09-02 23:25:54
             </span>
             
                   <span class="post-tags">
@@ -400,7 +400,7 @@
     <div class="title">Contents</div>
     <div class="catalog-content">
       
-        <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%B7%B1%E5%BA%A6%E7%9A%84%E7%BA%A6%E5%AE%9A"><span class="toc-text">深度的约定</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%8E%A8%E5%AF%BC%E9%80%8F%E8%A7%86%E7%9F%A9%E9%98%B5%E6%97%B6%E5%8F%AF%E8%83%BD%E9%81%87%E5%88%B0%E7%9A%84%E5%9B%B0%E9%9A%BE"><span class="toc-text">推导透视矩阵时可能遇到的困难</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E7%89%A9%E7%90%86%E8%BF%87%E7%A8%8B"><span class="toc-text">物理过程</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E7%89%A9%E7%90%86%E9%87%8F%E7%9A%84%E5%AE%9A%E4%B9%89"><span class="toc-text">物理量的定义</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#NDC-%E6%B7%B1%E5%BA%A6%E8%8C%83%E5%9B%B4%E4%B8%8E-z-%E8%BD%B4%E5%8F%8D%E8%BD%AC"><span class="toc-text">NDC 深度范围与 z 轴反转</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%8F%98%E6%8D%A2%E5%88%B0-clip-%E7%A9%BA%E9%97%B4%E4%B8%AD%E7%9A%84%E5%9D%90%E6%A0%87%E7%9A%84%E9%BD%90%E6%AC%A1%E5%9D%90%E6%A0%87-w-%E7%9A%84%E7%AC%A6%E5%8F%B7"><span class="toc-text">变换到 clip 空间中的坐标的齐次坐标 w 的符号</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%B8%BA%E4%BB%80%E4%B9%88-OpenGL-%E4%B8%AD%E7%9B%B8%E6%9C%BA%E5%9C%A8-eye-%E7%A9%BA%E9%97%B4%E4%B8%AD%E7%9C%8B%E5%90%91-z-%E8%BD%B4"><span class="toc-text">为什么 OpenGL 中相机在 eye 空间中看向 -z 轴</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#lookAt-%E6%80%8E%E4%B9%88%E4%B8%8E%E9%80%8F%E8%A7%86%E7%9F%A9%E9%98%B5%E5%AF%B9%E5%BA%94"><span class="toc-text">lookAt 怎么与透视矩阵对应</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BB%8E-Games101-%E7%9A%84%E5%85%AC%E5%BC%8F%E5%BC%80%E5%A7%8B"><span class="toc-text">从 Games101 的公式开始</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E8%80%83%E8%99%91-OpenGL"><span class="toc-text">考虑 OpenGL</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%94%A8%E4%BA%8E-Vulkan-%E7%9A%84%E9%80%8F%E8%A7%86%E7%9F%A9%E9%98%B5"><span class="toc-text">用于 Vulkan 的透视矩阵</span></a></li></ol>
+        <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%8E%A8%E5%AF%BC%E9%80%8F%E8%A7%86%E7%9F%A9%E9%98%B5%E6%97%B6%E5%8F%AF%E8%83%BD%E9%81%87%E5%88%B0%E7%9A%84%E5%9B%B0%E9%9A%BE"><span class="toc-text">推导透视矩阵时可能遇到的困难</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E7%89%A9%E7%90%86%E8%BF%87%E7%A8%8B"><span class="toc-text">物理过程</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E7%89%A9%E7%90%86%E9%87%8F%E7%9A%84%E5%AE%9A%E4%B9%89"><span class="toc-text">物理量的定义</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%B7%B1%E5%BA%A6%E7%9A%84%E7%BA%A6%E5%AE%9A"><span class="toc-text">深度的约定</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#NDC-%E6%B7%B1%E5%BA%A6%E8%8C%83%E5%9B%B4%E4%B8%8E-z-%E8%BD%B4%E5%8F%8D%E8%BD%AC"><span class="toc-text">NDC 深度范围与 z 轴反转</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%8F%98%E6%8D%A2%E5%88%B0-clip-%E7%A9%BA%E9%97%B4%E4%B8%AD%E7%9A%84%E5%9D%90%E6%A0%87%E7%9A%84%E9%BD%90%E6%AC%A1%E5%9D%90%E6%A0%87-w-%E7%9A%84%E7%AC%A6%E5%8F%B7"><span class="toc-text">变换到 clip 空间中的坐标的齐次坐标 w 的符号</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%B8%BA%E4%BB%80%E4%B9%88-OpenGL-%E4%B8%AD%E7%9B%B8%E6%9C%BA%E5%9C%A8-eye-%E7%A9%BA%E9%97%B4%E4%B8%AD%E7%9C%8B%E5%90%91-z-%E8%BD%B4"><span class="toc-text">为什么 OpenGL 中相机在 eye 空间中看向 -z 轴</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#lookAt-%E6%80%8E%E4%B9%88%E4%B8%8E%E9%80%8F%E8%A7%86%E7%9F%A9%E9%98%B5%E5%AF%B9%E5%BA%94"><span class="toc-text">lookAt 怎么与透视矩阵对应</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BB%8E-Games101-%E7%9A%84%E5%85%AC%E5%BC%8F%E5%BC%80%E5%A7%8B"><span class="toc-text">从 Games101 的公式开始</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E8%80%83%E8%99%91-OpenGL"><span class="toc-text">考虑 OpenGL</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%94%A8%E4%BA%8E-Vulkan-%E7%9A%84%E9%80%8F%E8%A7%86%E7%9F%A9%E9%98%B5"><span class="toc-text">用于 Vulkan 的透视矩阵</span></a></li></ol>
       
     </div>
   </div>
