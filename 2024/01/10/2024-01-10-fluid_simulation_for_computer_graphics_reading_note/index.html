@@ -1,112 +1,184 @@
 <!DOCTYPE html>
-<html>
-<head>
+<html lang="en" color-mode="light">
+
+  <head>
   <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="author" content="John Doe" />
+  <!-- Open Graph Description 简短摘要-->
   
-  
-  <title>Fluid Simulation for Computer Graphics Reading Note | CheapMeow</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-  <meta name="description" content="It is an reading note of “Fluid Simulation for Computer Graphics”, related about fluid simulation coding, such as SPH, Level Set, PIC&#x2F;FLIP and so on. The article can’t cover all details, it just">
-<meta property="og:type" content="article">
-<meta property="og:title" content="Fluid Simulation for Computer Graphics Reading Note">
-<meta property="og:url" content="https://cheapmeow.github.io/2024/01/10/2024-01-10-fluid_simulation_for_computer_graphics_reading_note/index.html">
-<meta property="og:site_name" content="CheapMeow">
-<meta property="og:description" content="It is an reading note of “Fluid Simulation for Computer Graphics”, related about fluid simulation coding, such as SPH, Level Set, PIC&#x2F;FLIP and so on. The article can’t cover all details, it just">
-<meta property="og:locale" content="en_US">
-<meta property="og:image" content="https://cheapmeow.github.io/2024/01/10/_images/fluid_sim_reading_note/Undersampling.svg">
-<meta property="og:image" content="https://cheapmeow.github.io/2024/01/10/_images/fluid_sim_reading_note/mac_velocity_diagram-large-1.png">
-<meta property="og:image" content="https://cheapmeow.github.io/2024/01/10/_images/fluid_sim_reading_note/mac_velocity_diagram-large-2.png">
-<meta property="og:image" content="https://cheapmeow.github.io/2024/01/10/_images/fluid_sim_reading_note/mac_velocity_diagram-large-3.png">
-<meta property="og:image" content="https://cheapmeow.github.io/2024/01/10/_images/fluid_sim_reading_note/One_cell_from_the_three-dimensional_MAC%20grid.png">
-<meta property="og:image" content="https://cheapmeow.github.io/2024/01/10/_images/fluid_sim_reading_note/sdf_field.png">
-<meta property="og:image" content="https://cheapmeow.github.io/2024/01/10/_images/fluid_sim_reading_note/sdf_topology.png">
-<meta property="og:image" content="https://cheapmeow.github.io/2024/01/10/_images/fluid_sim_reading_note/sdf_reinitialize.png">
-<meta property="og:image" content="https://cheapmeow.github.io/2024/01/10/_images/fluid_sim_reading_note/velocity_projection.png">
-<meta property="og:image" content="https://cheapmeow.github.io/2024/01/10/_images/fluid_sim_reading_note/velocity_based_particles_method_drift_problem.svg">
-<meta property="og:image" content="https://cheapmeow.github.io/2024/01/10/_images/fluid_sim_reading_note/ghost_fluid_method.svg">
-<meta property="article:published_time" content="2024-01-10T04:00:00.000Z">
-<meta property="article:modified_time" content="2024-09-02T12:38:09.439Z">
-<meta property="article:author" content="John Doe">
-<meta property="article:tag" content="Fluid Simulation">
-<meta property="article:tag" content="Computer Graphics">
-<meta name="twitter:card" content="summary">
-<meta name="twitter:image" content="https://cheapmeow.github.io/2024/01/10/_images/fluid_sim_reading_note/Undersampling.svg">
-  
-    <link rel="alternate" href="/atom.xml" title="CheapMeow" type="application/atom+xml">
-  
-  
-    <link rel="shortcut icon" href="/favicon.png">
+  <!-- 用于搜索引擎的文章摘要 -->
   
   
   
-<link rel="stylesheet" href="/css/style.css">
-
-  
+  <title>
     
-<link rel="stylesheet" href="/fancybox/jquery.fancybox.min.css">
+      Fluid Simulation for Computer Graphics Reading Note 
+      
+      
+      |
+    
+     CheapMeow
+  </title>
 
   
+    <link rel="apple-touch-icon" href="/images/favicon.png">
+    <link rel="icon" href="/images/favicon.png">
   
+
+  <!-- Raleway-Font -->
+  <link href="https://fonts.googleapis.com/css?family=Raleway&display=swap" rel="stylesheet">
+
+  <!-- hexo site css -->
+  <link rel="stylesheet" href="/css/main.css" />
+  <link rel="stylesheet" href="//at.alicdn.com/t/font_1886449_67xjft27j1l.css" />
+  <!-- 代码块风格 -->
+  
+
+  <!-- jquery3.3.1 -->
+  
+    <script defer type="text/javascript" src="/plugins/jquery.min.js"></script>
+  
+
+  <!-- fancybox -->
+  
+    <link href="/plugins/jquery.fancybox.min.css" rel="stylesheet">
+    <script defer type="text/javascript" src="/plugins/jquery.fancybox.min.js"></script>
+  
+  
+<script src="/js/fancybox.js"></script>
+
+
+  
+
+  
+
+  <script>
+    var html = document.documentElement
+    const colorMode = localStorage.getItem('color-mode')
+    if (colorMode) {
+      document.documentElement.setAttribute('color-mode', colorMode)
+    }
+  </script>
 <meta name="generator" content="Hexo 7.3.0"></head>
 
-<body>
-  <div id="container">
-    <div id="wrap">
-      <header id="header">
-  <div id="banner"></div>
-  <div id="header-outer" class="outer">
-    <div id="header-title" class="inner">
-      <h1 id="logo-wrap">
-        <a href="/" id="logo">CheapMeow</a>
-      </h1>
+
+  <body>
+    <div id="app">
+      <div class="header">
+  <div class="avatar">
+    <a href="/">
+      <!-- 头像取消懒加载，添加no-lazy -->
       
-    </div>
-    <div id="header-inner" class="inner">
-      <nav id="main-nav">
-        <a id="main-nav-toggle" class="nav-icon"><span class="fa fa-bars"></span></a>
+        <img src="/images/avatar.png" alt="">
+      
+    </a>
+    <div class="nickname"><a href="/">Oranges</a></div>
+  </div>
+  <div class="navbar">
+    <ul>
+      
+        <li class="nav-item" data-path="/">
+          <a href="/">Home</a>
+        </li>
+      
+        <li class="nav-item" data-path="/archives/">
+          <a href="/archives/">Archives</a>
+        </li>
+      
+        <li class="nav-item" data-path="/tags/">
+          <a href="/tags/">Tags</a>
+        </li>
+      
+        <li class="nav-item" data-path="/friends/">
+          <a href="/friends/">Friends</a>
+        </li>
+      
+        <li class="nav-item" data-path="/about/">
+          <a href="/about/">About</a>
+        </li>
+      
+    </ul>
+  </div>
+</div>
+
+
+<script src="/js/activeNav.js"></script>
+
+
+
+      <div class="flex-container">
+        <!-- 文章详情页，展示文章具体内容，url形式：https://yoursite/文章标题/ -->
+<!-- 同时为「标签tag」，「朋友friend」，「分类categories」，「关于about」页面的承载页面，具体展示取决于page.type -->
+
+
+  <!-- LaTex Display -->
+
+  
+    <script async type="text/javascript" src="/plugins/mathjax/tex-chtml.js"></script>
+  
+  <script>
+    MathJax = {
+      tex: {
+        inlineMath: [['$', '$'], ['\\(', '\\)']]
+      }
+    }
+  </script>
+
+
+
+
+
+  <!-- clipboard -->
+
+  
+    <script async type="text/javascript" src="/plugins/clipboard.min.js"></script>
+  
+  
+<script src="/js/codeCopy.js"></script>
+
+
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  <!-- 文章内容页 url形式：https://yoursite/文章标题/ -->
+  <div class="container post-details" id="post-details">
+    <div class="post-content">
+      <div class="post-title">Fluid Simulation for Computer Graphics Reading Note</div>
+      <div class="post-attach">
+        <span class="post-pubtime">
+          <i class="iconfont icon-updatetime mr-10" title="Update time"></i>
+          2024-09-02 20:44:49
+        </span>
         
-          <a class="main-nav-link" href="/">Home</a>
-        
-          <a class="main-nav-link" href="/archives">Archives</a>
-        
-      </nav>
-      <nav id="sub-nav">
-        
-        
-          <a class="nav-icon" href="/atom.xml" title="RSS Feed"><span class="fa fa-rss"></span></a>
-        
-        <a class="nav-icon nav-search-btn" title="Search"><span class="fa fa-search"></span></a>
-      </nav>
-      <div id="search-form-wrap">
-        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="https://cheapmeow.github.io"></form>
+              <span class="post-tags">
+                <i class="iconfont icon-tags mr-10" title="Tags"></i>
+                
+                <span class="span--tag mr-8">
+                  <a href="/tags/Fluid-Simulation/" title="Fluid Simulation">
+                    #Fluid Simulation
+                  </a>
+                </span>
+                
+                <span class="span--tag mr-8">
+                  <a href="/tags/Computer-Graphics/" title="Computer Graphics">
+                    #Computer Graphics
+                  </a>
+                </span>
+                
+              </span>
+          
       </div>
-    </div>
-  </div>
-</header>
-
-      <div class="outer">
-        <section id="main"><article id="post-2024-01-10-fluid_simulation_for_computer_graphics_reading_note" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
-  <div class="article-meta">
-    <a href="/2024/01/10/2024-01-10-fluid_simulation_for_computer_graphics_reading_note/" class="article-date">
-  <time class="dt-published" datetime="2024-01-10T04:00:00.000Z" itemprop="datePublished">2024-01-10</time>
-</a>
-    
-  </div>
-  <div class="article-inner">
-    
-    
-      <header class="article-header">
-        
-  
-    <h1 class="p-name article-title" itemprop="headline name">
-      Fluid Simulation for Computer Graphics Reading Note
-    </h1>
-  
-
-      </header>
-    
-    <div class="e-content article-entry" itemprop="articleBody">
-      
+      <div class="markdown-body">
         <p>It is an reading note of “Fluid Simulation for Computer Graphics”, related about fluid simulation coding, such as SPH, Level Set, PIC&#x2F;FLIP and so on.</p>
 <p>The article can’t cover all details, it just a reading note. Implementation details are so complex that it is recommended to have a look on original source.</p>
 <p>Also see:</p>
@@ -163,7 +235,7 @@
 <p>I think it is similar with Undersampling. Nyquist-Shannon sample Theorem says that for an accurate representation of the baseband signal, the sample rate must be at least twice the highest frequency component. Aliasing happens when the sampling rate falls below this limit (the Nyquist Rate).</p>
 <p>Here you can analogize aliasing to $$(\dfrac{\partial{q}}{\partial{x}})_{i}$$ becoming close to 0.</p>
 <figure style="width: 300px" class="align-center">
-<img src="../_images/fluid_sim_reading_note/Undersampling.svg">
+<img src="/images/fluid_sim_reading_note/Undersampling.svg">
 <figcaption align = "center">Fig: Undersampling</figcaption>
 </figure>
 
@@ -174,22 +246,22 @@
 <p>$$v$$ is defined at center of Y plane of cell.</p>
 <p>$$w$$ is defined at center of Z plane of cell.</p>
 <figure style="width: 700px" class="align-center">
-<img src="../_images/fluid_sim_reading_note/mac_velocity_diagram-large-1.png">
+<img src="/images/fluid_sim_reading_note/mac_velocity_diagram-large-1.png">
 <figcaption align = "center">Fig: MAC Grid Veocity u</figcaption>
 </figure>
 
 <figure style="width: 700px" class="align-center">
-<img src="../_images/fluid_sim_reading_note/mac_velocity_diagram-large-2.png">
+<img src="/images/fluid_sim_reading_note/mac_velocity_diagram-large-2.png">
 <figcaption align = "center">Fig: MAC Grid Veocity v</figcaption>
 </figure>
 
 <figure style="width: 700px" class="align-center">
-<img src="../_images/fluid_sim_reading_note/mac_velocity_diagram-large-3.png">
+<img src="/images/fluid_sim_reading_note/mac_velocity_diagram-large-3.png">
 <figcaption align = "center">Fig: MAC Grid Veocity w</figcaption>
 </figure>
 
 <figure style="width: 592px" class="align-center">
-<img src="../_images/fluid_sim_reading_note/One_cell_from_the_three-dimensional_MAC grid.png">
+<img src="/images/fluid_sim_reading_note/One_cell_from_the_three-dimensional_MAC grid.png">
 <figcaption align = "center">Fig: One cell from the three-dimensional MAC grid</figcaption>
 </figure>
 
@@ -361,7 +433,7 @@ w_&#123;i,\ j,\ k&#123;+&#125;1/2&#125;
 </li>
 </ol>
 <h3 id="SDF"><a href="#SDF" class="headerlink" title="SDF"></a>SDF</h3><figure style="width: 567px" class="align-center">
-<img src="../_images/fluid_sim_reading_note/sdf_field.png">
+<img src="/images/fluid_sim_reading_note/sdf_field.png">
 <figcaption align = "center">Fig: SDF Field. Taken from "Fluid Engine Development"</figcaption>
 </figure>
 
@@ -378,13 +450,13 @@ w_&#123;i,\ j,\ k&#123;+&#125;1/2&#125;
 <p>SDF can also be defined as $$\phi(x) &#x3D; 0$$ at boundary.</p>
 <p>SDF can handle topological change easily. To merge two surface, just get minimum value of two SDF.</p>
 <figure style="width: 595px" class="align-center">
-<img src="../_images/fluid_sim_reading_note/sdf_topology.png">
+<img src="/images/fluid_sim_reading_note/sdf_topology.png">
 <figcaption align = "center">Fig: SDF Topology. Taken from "Fluid Engine Development"</figcaption>
 </figure>
 
 <h4 id="Reinitializing-SDF"><a href="#Reinitializing-SDF" class="headerlink" title="Reinitializing SDF"></a>Reinitializing SDF</h4><p>After advection, the SDF field can not keep its distance property. So we should recover it. Luckily, only the SDF value on the surface is correct. So the reinitializeing can start from surface.</p>
 <figure style="width: 626px" class="align-center">
-<img src="../_images/fluid_sim_reading_note/sdf_reinitialize.png">
+<img src="/images/fluid_sim_reading_note/sdf_reinitialize.png">
 <figcaption align = "center">Fig: SDF Reinitializing. Taken from "Fluid Engine Development"</figcaption>
 </figure>
 
@@ -495,7 +567,7 @@ w_&#123;i,\ j,\ k&#123;+&#125;1/2&#125;
 <p>Where $$\mathrm{\mathbf{P}}$$ satisfies $$\mathrm{\mathbf{P}} \mathrm{\mathbf{u}} &#x3D; \mathrm{\mathbf{u}}$$, $$\mathrm{\mathbf{P}} \nabla q &#x3D; 0$$.</p>
 <p>So you can see, solving Poisson eq is projecting velocity field to pressure field.</p>
 <figure style="width: 513px" class="align-center">
-<img src="../_images/fluid_sim_reading_note/velocity_projection.png">
+<img src="/images/fluid_sim_reading_note/velocity_projection.png">
 <figcaption align = "center">Fig: Velocity Projection. Taken from "Stable Fluid"</figcaption>
 </figure>
 
@@ -527,7 +599,7 @@ w_&#123;i,\ j,\ k&#123;+&#125;1/2&#125;
 </blockquote>
 <p>It means that the method can only see collision of opposite motion. It can’t recognize collision of two particles with parallel velocity.</p>
 <figure style="width: 600px" class="align-center">
-<img src="../_images/fluid_sim_reading_note/velocity_based_particles_method_drift_problem.svg">
+<img src="/images/fluid_sim_reading_note/velocity_based_particles_method_drift_problem.svg">
 <figcaption align = "center">Fig: Drift problem</figcaption>
 </figure>
 
@@ -742,7 +814,7 @@ w_&#123;i,\ j,\ k&#123;+&#125;1/2&#125;
 <p>$$\begin{align*}<br>u_{i+1&#x2F;2,j,k}^{n+1} &amp; &#x3D; u_{i+1&#x2F;2,j,k} - \dfrac{\Delta t}{\rho_{i+1&#x2F;2,j,k}}\dfrac{\dfrac{(\theta-1)p_{i,j,k}}{\theta}-p_{i,j,k}}{\Delta x} \<br>&amp; &#x3D; u_{i+1&#x2F;2,j,k} + \dfrac{\Delta t}{\rho}\dfrac{1}{\theta}\dfrac{p_{i,j,k}}{\Delta x}<br>\end{align*}$$</p>
 <p>that is all.</p>
 <figure style="width: 600px" class="align-center">
-<img src="../_images/fluid_sim_reading_note/ghost_fluid_method.svg">
+<img src="/images/fluid_sim_reading_note/ghost_fluid_method.svg">
 <figcaption align = "center">Fig: Ghost fluid Method</figcaption>
 </figure>
 
@@ -764,150 +836,366 @@ w_&#123;i,\ j,\ k&#123;+&#125;1/2&#125;
         crossorigin="anonymous"
         async>
 </script>
+      </div>
+      
+        <div class="prev-or-next">
+          <div class="post-foot-next">
+            
+              <a href="/2023/12/19/2023-12-19-ue5_niagara_sph/" target="_self">
+                <i class="iconfont icon-chevronleft"></i>
+                <span>Prev</span>
+              </a>
+            
+          </div>
+          <div class="post-attach">
+            <span class="post-pubtime">
+              <i class="iconfont icon-updatetime mr-10" title="Update time"></i>
+              2024-09-02 20:44:49
+            </span>
+            
+                  <span class="post-tags">
+                    <i class="iconfont icon-tags mr-10" title="Tags"></i>
+                    
+                    <span class="span--tag mr-8">
+                      <a href="/tags/Fluid-Simulation/" title="Fluid Simulation">
+                        #Fluid Simulation
+                      </a>
+                    </span>
+                    
+                    <span class="span--tag mr-8">
+                      <a href="/tags/Computer-Graphics/" title="Computer Graphics">
+                        #Computer Graphics
+                      </a>
+                    </span>
+                    
+                  </span>
+              
+          </div>
+          <div class="post-foot-prev">
+            
+              <a href="/2024/05/13/2024-05-13-cpp_static_reflection/" target="_self">
+                <span>Next</span>
+                <i class="iconfont icon-chevronright"></i>
+              </a>
+            
+          </div>
+        </div>
       
     </div>
-    <footer class="article-footer">
-      <a data-url="https://cheapmeow.github.io/2024/01/10/2024-01-10-fluid_simulation_for_computer_graphics_reading_note/" data-id="cm0kzl0la000czcpy2q0j8re1" data-title="Fluid Simulation for Computer Graphics Reading Note" class="article-share-link"><span class="fa fa-share">Share</span></a>
+    
+  <div id="btn-catalog" class="btn-catalog">
+    <i class="iconfont icon-catalog"></i>
+  </div>
+  <div class="post-catalog hidden" id="catalog">
+    <div class="title">Contents</div>
+    <div class="catalog-content">
       
+        <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#Chapter-1-The-Equations-of-Fluids"><span class="toc-text">Chapter 1: The Equations of Fluids</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Force"><span class="toc-text">Force</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Incompressibility"><span class="toc-text">Incompressibility</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Dropping-Viscosity"><span class="toc-text">Dropping Viscosity</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Boundary-Conditions"><span class="toc-text">Boundary Conditions</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#Wall-condition"><span class="toc-text">Wall condition</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Free-surface"><span class="toc-text">Free surface</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Bubbles"><span class="toc-text">Bubbles</span></a></li></ol></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Chapter-2-Overview-of-Numerical-Simulation"><span class="toc-text">Chapter 2: Overview of Numerical Simulation</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Splitting"><span class="toc-text">Splitting</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Splitting-the-Fluid-Equations"><span class="toc-text">Splitting the Fluid Equations</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Time-Steps"><span class="toc-text">Time Steps</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#MAC-Grid"><span class="toc-text">MAC Grid</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#Problem-of-central-difference"><span class="toc-text">Problem of central difference</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#MAC-Velocity-Grid"><span class="toc-text">MAC Velocity Grid</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Dynamic-Sparse-Grids"><span class="toc-text">Dynamic Sparse Grids</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Code-2D-before-3D"><span class="toc-text">Code 2D before 3D</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Chapter-3-Advection-Algorithms"><span class="toc-text">Chapter 3: Advection Algorithms</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Semi-Lagrangian-Advection"><span class="toc-text">Semi-Lagrangian Advection</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#Forward-Euler"><span class="toc-text">Forward Euler</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Problem-of-spatial-discretization"><span class="toc-text">Problem of spatial discretization</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Semi-Lagrangian-Advection-1"><span class="toc-text">Semi-Lagrangian Advection</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Boundary-Conditions-1"><span class="toc-text">Boundary Conditions</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Time-Step-Size"><span class="toc-text">Time Step Size</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#CFL-condition"><span class="toc-text">CFL condition</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Diffusion"><span class="toc-text">Diffusion</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Reducing-Numerical-Diffusion"><span class="toc-text">Reducing Numerical Diffusion</span></a></li></ol></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Chapter-4-Level-Set-Geometry"><span class="toc-text">Chapter 4: Level Set Geometry</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#SDF"><span class="toc-text">SDF</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#Reinitializing-SDF"><span class="toc-text">Reinitializing SDF</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Medial-Axis"><span class="toc-text">Medial Axis</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Discretizing-Signed-Distance-Functions"><span class="toc-text">Discretizing Signed Distance Functions</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Computing-Signed-Distance"><span class="toc-text">Computing Signed Distance</span></a><ol class="toc-child"><li class="toc-item toc-level-5"><a class="toc-link" href="#Distance-to-Points"><span class="toc-text">Distance to Points</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#Loop-Order"><span class="toc-text">Loop Order</span></a><ol class="toc-child"><li class="toc-item toc-level-6"><a class="toc-link" href="#Fast-Marching-Method"><span class="toc-text">Fast Marching Method</span></a></li><li class="toc-item toc-level-6"><a class="toc-link" href="#Fast-Sweeping-Method"><span class="toc-text">Fast Sweeping Method</span></a></li><li class="toc-item toc-level-6"><a class="toc-link" href="#When-using-sparse-tiled-grids"><span class="toc-text">When using sparse tiled grids</span></a></li></ol></li><li class="toc-item toc-level-5"><a class="toc-link" href="#Finding-Signed-Distance-for-a-Triangle-Mesh"><span class="toc-text">Finding Signed Distance for a Triangle Mesh</span></a><ol class="toc-child"><li class="toc-item toc-level-6"><a class="toc-link" href="#Computing-the-distance-between-a-point-and-a-triangle"><span class="toc-text">Computing the distance between a point and a triangle</span></a></li></ol></li></ol></li></ol></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Chapter-5-Making-Fluids-Incompressible"><span class="toc-text">Chapter 5: Making Fluids Incompressible</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Project"><span class="toc-text">Project</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Why-is-it-called-projection"><span class="toc-text">Why is it called projection?</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Method-without-projection"><span class="toc-text">Method without projection</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#Wall-Condition"><span class="toc-text">Wall Condition</span></a><ol class="toc-child"><li class="toc-item toc-level-5"><a class="toc-link" href="#Boolean-flag"><span class="toc-text">Boolean flag</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#Copying-value"><span class="toc-text">Copying value</span></a></li></ol></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Drift-problem"><span class="toc-text">Drift problem</span></a><ol class="toc-child"><li class="toc-item toc-level-5"><a class="toc-link" href="#Solution"><span class="toc-text">Solution</span></a></li></ol></li></ol></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Chapter-7-Particle-Methods"><span class="toc-text">Chapter 7: Particle Methods</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Advection-Troubles-on-Grids"><span class="toc-text">Advection Troubles on Grids</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#Velocity-Field-with-Distortion"><span class="toc-text">Velocity Field with Distortion</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Velocity-Field-without-Distortion"><span class="toc-text">Velocity Field without Distortion</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Eulerian-scheme-filtering-ability"><span class="toc-text">Eulerian scheme filtering ability</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Why-DNS-works-well"><span class="toc-text">Why DNS works well</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Adaptive-Grids"><span class="toc-text">Adaptive Grids</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Store-information-in-Particle"><span class="toc-text">Store information in Particle</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Particle-Advection"><span class="toc-text">Particle Advection</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Transferring-Particles-to-the-Grid"><span class="toc-text">Transferring Particles to the Grid</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Particle-Seeding"><span class="toc-text">Particle Seeding</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Diffusion-1"><span class="toc-text">Diffusion</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Particle-in-Cell-Methods"><span class="toc-text">Particle-in-Cell Methods</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#From-Grid-to-Particle"><span class="toc-text">From Grid to Particle</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#From-Particles-to-Grid"><span class="toc-text">From Particles to Grid</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#PIC"><span class="toc-text">PIC</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#FLIP"><span class="toc-text">FLIP</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#PIC-FLIP"><span class="toc-text">PIC&#x2F;FLIP</span></a></li></ol></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Chapter-8-Water"><span class="toc-text">Chapter 8: Water</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Marker-Particles-and-Voxels"><span class="toc-text">Marker Particles and Voxels</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#Density-of-marker-particles"><span class="toc-text">Density of marker particles</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Rendering"><span class="toc-text">Rendering</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Combine-marker-particles-and-FLIP"><span class="toc-text">Combine marker particles and FLIP</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Why-we-need-More-Accurate-Pressure-Solves-Voxelized-Surface"><span class="toc-text">Why we need More Accurate Pressure Solves: Voxelized Surface</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Ghost-fluid-Method"><span class="toc-text">Ghost fluid Method</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Topology-Change-and-Wall-Separation"><span class="toc-text">Topology Change and Wall Separation</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#How-does-Separation-happen"><span class="toc-text">How does Separation happen</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Lose-volume-when-merging-water"><span class="toc-text">Lose volume when merging water</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#How-Liquid-can-Separate-from-Solid-Walls"><span class="toc-text">How Liquid can Separate from Solid Walls</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Volume-Control"><span class="toc-text">Volume Control</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Surface-Tension"><span class="toc-text">Surface Tension</span></a></li></ol></li></ol>
       
-      
-  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/Computer-Graphics/" rel="tag">Computer Graphics</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/Fluid-Simulation/" rel="tag">Fluid Simulation</a></li></ul>
+    </div>
+  </div>
 
-    </footer>
+  
+<script src="/js/catalog.js"></script>
+
+
+
+
+    
+      <div class="comments-container">
+        
+
+
+
+
+
+
+
+      </div>
+    
+  </div>
+
+
+        
+<div class="footer">
+  <div class="social">
+    <ul>
+      
+        <li>
+          
+              <a title="github" target="_blank" rel="noopener" href="https://github.com/zchengsite/hexo-theme-oranges">
+                <i class="iconfont icon-github"></i>
+              </a>
+              
+        </li>
+        
+    </ul>
   </div>
   
     
-<nav id="article-nav">
-  
-    <a href="/2024/05/13/2024-05-13-cpp_static_reflection/" id="article-nav-newer" class="article-nav-link-wrap">
-      <strong class="article-nav-caption">Newer</strong>
-      <div class="article-nav-title">
+    <div class="footer-more">
+      
+        <a target="_blank" rel="noopener" href="https://github.com/zchengsite/hexo-theme-oranges">Copyright © 2024 Oranges</a>
         
-          C++静态反射学习
+    </div>
+  
+    
+    <div class="footer-more">
+      
+        <a target="_blank" rel="noopener" href="https://github.com/zchengsite/hexo-theme-oranges">Theme by Oranges | Powered by Hexo</a>
+        
+    </div>
+  
+  
+</div>
+
+      </div>
+
+      <div class="tools-bar">
+        <div class="back-to-top tools-bar-item hidden">
+  <a href="javascript: void(0)">
+    <i class="iconfont icon-chevronup"></i>
+  </a>
+</div>
+
+
+<script src="/js/backtotop.js"></script>
+
+
+
+        
+  <div class="search-icon tools-bar-item" id="search-icon">
+    <a href="javascript: void(0)">
+      <i class="iconfont icon-search"></i>
+    </a>
+  </div>
+
+  <div class="search-overlay hidden">
+    <div class="search-content" tabindex="0">
+      <div class="search-title">
+        <span class="search-icon-input">
+          <a href="javascript: void(0)">
+            <i class="iconfont icon-search"></i>
+          </a>
+        </span>
+        
+          <input type="text" class="search-input" id="search-input" placeholder="Search...">
+        
+        <span class="search-close-icon" id="search-close-icon">
+          <a href="javascript: void(0)">
+            <i class="iconfont icon-close"></i>
+          </a>
+        </span>
+      </div>
+      <div class="search-result" id="search-result"></div>
+    </div>
+  </div>
+
+  <script type="text/javascript">
+    var inputArea = document.querySelector("#search-input")
+    var searchOverlayArea = document.querySelector(".search-overlay")
+
+    inputArea.onclick = function() {
+      getSearchFile()
+      this.onclick = null
+    }
+
+    inputArea.onkeydown = function() {
+      if(event.keyCode == 13)
+        return false
+    }
+
+    function openOrHideSearchContent() {
+      let isHidden = searchOverlayArea.classList.contains('hidden')
+      if (isHidden) {
+        searchOverlayArea.classList.remove('hidden')
+        document.body.classList.add('hidden')
+        // inputArea.focus()
+      } else {
+        searchOverlayArea.classList.add('hidden')
+        document.body.classList.remove('hidden')
+      }
+    }
+
+    function blurSearchContent(e) {
+      if (e.target === searchOverlayArea) {
+        openOrHideSearchContent()
+      }
+    }
+
+    document.querySelector("#search-icon").addEventListener("click", openOrHideSearchContent, false)
+    document.querySelector("#search-close-icon").addEventListener("click", openOrHideSearchContent, false)
+    searchOverlayArea.addEventListener("click", blurSearchContent, false)
+
+    var searchFunc = function (path, search_id, content_id) {
+      'use strict';
+      var $input = document.getElementById(search_id);
+      var $resultContent = document.getElementById(content_id);
+      $resultContent.innerHTML = "<ul><span class='local-search-empty'>First search, index file loading, please wait...<span></ul>";
+      $.ajax({
+        // 0x01. load xml file
+        url: path,
+        dataType: "xml",
+        success: function (xmlResponse) {
+          // 0x02. parse xml file
+          var datas = $("entry", xmlResponse).map(function () {
+            return {
+              title: $("title", this).text(),
+              content: $("content", this).text(),
+              url: $("url", this).text()
+            };
+          }).get();
+          $resultContent.innerHTML = "";
+
+          $input.addEventListener('input', function () {
+            // 0x03. parse query to keywords list
+            var str = '<ul class=\"search-result-list\">';
+            var keywords = this.value.trim().toLowerCase().split(/[\s\-]+/);
+            $resultContent.innerHTML = "";
+            if (this.value.trim().length <= 0) {
+              return;
+            }
+            // 0x04. perform local searching
+            datas.forEach(function (data) {
+              var isMatch = true;
+              var content_index = [];
+              if (!data.title || data.title.trim() === '') {
+                data.title = "Untitled";
+              }
+              var orig_data_title = data.title.trim();
+              var data_title = orig_data_title.toLowerCase();
+              var orig_data_content = data.content.trim().replace(/<[^>]+>/g, "");
+              var data_content = orig_data_content.toLowerCase();
+              var data_url = data.url;
+              var index_title = -1;
+              var index_content = -1;
+              var first_occur = -1;
+              // only match artiles with not empty contents
+              if (data_content !== '') {
+                keywords.forEach(function (keyword, i) {
+                  index_title = data_title.indexOf(keyword);
+                  index_content = data_content.indexOf(keyword);
+
+                  if (index_title < 0 && index_content < 0) {
+                    isMatch = false;
+                  } else {
+                    if (index_content < 0) {
+                      index_content = 0;
+                    }
+                    if (i == 0) {
+                      first_occur = index_content;
+                    }
+                    // content_index.push({index_content:index_content, keyword_len:keyword_len});
+                  }
+                });
+              } else {
+                isMatch = false;
+              }
+              // 0x05. show search results
+              if (isMatch) {
+                str += "<li><a href='" + data_url + "' class='search-result-title'>" + orig_data_title + "</a>";
+                var content = orig_data_content;
+                if (first_occur >= 0) {
+                  // cut out 100 characters
+                  var start = first_occur - 20;
+                  var end = first_occur + 80;
+
+                  if (start < 0) {
+                    start = 0;
+                  }
+
+                  if (start == 0) {
+                    end = 100;
+                  }
+
+                  if (end > content.length) {
+                    end = content.length;
+                  }
+
+                  var match_content = content.substr(start, end);
+
+                  // highlight all keywords
+                  keywords.forEach(function (keyword) {
+                    var regS = new RegExp(keyword, "gi");
+                    match_content = match_content.replace(regS, "<span class=\"search-keyword\">" + keyword + "</span>");
+                  });
+
+                  str += "<p class=\"search-result-abstract\">" + match_content + "...</p>"
+                }
+                str += "</li>";
+              }
+            });
+            str += "</ul>";
+            if (str.indexOf('<li>') === -1) {
+              return $resultContent.innerHTML = "<ul><span class='local-search-empty'>No result<span></ul>";
+            }
+            $resultContent.innerHTML = str;
+          });
+        },
+        error: function(xhr, status, error) {
+          $resultContent.innerHTML = ""
+          if (xhr.status === 404) {
+            $resultContent.innerHTML = "<ul><span class='local-search-empty'>The search.xml file was not found, please refer to：<a href='https://github.com/zchengsite/hexo-theme-oranges#configuration' target='_black'>configuration</a><span></ul>";
+          } else {
+            $resultContent.innerHTML = "<ul><span class='local-search-empty'>The request failed, Try to refresh the page or try again later.<span></ul>";
+          }
+        }
+      });
+      $(document).on('click', '#search-close-icon', function() {
+        $('#search-input').val('');
+        $('#search-result').html('');
+      });
+    }
+
+    var getSearchFile = function() {
+        var path = "/search.xml";
+        searchFunc(path, 'search-input', 'search-result');
+    }
+  </script>
+
+
+
+
+        
+  <div class="tools-bar-item theme-icon" id="switch-color-scheme">
+    <a href="javascript: void(0)">
+      <i id="theme-icon" class="iconfont icon-moon"></i>
+    </a>
+  </div>
+
+  
+<script src="/js/colorscheme.js"></script>
+
+
+
+
+
+        
+  
+    <div class="share-icon tools-bar-item">
+      <a href="javascript: void(0)" id="share-icon">
+        <i class="iconfont iconshare"></i>
+      </a>
+      <div class="share-content hidden">
+        
+          <a class="share-item" href="https://twitter.com/intent/tweet?text=' + Fluid%20Simulation%20for%20Computer%20Graphics%20Reading%20Note + '&url=' + https%3A%2F%2Fcheapmeow.github.io%2F2024%2F01%2F10%2F2024-01-10-fluid_simulation_for_computer_graphics_reading_note%2F + '" target="_blank" title="Twitter">
+            <i class="iconfont icon-twitter"></i>
+          </a>
+        
+        
+          <a class="share-item" href="https://www.facebook.com/sharer.php?u=https://cheapmeow.github.io/2024/01/10/2024-01-10-fluid_simulation_for_computer_graphics_reading_note/" target="_blank" title="Facebook">
+            <i class="iconfont icon-facebooksquare"></i>
+          </a>
         
       </div>
-    </a>
-  
-  
-    <a href="/2023/12/19/2023-12-19-ue5_niagara_sph/" id="article-nav-older" class="article-nav-link-wrap">
-      <strong class="article-nav-caption">Older</strong>
-      <div class="article-nav-title">Create SPH Fluid using UE5 Niagara System</div>
-    </a>
-  
-</nav>
-
-  
-</article>
-
-
-</section>
-        
-          <aside id="sidebar">
-  
-    
-
-  
-    
-  <div class="widget-wrap">
-    <h3 class="widget-title">Tags</h3>
-    <div class="widget">
-      <ul class="tag-list" itemprop="keywords"><li class="tag-list-item"><a class="tag-list-link" href="/tags/Computer-Graphics/" rel="tag">Computer Graphics</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Cpp/" rel="tag">Cpp</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Fluid-Simulation/" rel="tag">Fluid Simulation</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Game-Effect/" rel="tag">Game Effect</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Grphics/" rel="tag">Grphics</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/High-Performance-Computing/" rel="tag">High Performance Computing</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Mutliple-Dimensional-Array/" rel="tag">Mutliple Dimensional Array</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Niagara-System/" rel="tag">Niagara System</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/OpenGL/" rel="tag">OpenGL</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Reflection/" rel="tag">Reflection</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/SPH/" rel="tag">SPH</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Template-programming/" rel="tag">Template programming</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/UE5/" rel="tag">UE5</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Vulkan/" rel="tag">Vulkan</a></li></ul>
     </div>
-  </div>
-
-
   
-    
-  <div class="widget-wrap">
-    <h3 class="widget-title">Tag Cloud</h3>
-    <div class="widget tagcloud">
-      <a href="/tags/Computer-Graphics/" style="font-size: 10px;">Computer Graphics</a> <a href="/tags/Cpp/" style="font-size: 20px;">Cpp</a> <a href="/tags/Fluid-Simulation/" style="font-size: 20px;">Fluid Simulation</a> <a href="/tags/Game-Effect/" style="font-size: 10px;">Game Effect</a> <a href="/tags/Grphics/" style="font-size: 10px;">Grphics</a> <a href="/tags/High-Performance-Computing/" style="font-size: 10px;">High Performance Computing</a> <a href="/tags/Mutliple-Dimensional-Array/" style="font-size: 10px;">Mutliple Dimensional Array</a> <a href="/tags/Niagara-System/" style="font-size: 10px;">Niagara System</a> <a href="/tags/OpenGL/" style="font-size: 10px;">OpenGL</a> <a href="/tags/Reflection/" style="font-size: 10px;">Reflection</a> <a href="/tags/SPH/" style="font-size: 10px;">SPH</a> <a href="/tags/Template-programming/" style="font-size: 10px;">Template programming</a> <a href="/tags/UE5/" style="font-size: 10px;">UE5</a> <a href="/tags/Vulkan/" style="font-size: 10px;">Vulkan</a>
-    </div>
-  </div>
-
   
-    
-  <div class="widget-wrap">
-    <h3 class="widget-title">Archives</h3>
-    <div class="widget">
-      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/09/">September 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/07/">July 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/05/">May 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/01/">January 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/12/">December 2023</a></li></ul>
-    </div>
-  </div>
+<script src="/js/shares.js"></script>
 
 
-  
-    
-  <div class="widget-wrap">
-    <h3 class="widget-title">Recent Posts</h3>
-    <div class="widget">
-      <ul>
-        
-          <li>
-            <a href="/2024/09/02/2024-09-02-perspective_matrix_for_opengl_and_vulkan/">OpenGL 和 Vulkan 的投影矩阵</a>
-          </li>
-        
-          <li>
-            <a href="/2024/09/02/test/">test</a>
-          </li>
-        
-          <li>
-            <a href="/2024/09/02/hello-world/">Hello World</a>
-          </li>
-        
-          <li>
-            <a href="/2024/07/21/2024-07-21-cpp_multiple_dimensional_array/">C++用于高性能计算的多维数组的不同实现的性能测试</a>
-          </li>
-        
-          <li>
-            <a href="/2024/05/13/2024-05-13-cpp_static_reflection/">C++静态反射学习</a>
-          </li>
-        
-      </ul>
-    </div>
-  </div>
 
-  
-</aside>
-        
       </div>
-      <footer id="footer">
-  
-  <div class="outer">
-    <div id="footer-info" class="inner">
-      
-      &copy; 2024 John Doe<br>
-      Powered by <a href="https://hexo.io/" target="_blank">Hexo</a>
     </div>
-  </div>
-</footer>
-
-    </div>
-    <nav id="mobile-nav">
-  
-    <a href="/" class="mobile-nav-link">Home</a>
-  
-    <a href="/archives" class="mobile-nav-link">Archives</a>
-  
-</nav>
-    
-
-
-<script src="/js/jquery-3.6.4.min.js"></script>
-
-
-
-  
-<script src="/fancybox/jquery.fancybox.min.js"></script>
-
-
-
-
-<script src="/js/script.js"></script>
-
-
-
-
-
-  </div>
-</body>
+  </body>
 </html>

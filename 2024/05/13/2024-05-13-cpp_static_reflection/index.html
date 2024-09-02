@@ -1,101 +1,190 @@
 <!DOCTYPE html>
-<html>
-<head>
+<html lang="en" color-mode="light">
+
+  <head>
   <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="author" content="John Doe" />
+  <!-- Open Graph Description 简短摘要-->
   
-  
-  <title>C++静态反射学习 | CheapMeow</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-  <meta name="description" content="比较了 Piccolo, Taichi, ykiko 的静态反射做法 C++静态反射学习Piccolo 中的静态反射存储类型信息反射需要存储一些类型信息，Piccolo 用一个 map 存储了类型名对应的工具函数，也就是存储了类型信息。 123456789101112131415161718192021222324252627&#x2F;&#x2F; reflection.htypedef std::function">
-<meta property="og:type" content="article">
-<meta property="og:title" content="C++静态反射学习">
-<meta property="og:url" content="https://cheapmeow.github.io/2024/05/13/2024-05-13-cpp_static_reflection/index.html">
-<meta property="og:site_name" content="CheapMeow">
-<meta property="og:description" content="比较了 Piccolo, Taichi, ykiko 的静态反射做法 C++静态反射学习Piccolo 中的静态反射存储类型信息反射需要存储一些类型信息，Piccolo 用一个 map 存储了类型名对应的工具函数，也就是存储了类型信息。 123456789101112131415161718192021222324252627&#x2F;&#x2F; reflection.htypedef std::function">
-<meta property="og:locale" content="en_US">
-<meta property="article:published_time" content="2024-05-13T04:00:00.000Z">
-<meta property="article:modified_time" content="2024-09-02T12:35:21.770Z">
-<meta property="article:author" content="John Doe">
-<meta property="article:tag" content="Cpp">
-<meta property="article:tag" content="Reflection">
-<meta property="article:tag" content="Template programming">
-<meta name="twitter:card" content="summary">
-  
-    <link rel="alternate" href="/atom.xml" title="CheapMeow" type="application/atom+xml">
-  
-  
-    <link rel="shortcut icon" href="/favicon.png">
+  <!-- 用于搜索引擎的文章摘要 -->
   
   
   
-<link rel="stylesheet" href="/css/style.css">
-
-  
+  <title>
     
-<link rel="stylesheet" href="/fancybox/jquery.fancybox.min.css">
+      C++静态反射学习 
+      
+      
+      |
+    
+     CheapMeow
+  </title>
 
   
+    <link rel="apple-touch-icon" href="/images/favicon.png">
+    <link rel="icon" href="/images/favicon.png">
   
+
+  <!-- Raleway-Font -->
+  <link href="https://fonts.googleapis.com/css?family=Raleway&display=swap" rel="stylesheet">
+
+  <!-- hexo site css -->
+  <link rel="stylesheet" href="/css/main.css" />
+  <link rel="stylesheet" href="//at.alicdn.com/t/font_1886449_67xjft27j1l.css" />
+  <!-- 代码块风格 -->
+  
+
+  <!-- jquery3.3.1 -->
+  
+    <script defer type="text/javascript" src="/plugins/jquery.min.js"></script>
+  
+
+  <!-- fancybox -->
+  
+    <link href="/plugins/jquery.fancybox.min.css" rel="stylesheet">
+    <script defer type="text/javascript" src="/plugins/jquery.fancybox.min.js"></script>
+  
+  
+<script src="/js/fancybox.js"></script>
+
+
+  
+
+  
+
+  <script>
+    var html = document.documentElement
+    const colorMode = localStorage.getItem('color-mode')
+    if (colorMode) {
+      document.documentElement.setAttribute('color-mode', colorMode)
+    }
+  </script>
 <meta name="generator" content="Hexo 7.3.0"></head>
 
-<body>
-  <div id="container">
-    <div id="wrap">
-      <header id="header">
-  <div id="banner"></div>
-  <div id="header-outer" class="outer">
-    <div id="header-title" class="inner">
-      <h1 id="logo-wrap">
-        <a href="/" id="logo">CheapMeow</a>
-      </h1>
+
+  <body>
+    <div id="app">
+      <div class="header">
+  <div class="avatar">
+    <a href="/">
+      <!-- 头像取消懒加载，添加no-lazy -->
       
-    </div>
-    <div id="header-inner" class="inner">
-      <nav id="main-nav">
-        <a id="main-nav-toggle" class="nav-icon"><span class="fa fa-bars"></span></a>
+        <img src="/images/avatar.png" alt="">
+      
+    </a>
+    <div class="nickname"><a href="/">Oranges</a></div>
+  </div>
+  <div class="navbar">
+    <ul>
+      
+        <li class="nav-item" data-path="/">
+          <a href="/">Home</a>
+        </li>
+      
+        <li class="nav-item" data-path="/archives/">
+          <a href="/archives/">Archives</a>
+        </li>
+      
+        <li class="nav-item" data-path="/tags/">
+          <a href="/tags/">Tags</a>
+        </li>
+      
+        <li class="nav-item" data-path="/friends/">
+          <a href="/friends/">Friends</a>
+        </li>
+      
+        <li class="nav-item" data-path="/about/">
+          <a href="/about/">About</a>
+        </li>
+      
+    </ul>
+  </div>
+</div>
+
+
+<script src="/js/activeNav.js"></script>
+
+
+
+      <div class="flex-container">
+        <!-- 文章详情页，展示文章具体内容，url形式：https://yoursite/文章标题/ -->
+<!-- 同时为「标签tag」，「朋友friend」，「分类categories」，「关于about」页面的承载页面，具体展示取决于page.type -->
+
+
+  <!-- LaTex Display -->
+
+  
+    <script async type="text/javascript" src="/plugins/mathjax/tex-chtml.js"></script>
+  
+  <script>
+    MathJax = {
+      tex: {
+        inlineMath: [['$', '$'], ['\\(', '\\)']]
+      }
+    }
+  </script>
+
+
+
+
+
+  <!-- clipboard -->
+
+  
+    <script async type="text/javascript" src="/plugins/clipboard.min.js"></script>
+  
+  
+<script src="/js/codeCopy.js"></script>
+
+
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  <!-- 文章内容页 url形式：https://yoursite/文章标题/ -->
+  <div class="container post-details" id="post-details">
+    <div class="post-content">
+      <div class="post-title">C++静态反射学习</div>
+      <div class="post-attach">
+        <span class="post-pubtime">
+          <i class="iconfont icon-updatetime mr-10" title="Update time"></i>
+          2024-09-02 20:35:21
+        </span>
         
-          <a class="main-nav-link" href="/">Home</a>
-        
-          <a class="main-nav-link" href="/archives">Archives</a>
-        
-      </nav>
-      <nav id="sub-nav">
-        
-        
-          <a class="nav-icon" href="/atom.xml" title="RSS Feed"><span class="fa fa-rss"></span></a>
-        
-        <a class="nav-icon nav-search-btn" title="Search"><span class="fa fa-search"></span></a>
-      </nav>
-      <div id="search-form-wrap">
-        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="https://cheapmeow.github.io"></form>
+              <span class="post-tags">
+                <i class="iconfont icon-tags mr-10" title="Tags"></i>
+                
+                <span class="span--tag mr-8">
+                  <a href="/tags/Cpp/" title="Cpp">
+                    #Cpp
+                  </a>
+                </span>
+                
+                <span class="span--tag mr-8">
+                  <a href="/tags/Reflection/" title="Reflection">
+                    #Reflection
+                  </a>
+                </span>
+                
+                <span class="span--tag mr-8">
+                  <a href="/tags/Template-programming/" title="Template programming">
+                    #Template programming
+                  </a>
+                </span>
+                
+              </span>
+          
       </div>
-    </div>
-  </div>
-</header>
-
-      <div class="outer">
-        <section id="main"><article id="post-2024-05-13-cpp_static_reflection" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
-  <div class="article-meta">
-    <a href="/2024/05/13/2024-05-13-cpp_static_reflection/" class="article-date">
-  <time class="dt-published" datetime="2024-05-13T04:00:00.000Z" itemprop="datePublished">2024-05-13</time>
-</a>
-    
-  </div>
-  <div class="article-inner">
-    
-    
-      <header class="article-header">
-        
-  
-    <h1 class="p-name article-title" itemprop="headline name">
-      C++静态反射学习
-    </h1>
-  
-
-      </header>
-    
-    <div class="e-content article-entry" itemprop="articleBody">
-      
+      <div class="markdown-body">
         <p>比较了 Piccolo, Taichi, ykiko 的静态反射做法</p>
 <h2 id="C-静态反射学习"><a href="#C-静态反射学习" class="headerlink" title="C++静态反射学习"></a>C++静态反射学习</h2><h3 id="Piccolo-中的静态反射"><a href="#Piccolo-中的静态反射" class="headerlink" title="Piccolo 中的静态反射"></a>Piccolo 中的静态反射</h3><h4 id="存储类型信息"><a href="#存储类型信息" class="headerlink" title="存储类型信息"></a>存储类型信息</h4><p>反射需要存储一些类型信息，Piccolo 用一个 map 存储了类型名对应的工具函数，也就是存储了类型信息。</p>
 <figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// reflection.h</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">typedef</span> std::function&lt;<span class="type">void</span>(<span class="type">void</span>*, <span class="type">void</span>*)&gt;      SetFuncion;</span><br><span class="line"><span class="keyword">typedef</span> std::function&lt;<span class="type">void</span>*(<span class="type">void</span>*)&gt;            GetFuncion;</span><br><span class="line"><span class="keyword">typedef</span> std::function&lt;<span class="type">const</span> <span class="type">char</span>*()&gt;           GetNameFuncion;</span><br><span class="line"><span class="keyword">typedef</span> std::function&lt;<span class="type">void</span>(<span class="type">int</span>, <span class="type">void</span>*, <span class="type">void</span>*)&gt; SetArrayFunc;</span><br><span class="line"><span class="keyword">typedef</span> std::function&lt;<span class="type">void</span>*(<span class="type">int</span>, <span class="type">void</span>*)&gt;       GetArrayFunc;</span><br><span class="line"><span class="keyword">typedef</span> std::function&lt;<span class="type">int</span>(<span class="type">void</span>*)&gt;              GetSizeFunc;</span><br><span class="line"><span class="keyword">typedef</span> std::function&lt;<span class="type">bool</span>()&gt;                  GetBoolFunc;</span><br><span class="line"><span class="keyword">typedef</span> std::function&lt;<span class="type">void</span>(<span class="type">void</span>*)&gt;             InvokeFunction;</span><br><span class="line"></span><br><span class="line"><span class="keyword">typedef</span> std::function&lt;<span class="type">void</span>*(<span class="type">const</span> Json&amp;)&gt;                           ConstructorWithJson;</span><br><span class="line"><span class="keyword">typedef</span> std::function&lt;Json(<span class="type">void</span>*)&gt;                                  WriteJsonByName;</span><br><span class="line"><span class="keyword">typedef</span> std::function&lt;<span class="type">int</span>(Reflection::ReflectionInstance*&amp;, <span class="type">void</span>*)&gt; GetBaseClassReflectionInstanceListFunc;</span><br><span class="line"></span><br><span class="line"><span class="keyword">typedef</span> std::tuple&lt;SetFuncion, GetFuncion, GetNameFuncion, GetNameFuncion, GetNameFuncion, GetBoolFunc&gt;</span><br><span class="line">                                                    FieldFunctionTuple;</span><br><span class="line"><span class="keyword">typedef</span> std::tuple&lt;GetNameFuncion, InvokeFunction&gt; MethodFunctionTuple;</span><br><span class="line"><span class="keyword">typedef</span> std::tuple&lt;GetBaseClassReflectionInstanceListFunc, ConstructorWithJson, WriteJsonByName&gt; ClassFunctionTuple;</span><br><span class="line"><span class="keyword">typedef</span> std::tuple&lt;SetArrayFunc, GetArrayFunc, GetSizeFunc, GetNameFuncion, GetNameFuncion&gt;      ArrayFunctionTuple;</span><br><span class="line"></span><br><span class="line"><span class="comment">// reflection.cpp</span></span><br><span class="line"></span><br><span class="line"><span class="type">static</span> std::map&lt;std::string, ClassFunctionTuple*&gt;       m_class_map;</span><br><span class="line"><span class="type">static</span> std::multimap&lt;std::string, FieldFunctionTuple*&gt;  m_field_map;</span><br><span class="line"><span class="type">static</span> std::multimap&lt;std::string, MethodFunctionTuple*&gt; m_method_map;</span><br><span class="line"><span class="type">static</span> std::map&lt;std::string, ArrayFunctionTuple*&gt;       m_array_map;</span><br></pre></td></tr></table></figure>
@@ -366,150 +455,372 @@
         crossorigin="anonymous"
         async>
 </script>
+      </div>
+      
+        <div class="prev-or-next">
+          <div class="post-foot-next">
+            
+              <a href="/2024/01/10/2024-01-10-fluid_simulation_for_computer_graphics_reading_note/" target="_self">
+                <i class="iconfont icon-chevronleft"></i>
+                <span>Prev</span>
+              </a>
+            
+          </div>
+          <div class="post-attach">
+            <span class="post-pubtime">
+              <i class="iconfont icon-updatetime mr-10" title="Update time"></i>
+              2024-09-02 20:35:21
+            </span>
+            
+                  <span class="post-tags">
+                    <i class="iconfont icon-tags mr-10" title="Tags"></i>
+                    
+                    <span class="span--tag mr-8">
+                      <a href="/tags/Cpp/" title="Cpp">
+                        #Cpp
+                      </a>
+                    </span>
+                    
+                    <span class="span--tag mr-8">
+                      <a href="/tags/Reflection/" title="Reflection">
+                        #Reflection
+                      </a>
+                    </span>
+                    
+                    <span class="span--tag mr-8">
+                      <a href="/tags/Template-programming/" title="Template programming">
+                        #Template programming
+                      </a>
+                    </span>
+                    
+                  </span>
+              
+          </div>
+          <div class="post-foot-prev">
+            
+              <a href="/2024/07/21/2024-07-21-cpp_multiple_dimensional_array/" target="_self">
+                <span>Next</span>
+                <i class="iconfont icon-chevronright"></i>
+              </a>
+            
+          </div>
+        </div>
       
     </div>
-    <footer class="article-footer">
-      <a data-url="https://cheapmeow.github.io/2024/05/13/2024-05-13-cpp_static_reflection/" data-id="cm0kzl0lb000ezcpy42mdft08" data-title="C++静态反射学习" class="article-share-link"><span class="fa fa-share">Share</span></a>
+    
+  <div id="btn-catalog" class="btn-catalog">
+    <i class="iconfont icon-catalog"></i>
+  </div>
+  <div class="post-catalog hidden" id="catalog">
+    <div class="title">Contents</div>
+    <div class="catalog-content">
       
+        <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#C-%E9%9D%99%E6%80%81%E5%8F%8D%E5%B0%84%E5%AD%A6%E4%B9%A0"><span class="toc-text">C++静态反射学习</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Piccolo-%E4%B8%AD%E7%9A%84%E9%9D%99%E6%80%81%E5%8F%8D%E5%B0%84"><span class="toc-text">Piccolo 中的静态反射</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#%E5%AD%98%E5%82%A8%E7%B1%BB%E5%9E%8B%E4%BF%A1%E6%81%AF"><span class="toc-text">存储类型信息</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E4%BD%BF%E7%94%A8%E5%8F%8D%E5%B0%84%E5%88%9B%E5%BB%BA-GUI-%E6%A0%91"><span class="toc-text">使用反射创建 GUI 树</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E5%BA%8F%E5%88%97%E5%8C%96%E4%B8%8E%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96"><span class="toc-text">序列化与反序列化</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#ReflectionPtr-%E5%92%8C-ReflectionInstance-%E7%94%A8%E4%BA%8E%E7%B1%BB%E5%9E%8B%E6%93%A6%E9%99%A4"><span class="toc-text">ReflectionPtr 和 ReflectionInstance 用于类型擦除</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#ReflectionPtr-%E5%92%8C-ReflectionInstance-%E7%9A%84%E8%AE%BE%E8%AE%A1"><span class="toc-text">ReflectionPtr 和 ReflectionInstance 的设计</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#ReflectionPtr-%E5%86%85%E4%BD%BF%E7%94%A8%E6%99%BA%E8%83%BD%E6%8C%87%E9%92%88"><span class="toc-text">ReflectionPtr 内使用智能指针</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Taichi-Graphics-cpp-reflection"><span class="toc-text">Taichi Graphics cpp reflection</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#%E4%BD%BF%E7%94%A8-static-assert-%E4%BB%A5%E8%B0%83%E8%AF%95"><span class="toc-text">使用 static_assert 以调试</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E7%AE%80%E5%8C%96%E4%BB%A3%E7%A0%81%E4%BB%A5%E8%B0%83%E8%AF%95"><span class="toc-text">简化代码以调试</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E8%BE%93%E5%87%BA-typeid-T-name-%E4%BB%A5%E8%B0%83%E8%AF%95"><span class="toc-text">输出 typeid(T).name() 以调试</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#any-cast-%E7%9A%84%E4%B8%A5%E6%A0%BC"><span class="toc-text">any_cast 的严格</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E6%80%BB%E7%BB%93"><span class="toc-text">总结</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#YKIKO-reflection"><span class="toc-text">YKIKO reflection</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%BD%BF%E7%94%A8-annotate-%E5%B1%9E%E6%80%A7%E5%92%8C-libclang-%E5%88%86%E6%9E%90-AST-%E5%81%9A%E4%BB%A3%E7%A0%81%E7%94%9F%E6%88%90"><span class="toc-text">使用 annotate 属性和 libclang 分析 AST 做代码生成</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#%E9%93%BE%E6%8E%A5-libclang"><span class="toc-text">链接 libclang</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#annotate-%E5%B1%9E%E6%80%A7"><span class="toc-text">annotate 属性</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#libclang"><span class="toc-text">libclang</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#clang-visitChildren-%E5%9B%9E%E8%B0%83%E9%87%8C%E9%9D%A2%E7%9A%84%E7%94%A8%E6%88%B7%E6%95%B0%E6%8D%AE%E6%8C%87%E9%92%88"><span class="toc-text">clang_visitChildren 回调里面的用户数据指针</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E7%94%9F%E6%88%90%E6%96%87%E4%BB%B6"><span class="toc-text">生成文件</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E4%B8%BA-libclang-%E6%8F%90%E4%BE%9B%E7%BC%96%E8%AF%91%E9%80%89%E9%A1%B9"><span class="toc-text">为 libclang 提供编译选项</span></a></li></ol></li></ol></li></ol>
       
-      
-  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/Cpp/" rel="tag">Cpp</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/Reflection/" rel="tag">Reflection</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/Template-programming/" rel="tag">Template programming</a></li></ul>
+    </div>
+  </div>
 
-    </footer>
+  
+<script src="/js/catalog.js"></script>
+
+
+
+
+    
+      <div class="comments-container">
+        
+
+
+
+
+
+
+
+      </div>
+    
+  </div>
+
+
+        
+<div class="footer">
+  <div class="social">
+    <ul>
+      
+        <li>
+          
+              <a title="github" target="_blank" rel="noopener" href="https://github.com/zchengsite/hexo-theme-oranges">
+                <i class="iconfont icon-github"></i>
+              </a>
+              
+        </li>
+        
+    </ul>
   </div>
   
     
-<nav id="article-nav">
-  
-    <a href="/2024/07/21/2024-07-21-cpp_multiple_dimensional_array/" id="article-nav-newer" class="article-nav-link-wrap">
-      <strong class="article-nav-caption">Newer</strong>
-      <div class="article-nav-title">
+    <div class="footer-more">
+      
+        <a target="_blank" rel="noopener" href="https://github.com/zchengsite/hexo-theme-oranges">Copyright © 2024 Oranges</a>
         
-          C++用于高性能计算的多维数组的不同实现的性能测试
+    </div>
+  
+    
+    <div class="footer-more">
+      
+        <a target="_blank" rel="noopener" href="https://github.com/zchengsite/hexo-theme-oranges">Theme by Oranges | Powered by Hexo</a>
+        
+    </div>
+  
+  
+</div>
+
+      </div>
+
+      <div class="tools-bar">
+        <div class="back-to-top tools-bar-item hidden">
+  <a href="javascript: void(0)">
+    <i class="iconfont icon-chevronup"></i>
+  </a>
+</div>
+
+
+<script src="/js/backtotop.js"></script>
+
+
+
+        
+  <div class="search-icon tools-bar-item" id="search-icon">
+    <a href="javascript: void(0)">
+      <i class="iconfont icon-search"></i>
+    </a>
+  </div>
+
+  <div class="search-overlay hidden">
+    <div class="search-content" tabindex="0">
+      <div class="search-title">
+        <span class="search-icon-input">
+          <a href="javascript: void(0)">
+            <i class="iconfont icon-search"></i>
+          </a>
+        </span>
+        
+          <input type="text" class="search-input" id="search-input" placeholder="Search...">
+        
+        <span class="search-close-icon" id="search-close-icon">
+          <a href="javascript: void(0)">
+            <i class="iconfont icon-close"></i>
+          </a>
+        </span>
+      </div>
+      <div class="search-result" id="search-result"></div>
+    </div>
+  </div>
+
+  <script type="text/javascript">
+    var inputArea = document.querySelector("#search-input")
+    var searchOverlayArea = document.querySelector(".search-overlay")
+
+    inputArea.onclick = function() {
+      getSearchFile()
+      this.onclick = null
+    }
+
+    inputArea.onkeydown = function() {
+      if(event.keyCode == 13)
+        return false
+    }
+
+    function openOrHideSearchContent() {
+      let isHidden = searchOverlayArea.classList.contains('hidden')
+      if (isHidden) {
+        searchOverlayArea.classList.remove('hidden')
+        document.body.classList.add('hidden')
+        // inputArea.focus()
+      } else {
+        searchOverlayArea.classList.add('hidden')
+        document.body.classList.remove('hidden')
+      }
+    }
+
+    function blurSearchContent(e) {
+      if (e.target === searchOverlayArea) {
+        openOrHideSearchContent()
+      }
+    }
+
+    document.querySelector("#search-icon").addEventListener("click", openOrHideSearchContent, false)
+    document.querySelector("#search-close-icon").addEventListener("click", openOrHideSearchContent, false)
+    searchOverlayArea.addEventListener("click", blurSearchContent, false)
+
+    var searchFunc = function (path, search_id, content_id) {
+      'use strict';
+      var $input = document.getElementById(search_id);
+      var $resultContent = document.getElementById(content_id);
+      $resultContent.innerHTML = "<ul><span class='local-search-empty'>First search, index file loading, please wait...<span></ul>";
+      $.ajax({
+        // 0x01. load xml file
+        url: path,
+        dataType: "xml",
+        success: function (xmlResponse) {
+          // 0x02. parse xml file
+          var datas = $("entry", xmlResponse).map(function () {
+            return {
+              title: $("title", this).text(),
+              content: $("content", this).text(),
+              url: $("url", this).text()
+            };
+          }).get();
+          $resultContent.innerHTML = "";
+
+          $input.addEventListener('input', function () {
+            // 0x03. parse query to keywords list
+            var str = '<ul class=\"search-result-list\">';
+            var keywords = this.value.trim().toLowerCase().split(/[\s\-]+/);
+            $resultContent.innerHTML = "";
+            if (this.value.trim().length <= 0) {
+              return;
+            }
+            // 0x04. perform local searching
+            datas.forEach(function (data) {
+              var isMatch = true;
+              var content_index = [];
+              if (!data.title || data.title.trim() === '') {
+                data.title = "Untitled";
+              }
+              var orig_data_title = data.title.trim();
+              var data_title = orig_data_title.toLowerCase();
+              var orig_data_content = data.content.trim().replace(/<[^>]+>/g, "");
+              var data_content = orig_data_content.toLowerCase();
+              var data_url = data.url;
+              var index_title = -1;
+              var index_content = -1;
+              var first_occur = -1;
+              // only match artiles with not empty contents
+              if (data_content !== '') {
+                keywords.forEach(function (keyword, i) {
+                  index_title = data_title.indexOf(keyword);
+                  index_content = data_content.indexOf(keyword);
+
+                  if (index_title < 0 && index_content < 0) {
+                    isMatch = false;
+                  } else {
+                    if (index_content < 0) {
+                      index_content = 0;
+                    }
+                    if (i == 0) {
+                      first_occur = index_content;
+                    }
+                    // content_index.push({index_content:index_content, keyword_len:keyword_len});
+                  }
+                });
+              } else {
+                isMatch = false;
+              }
+              // 0x05. show search results
+              if (isMatch) {
+                str += "<li><a href='" + data_url + "' class='search-result-title'>" + orig_data_title + "</a>";
+                var content = orig_data_content;
+                if (first_occur >= 0) {
+                  // cut out 100 characters
+                  var start = first_occur - 20;
+                  var end = first_occur + 80;
+
+                  if (start < 0) {
+                    start = 0;
+                  }
+
+                  if (start == 0) {
+                    end = 100;
+                  }
+
+                  if (end > content.length) {
+                    end = content.length;
+                  }
+
+                  var match_content = content.substr(start, end);
+
+                  // highlight all keywords
+                  keywords.forEach(function (keyword) {
+                    var regS = new RegExp(keyword, "gi");
+                    match_content = match_content.replace(regS, "<span class=\"search-keyword\">" + keyword + "</span>");
+                  });
+
+                  str += "<p class=\"search-result-abstract\">" + match_content + "...</p>"
+                }
+                str += "</li>";
+              }
+            });
+            str += "</ul>";
+            if (str.indexOf('<li>') === -1) {
+              return $resultContent.innerHTML = "<ul><span class='local-search-empty'>No result<span></ul>";
+            }
+            $resultContent.innerHTML = str;
+          });
+        },
+        error: function(xhr, status, error) {
+          $resultContent.innerHTML = ""
+          if (xhr.status === 404) {
+            $resultContent.innerHTML = "<ul><span class='local-search-empty'>The search.xml file was not found, please refer to：<a href='https://github.com/zchengsite/hexo-theme-oranges#configuration' target='_black'>configuration</a><span></ul>";
+          } else {
+            $resultContent.innerHTML = "<ul><span class='local-search-empty'>The request failed, Try to refresh the page or try again later.<span></ul>";
+          }
+        }
+      });
+      $(document).on('click', '#search-close-icon', function() {
+        $('#search-input').val('');
+        $('#search-result').html('');
+      });
+    }
+
+    var getSearchFile = function() {
+        var path = "/search.xml";
+        searchFunc(path, 'search-input', 'search-result');
+    }
+  </script>
+
+
+
+
+        
+  <div class="tools-bar-item theme-icon" id="switch-color-scheme">
+    <a href="javascript: void(0)">
+      <i id="theme-icon" class="iconfont icon-moon"></i>
+    </a>
+  </div>
+
+  
+<script src="/js/colorscheme.js"></script>
+
+
+
+
+
+        
+  
+    <div class="share-icon tools-bar-item">
+      <a href="javascript: void(0)" id="share-icon">
+        <i class="iconfont iconshare"></i>
+      </a>
+      <div class="share-content hidden">
+        
+          <a class="share-item" href="https://twitter.com/intent/tweet?text=' + C%2B%2B%E9%9D%99%E6%80%81%E5%8F%8D%E5%B0%84%E5%AD%A6%E4%B9%A0 + '&url=' + https%3A%2F%2Fcheapmeow.github.io%2F2024%2F05%2F13%2F2024-05-13-cpp_static_reflection%2F + '" target="_blank" title="Twitter">
+            <i class="iconfont icon-twitter"></i>
+          </a>
+        
+        
+          <a class="share-item" href="https://www.facebook.com/sharer.php?u=https://cheapmeow.github.io/2024/05/13/2024-05-13-cpp_static_reflection/" target="_blank" title="Facebook">
+            <i class="iconfont icon-facebooksquare"></i>
+          </a>
         
       </div>
-    </a>
-  
-  
-    <a href="/2024/01/10/2024-01-10-fluid_simulation_for_computer_graphics_reading_note/" id="article-nav-older" class="article-nav-link-wrap">
-      <strong class="article-nav-caption">Older</strong>
-      <div class="article-nav-title">Fluid Simulation for Computer Graphics Reading Note</div>
-    </a>
-  
-</nav>
-
-  
-</article>
-
-
-</section>
-        
-          <aside id="sidebar">
-  
-    
-
-  
-    
-  <div class="widget-wrap">
-    <h3 class="widget-title">Tags</h3>
-    <div class="widget">
-      <ul class="tag-list" itemprop="keywords"><li class="tag-list-item"><a class="tag-list-link" href="/tags/Computer-Graphics/" rel="tag">Computer Graphics</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Cpp/" rel="tag">Cpp</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Fluid-Simulation/" rel="tag">Fluid Simulation</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Game-Effect/" rel="tag">Game Effect</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Grphics/" rel="tag">Grphics</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/High-Performance-Computing/" rel="tag">High Performance Computing</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Mutliple-Dimensional-Array/" rel="tag">Mutliple Dimensional Array</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Niagara-System/" rel="tag">Niagara System</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/OpenGL/" rel="tag">OpenGL</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Reflection/" rel="tag">Reflection</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/SPH/" rel="tag">SPH</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Template-programming/" rel="tag">Template programming</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/UE5/" rel="tag">UE5</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Vulkan/" rel="tag">Vulkan</a></li></ul>
     </div>
-  </div>
-
-
   
-    
-  <div class="widget-wrap">
-    <h3 class="widget-title">Tag Cloud</h3>
-    <div class="widget tagcloud">
-      <a href="/tags/Computer-Graphics/" style="font-size: 10px;">Computer Graphics</a> <a href="/tags/Cpp/" style="font-size: 20px;">Cpp</a> <a href="/tags/Fluid-Simulation/" style="font-size: 20px;">Fluid Simulation</a> <a href="/tags/Game-Effect/" style="font-size: 10px;">Game Effect</a> <a href="/tags/Grphics/" style="font-size: 10px;">Grphics</a> <a href="/tags/High-Performance-Computing/" style="font-size: 10px;">High Performance Computing</a> <a href="/tags/Mutliple-Dimensional-Array/" style="font-size: 10px;">Mutliple Dimensional Array</a> <a href="/tags/Niagara-System/" style="font-size: 10px;">Niagara System</a> <a href="/tags/OpenGL/" style="font-size: 10px;">OpenGL</a> <a href="/tags/Reflection/" style="font-size: 10px;">Reflection</a> <a href="/tags/SPH/" style="font-size: 10px;">SPH</a> <a href="/tags/Template-programming/" style="font-size: 10px;">Template programming</a> <a href="/tags/UE5/" style="font-size: 10px;">UE5</a> <a href="/tags/Vulkan/" style="font-size: 10px;">Vulkan</a>
-    </div>
-  </div>
-
   
-    
-  <div class="widget-wrap">
-    <h3 class="widget-title">Archives</h3>
-    <div class="widget">
-      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/09/">September 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/07/">July 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/05/">May 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/01/">January 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/12/">December 2023</a></li></ul>
-    </div>
-  </div>
+<script src="/js/shares.js"></script>
 
 
-  
-    
-  <div class="widget-wrap">
-    <h3 class="widget-title">Recent Posts</h3>
-    <div class="widget">
-      <ul>
-        
-          <li>
-            <a href="/2024/09/02/2024-09-02-perspective_matrix_for_opengl_and_vulkan/">OpenGL 和 Vulkan 的投影矩阵</a>
-          </li>
-        
-          <li>
-            <a href="/2024/09/02/test/">test</a>
-          </li>
-        
-          <li>
-            <a href="/2024/09/02/hello-world/">Hello World</a>
-          </li>
-        
-          <li>
-            <a href="/2024/07/21/2024-07-21-cpp_multiple_dimensional_array/">C++用于高性能计算的多维数组的不同实现的性能测试</a>
-          </li>
-        
-          <li>
-            <a href="/2024/05/13/2024-05-13-cpp_static_reflection/">C++静态反射学习</a>
-          </li>
-        
-      </ul>
-    </div>
-  </div>
 
-  
-</aside>
-        
       </div>
-      <footer id="footer">
-  
-  <div class="outer">
-    <div id="footer-info" class="inner">
-      
-      &copy; 2024 John Doe<br>
-      Powered by <a href="https://hexo.io/" target="_blank">Hexo</a>
     </div>
-  </div>
-</footer>
-
-    </div>
-    <nav id="mobile-nav">
-  
-    <a href="/" class="mobile-nav-link">Home</a>
-  
-    <a href="/archives" class="mobile-nav-link">Archives</a>
-  
-</nav>
-    
-
-
-<script src="/js/jquery-3.6.4.min.js"></script>
-
-
-
-  
-<script src="/fancybox/jquery.fancybox.min.js"></script>
-
-
-
-
-<script src="/js/script.js"></script>
-
-
-
-
-
-  </div>
-</body>
+  </body>
 </html>
