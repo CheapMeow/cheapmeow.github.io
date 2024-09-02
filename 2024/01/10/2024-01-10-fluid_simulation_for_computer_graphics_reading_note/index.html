@@ -22,8 +22,8 @@
   </title>
 
   
-    <link rel="apple-touch-icon" href="/images/favicon.png">
-    <link rel="icon" href="/images/favicon.png">
+    <link rel="apple-touch-icon" href="/images/avatar.png">
+    <link rel="icon" href="/images/avatar.png">
   
 
   <!-- Raleway-Font -->
@@ -161,7 +161,7 @@
       <div class="post-attach">
         <span class="post-pubtime">
           <i class="iconfont icon-updatetime mr-10" title="Update time"></i>
-          2024-09-02 20:44:49
+          2024-09-02 21:27:02
         </span>
         
               <span class="post-tags">
@@ -201,20 +201,20 @@ Fluids</h2>
 volume.</p>
 <p>It measures the imbalance in pressure at the position of the particle
 is simply to take the negative gradient of pressure <span
-class="math display">\[-\nabla p\]</span></p>
+class="math inline">\(-\nabla p\)</span></p>
 <p>Viscosity force tries to resist deforming. It tries to make our
 particle move at the average velocity of the nearby particle.</p>
 <p>The differential operator that measures how far a quantity is from
 the average around it is Laplacian operator <span
-class="math display">\[\nabla \cdot \nabla\]</span>, so viscosity force
-is <span class="math display">\[\nabla \cdot \nabla u\]</span></p>
+class="math inline">\(\nabla \cdot \nabla\)</span>, so viscosity force
+is <span class="math inline">\(\nabla \cdot \nabla u\)</span></p>
 <h3 id="incompressibility">Incompressibility</h3>
 <p>Incompressibility means volume doesn't change. It is <span
-class="math display">\[\iiint_{\Omega} \nabla \cdot u = 0\]</span>. How
-to get NS eq <span class="math display">\[\nabla \cdot u =
-0\]</span>?</p>
+class="math inline">\(\iiint_{\Omega} \nabla \cdot u = 0\)</span>. How
+to get NS eq <span class="math inline">\(\nabla \cdot u =
+0\)</span>?</p>
 <p>The integration should be true for any choice of <span
-class="math display">\[\Omega\]</span>, any region of fluid. The only
+class="math inline">\(\Omega\)</span>, any region of fluid. The only
 continuous function that integrates to zero independent of the region of
 integration is zero itself. Thus the integrand has to be zero
 everywhere.</p>
@@ -262,42 +262,35 @@ involved).</p>
 <h2 id="chapter-2-overview-of-numerical-simulation">Chapter 2: Overview
 of Numerical Simulation</h2>
 <h3 id="splitting">Splitting</h3>
-<p>Split <span class="math display">\[\dfrac{\mathrm{d}q}{\mathrm{d}t} =
-f(q) + g(q)\]</span> into:</p>
-<p><span class="math display">\[
-\begin{aligned}
+<p>Split <span class="math inline">\(\dfrac{\mathrm{d}q}{\mathrm{d}t} =
+f(q) + g(q)\)</span> into:</p>
+<p><span class="math inline">\(\begin{aligned}
   \widetilde{q} &amp; = q^n + \Delta t f(q^n) \\
   q^{n+1} &amp; = \widetilde{q} + \Delta t g(\widetilde{q})
-\end{aligned}
-\]</span></p>
+\end{aligned}\)</span></p>
 <p>Use Taylor series to prove firse-order-accurate.</p>
 <p>Simpler equation has simpler method.</p>
-<p><span class="math display">\[
-\begin{aligned}
+<p><span class="math inline">\(\begin{aligned}
   \widetilde{q} &amp; = F(\Delta t, q^n) \\
   q^{n+1} &amp; = G(\Delta t, \widetilde{q})
-\end{aligned}
-\]</span></p>
-<p>We have better method <span class="math display">\[F,G\]</span>.</p>
-<p><span class="math display">\[F,G\]</span> may be in parallel or
+\end{aligned}\)</span></p>
+<p>We have better method <span class="math inline">\(F,G\)</span>.</p>
+<p><span class="math inline">\(F,G\)</span> may be in parallel or
 not.</p>
 <h3 id="splitting-the-fluid-equations">Splitting the Fluid
 Equations</h3>
-<p><span class="math display">\[
-\begin{aligned}
+<p><span class="math inline">\(\begin{aligned}
   \dfrac{\mathrm{D}q}{\mathrm{D}t} = 0 &amp;, advection \\
   \dfrac{\partial{u}}{\partial{t}} = g &amp;, body\ force \\
   \dfrac{\partial{u}}{\partial{t}} + \dfrac{1}{\rho}\nabla p =0 &amp;,
 pressure/incompressibility
-\end{aligned}
-\]</span></p>
-<p>In advection part, quantity <span class="math display">\[q\]</span>
-is anything, not just velocity <span
-class="math display">\[v\]</span>.</p>
-<p>For body force part, forward euler <span class="math display">\[u = u
-+ \Delta t g\]</span> is fine.</p>
-<p>Pressure part is to make sure <span class="math display">\[\nabla
-\cdot u = 0\]</span>. Here we will project velocity and enforce the
+\end{aligned}\)</span></p>
+<p>In advection part, quantity <span class="math inline">\(q\)</span> is
+anything, not just velocity <span class="math inline">\(v\)</span>.</p>
+<p>For body force part, forward euler <span class="math inline">\(u = u
++ \Delta t g\)</span> is fine.</p>
+<p>Pressure part is to make sure <span class="math inline">\(\nabla
+\cdot u = 0\)</span>. Here we will project velocity and enforce the
 solid wall boundary conditions.</p>
 <p>Advection should only be done in a divergence-free velocity field. So
 sequence matters.</p>
@@ -309,27 +302,27 @@ sequence matters.</p>
 <h3 id="time-steps">Time Steps</h3>
 <p>Find a minimal time step that suits all steps: advect, add body
 force, project.</p>
-<p>If frame interval <span class="math display">\[t_{frame}\]</span>
-&gt; simulation delta time <span class="math display">\[\Delta
-t\]</span>, then run simulation multiple times, until total simulation
-time &gt;= <span class="math display">\[t_{frame}\]</span>.</p>
+<p>If frame interval <span class="math inline">\(t_{frame}\)</span> &gt;
+simulation delta time <span class="math inline">\(\Delta t\)</span>,
+then run simulation multiple times, until total simulation time &gt;=
+<span class="math inline">\(t_{frame}\)</span>.</p>
 <h3 id="mac-grid">MAC Grid</h3>
 <h4 id="problem-of-central-difference">Problem of central
 difference</h4>
 <p>First-order central difference:</p>
-<p><span class="math display">\[(\dfrac{\partial{q}}{\partial{x}})_{i}
-\approx \dfrac{q_{i+1}-q_{i-1}}{2\Delta x}\]</span></p>
+<p><span class="math inline">\((\dfrac{\partial{q}}{\partial{x}})_{i}
+\approx \dfrac{q_{i+1}-q_{i-1}}{2\Delta x}\)</span></p>
 <p>First-order forward or backward difference:</p>
-<p><span class="math display">\[(\dfrac{\partial{q}}{\partial{x}})_{i}
-\approx \dfrac{q_{i+1}-q_{i}}{\Delta x}\]</span></p>
+<p><span class="math inline">\((\dfrac{\partial{q}}{\partial{x}})_{i}
+\approx \dfrac{q_{i+1}-q_{i}}{\Delta x}\)</span></p>
 <p>First-order central difference has a major problem in that the
 derivative estimate at grid point i completely ignores the value qi
 sampled there.</p>
 <p>Why ignoring qi is terrible: jagged function has more probability to
 be estimate as constant function. For example, <span
-class="math display">\[q_i = {(-1)}^{i}\]</span> to produce <span
-class="math display">\[(\dfrac{\partial{q}}{\partial{x}})_{i} =
-0\]</span> using first-order central difference, but not using
+class="math inline">\(q_i = {(-1)}^{i}\)</span> to produce <span
+class="math inline">\((\dfrac{\partial{q}}{\partial{x}})_{i} =
+0\)</span> using first-order central difference, but not using
 first-order forward or backward difference.</p>
 <p>I think it is similar with Undersampling. Nyquist-Shannon sample
 Theorem says that for an accurate representation of the baseband signal,
@@ -337,7 +330,7 @@ the sample rate must be at least twice the highest frequency component.
 Aliasing happens when the sampling rate falls below this limit (the
 Nyquist Rate).</p>
 <p>Here you can analogize aliasing to <span
-class="math display">\[(\dfrac{\partial{q}}{\partial{x}})_{i}\]</span>
+class="math inline">\((\dfrac{\partial{q}}{\partial{x}})_{i}\)</span>
 becoming close to 0.</p>
 <figure style="width: 300px" class="align-center">
 <img src="/images/fluid_sim_reading_note/Undersampling.svg">
@@ -351,11 +344,11 @@ Fig: Undersampling
 pressure gradient and for the divergence of the velocity field without
 the usual disadvantages of central differences</p>
 <p>Pressure is defined at center of cell.</p>
-<p><span class="math display">\[u\]</span> is defined at center of X
+<p><span class="math inline">\(u\)</span> is defined at center of X
 plane of cell.</p>
-<p><span class="math display">\[v\]</span> is defined at center of Y
+<p><span class="math inline">\(v\)</span> is defined at center of Y
 plane of cell.</p>
-<p><span class="math display">\[w\]</span> is defined at center of Z
+<p><span class="math inline">\(w\)</span> is defined at center of Z
 plane of cell.</p>
 <figure style="width: 700px" class="align-center">
 <img src="/images/fluid_sim_reading_note/mac_velocity_diagram-large-1.png">
@@ -381,14 +374,13 @@ Fig: MAC Grid Veocity w
 Fig: One cell from the three-dimensional MAC grid
 </figcaption>
 </figure>
-<p>If pressure grid has dimensions <span class="math display">\[nx
-\times ny \times nz\]</span>, then <span
-class="math display">\[u\]</span> grid has dimensions <span
-class="math display">\[(nx + 1) \times ny \times nz\]</span>, <span
-class="math display">\[v\]</span> grid has dimensions <span
-class="math display">\[nx \times (ny + 1) \times nz\]</span>, <span
-class="math display">\[w\]</span> grid has dimensions <span
-class="math display">\[nx \times ny \times (nz + 1)\]</span>.</p>
+<p>If pressure grid has dimensions <span class="math inline">\(nx \times
+ny \times nz\)</span>, then <span class="math inline">\(u\)</span> grid
+has dimensions <span class="math inline">\((nx + 1) \times ny \times
+nz\)</span>, <span class="math inline">\(v\)</span> grid has dimensions
+<span class="math inline">\(nx \times (ny + 1) \times nz\)</span>, <span
+class="math inline">\(w\)</span> grid has dimensions <span
+class="math inline">\(nx \times ny \times (nz + 1)\)</span>.</p>
 <p>The half-index notation works well for describing velocity components
 in this document, but does not translate well into a programming
 implementation where arrays use integer indexing. The following table
@@ -404,46 +396,45 @@ array integer indexing:</p>
 <tbody>
 <tr>
 <td style="text-align: center;"><span
-class="math display">\[u_{i-1/2,j,k}\]</span></td>
+class="math inline">\(u_{i-1/2,j,k}\)</span></td>
 <td style="text-align: center;"><span
-class="math display">\[u(i,j,k)\]</span></td>
+class="math inline">\(u(i,j,k)\)</span></td>
 </tr>
 <tr>
 <td style="text-align: center;"><span
-class="math display">\[u_{i+1/2,j,k}\]</span></td>
+class="math inline">\(u_{i+1/2,j,k}\)</span></td>
 <td style="text-align: center;"><span
-class="math display">\[u(i+1,j,k)\]</span></td>
+class="math inline">\(u(i+1,j,k)\)</span></td>
 </tr>
 <tr>
 <td style="text-align: center;"><span
-class="math display">\[v_{i,j-1/2,k}\]</span></td>
+class="math inline">\(v_{i,j-1/2,k}\)</span></td>
 <td style="text-align: center;"><span
-class="math display">\[v(i,j,k)\]</span></td>
+class="math inline">\(v(i,j,k)\)</span></td>
 </tr>
 <tr>
 <td style="text-align: center;"><span
-class="math display">\[v_{i,j+1/2,k}\]</span></td>
+class="math inline">\(v_{i,j+1/2,k}\)</span></td>
 <td style="text-align: center;"><span
-class="math display">\[v(i,j+1,k)\]</span></td>
+class="math inline">\(v(i,j+1,k)\)</span></td>
 </tr>
 <tr>
 <td style="text-align: center;"><span
-class="math display">\[w_{i,j,k-1/2}\]</span></td>
+class="math inline">\(w_{i,j,k-1/2}\)</span></td>
 <td style="text-align: center;"><span
-class="math display">\[w(i,j,k)\]</span></td>
+class="math inline">\(w(i,j,k)\)</span></td>
 </tr>
 <tr>
 <td style="text-align: center;"><span
-class="math display">\[w_{i,j,k+1/2}\]</span></td>
+class="math inline">\(w_{i,j,k+1/2}\)</span></td>
 <td style="text-align: center;"><span
-class="math display">\[w(i,j,k+1)\]</span></td>
+class="math inline">\(w(i,j,k+1)\)</span></td>
 </tr>
 </tbody>
 </table>
 <p>Using staggered grid, we can get unbiased second-order accuracy of a
 central difference:</p>
-<p><span class="math display">\[
-\begin{align*}  
+<p><span class="math inline">\(\begin{align*}
     \left( \frac{\partial u}{\partial x} \right)_{i,\ j,\ k } \approx
 &amp; \
     \frac{u_{i{+}1/2,\ j,\ k} - u_{i{-}1/2,\ j,\ k}}{\Delta x},
@@ -455,15 +446,14 @@ central difference:</p>
     \left( \frac{\partial w}{\partial z} \right)_{i,\ j,\ k } \approx
 &amp; \
     \frac{w_{i,\ j,\ k{+}1/2} - w_{i,\ j,\ k{-}1/2}}{\Delta x}
-\end{align*}
-\]</span></p>
+\end{align*}\)</span></p>
 <p>The staggered MAC grid is perfectly suited for handling pressure and
 incompressibility, but it's frankly a pain for other uses. For example,
 if we actually want to evaluate the full velocity vector somewhere, we
 will always need to use some kind of interpolation even if we're looking
 at a grid point.</p>
 <p>For an arbitrary location:</p>
-<p>$$ <span class="math display">\[\begin{align}
+<p>$<span class="math display">\[\begin{align}
     \vec{u}_{i,\ j,\ k}\ = &amp; \  \left( \frac{u_{i{-}1/2,\ j,\ k} +
 u_{i{+}1/2,\ j,\ k}}{2}, \
     \frac{v_{i,\ j{-}1/2,\ k} + v_{i,\ j{+}1/2,\ k}}{2}, \
@@ -500,7 +490,7 @@ v_&#123;i,\ j&#123;+&#125;1/2,\ k&#125;, \
 \end&#123;align&#125;&#125;&#123;4&#125;, \ 
 w_&#123;i,\ j,\ k&#123;+&#125;1/2&#125;
 \right) \\[1.5ex]</code></pre>
-<p>\end{align} $$</p>
+<p>\end{align}$</p>
 <h3 id="dynamic-sparse-grids">Dynamic Sparse Grids</h3>
 <p>Problem:</p>
 <ol type="1">
@@ -515,17 +505,17 @@ according smoke concentration.</p></li>
 </ul></li>
 <li><p>Memory access efficiency on modren hardware</p>
 <p>Assume that grid is row-major layout, and row order is <span
-class="math display">\[i,j,k\]</span>. Distance between <span
-class="math display">\[(i,j,k)\]</span> and <span
-class="math display">\[(i+1,j,k)\]</span> will be <span
-class="math display">\[ny \times nz\]</span></p>
+class="math inline">\(i,j,k\)</span>. Distance between <span
+class="math inline">\((i,j,k)\)</span> and <span
+class="math inline">\((i+1,j,k)\)</span> will be <span
+class="math inline">\(ny \times nz\)</span></p>
 <p>So we can expect more page faults and cache misses.</p></li>
 <li><p>Fluid occupies only a small fraction of the volume of its
 bounding box</p>
 <p>For example: river, waterfall, pouring water...</p></li>
 </ol>
 <p>Using hash table to map index to a large virtual grid (such as <span
-class="math display">\[2^{32}\]</span> along each dimension by signed
+class="math inline">\(2^{32}\)</span> along each dimension by signed
 32-bit integers in each coordinate). The grid is large enough so you
 don't need to move grid origin.</p>
 <p>Since we only store the blocks of the grid we care about, this is a
@@ -551,7 +541,7 @@ discretization</h4>
 <p>Difference seems like pretty accurate estimate of the derivative, but
 it has dispersion problem.</p>
 <p>High-frequency jagged components of quantity, like <span
-class="math display">\[(−1)^i\]</span>, erroneously register as having
+class="math inline">\((−1)^i\)</span>, erroneously register as having
 zero or near-zero spatial derivative, and so don't get evolved forward
 in time or at least move much more slowly than the velocity u they
 should move at.</p>
@@ -612,7 +602,7 @@ old value.</p>
 dependence, at least in the limit, must contain the true domain of
 dependence if we want to get the correct answer.</p>
 <p>CFL condition depicts how small your <span
-class="math display">\[\Delta t, \Delta x\]</span> is can you say close
+class="math inline">\(\Delta t, \Delta x\)</span> is can you say close
 to limit.</p>
 <p>CFL condition: to make result accurate</p>
 <p>stability condition: to make update stable</p>
@@ -635,45 +625,41 @@ being ; linearly interpolating the velocity field in which we trace is
 not the main culprit and can be used as is).</p>
 <p>Solution: use sharper interpolation</p>
 <p>Cubic Interpolation:</p>
-<p><span class="math display">\[
-\begin{align}
+<p><span class="math inline">\(\begin{align}
     f(q_{i-1},\ q_{i},\ q_{i+1},\ q_{i+2},\ x) = \
 &amp;[-\dfrac{1}{3}s+\dfrac{1}{2}s^2-\dfrac{1}{6}s^3]q_{i-1} \\
     &amp;+ [1-s^2+\dfrac{1}{2}(s^3-s)]q_{i} \\
     &amp;+ [s+\dfrac{1}{2}(s^2-s^3)]q_{i+1} \\
     &amp;+ [\dfrac{1}{6}(s^3-s)]q_{i+2}
-\end{align}
-\]</span></p>
-<p>Where <span class="math display">\[s\]</span> means fraction between
-grid points <span class="math display">\[x_i\]</span> and <span
-class="math display">\[x_{i+1}\]</span>. So <span
-class="math display">\[s=-1\]</span> means <span
-class="math display">\[x_{i-1}\]</span>, <span
-class="math display">\[s=0\]</span> means <span
-class="math display">\[x_{i}\]</span>, <span
-class="math display">\[s=1\]</span> means <span
-class="math display">\[x_{i+1}\]</span>, <span
-class="math display">\[s=2\]</span> means <span
-class="math display">\[x_{i+2}\]</span>.</p>
+\end{align}\)</span></p>
+<p>Where <span class="math inline">\(s\)</span> means fraction between
+grid points <span class="math inline">\(x_i\)</span> and <span
+class="math inline">\(x_{i+1}\)</span>. So <span
+class="math inline">\(s=-1\)</span> means <span
+class="math inline">\(x_{i-1}\)</span>, <span
+class="math inline">\(s=0\)</span> means <span
+class="math inline">\(x_{i}\)</span>, <span
+class="math inline">\(s=1\)</span> means <span
+class="math inline">\(x_{i+1}\)</span>, <span
+class="math inline">\(s=2\)</span> means <span
+class="math inline">\(x_{i+2}\)</span>.</p>
 <p>It can be derived from Lagrange Interpolation, base point are <span
-class="math display">\[(-1, q_{i-1})\]</span>, <span
-class="math display">\[(0, q_{i})\]</span>, <span
-class="math display">\[(1, q_{i+1})\]</span>, <span
-class="math display">\[(2, q_{i+2})\]</span>.</p>
+class="math inline">\((-1, q_{i-1})\)</span>, <span
+class="math inline">\((0, q_{i})\)</span>, <span
+class="math inline">\((1, q_{i+1})\)</span>, <span
+class="math inline">\((2, q_{i+2})\)</span>.</p>
 <p>This algorithm also has another form. Derived from another way <a
 target="_blank" rel="noopener" href="http://www.paulinternet.nl/?page=bicubic">Paul Bourke's Cubic
 Interpolation Page</a></p>
-<p><span class="math display">\[
-\begin{align}
+<p><span class="math inline">\(\begin{align}
     f(p_0,\ p_1,\ p_2,\ p_3,\ x) = \ &amp;(-\tfrac{1}{2}p_0 +
 \tfrac{3}{2}p_1 - \tfrac{3}{2}p_2 + \tfrac{1}{2}p_3)x^3 \\
     &amp;+ (p_0 - \tfrac{5}{2}p_1 + 2p_2 - \tfrac{1}{2}p_3)x^2 \\
     &amp;+ (-\tfrac{1}{2}p_0 + \tfrac{1}{2}p_2)x \\
     &amp;+ p_1
-\end{align}
-\]</span></p>
-<p>Where <span class="math display">\[x\]</span> is same as <span
-class="math display">\[s\]</span> below.</p>
+\end{align}\)</span></p>
+<p>Where <span class="math inline">\(x\)</span> is same as <span
+class="math inline">\(s\)</span> below.</p>
 <p>In two or three dimensions, you can cubic interpolation
 sequentially.</p>
 <p>Code example for 3D:</p>
@@ -695,23 +681,23 @@ another?</p></li>
 Fig: SDF Field. Taken from "Fluid Engine Development"
 </figcaption>
 </figure>
-<p><span class="math display">\[\vert\vert \nabla \phi(x) \vert\vert =
-1\]</span>.</p>
+<p><span class="math inline">\(\vert\vert \nabla \phi(x) \vert\vert =
+1\)</span>.</p>
 <ul>
-<li><p>outside the geometry, <span class="math display">\[-\nabla
-\phi(x)\]</span> is the unit-length vector pointing towards the closest
+<li><p>outside the geometry, <span class="math inline">\(-\nabla
+\phi(x)\)</span> is the unit-length vector pointing towards the closest
 point on the surface</p></li>
-<li><p>inside the geometry, <span class="math display">\[\nabla
-\phi(x)\]</span> is the unit-length vector pointing towards the closest
+<li><p>inside the geometry, <span class="math inline">\(\nabla
+\phi(x)\)</span> is the unit-length vector pointing towards the closest
 point on the surface</p></li>
-<li><p>and on the surface, <span class="math display">\[\nabla
-\phi(x)\]</span> is the unit-length outward-pointing normal.</p></li>
+<li><p>and on the surface, <span class="math inline">\(\nabla
+\phi(x)\)</span> is the unit-length outward-pointing normal.</p></li>
 </ul>
-<p>This means <span class="math display">\[x - \phi(x)\nabla
-\phi(x)\]</span> is the closest point on the surface for any point <span
-class="math display">\[x\]</span>.</p>
-<p>SDF can also be defined as <span class="math display">\[\phi(x) =
-0\]</span> at boundary.</p>
+<p>This means <span class="math inline">\(x - \phi(x)\nabla
+\phi(x)\)</span> is the closest point on the surface for any point <span
+class="math inline">\(x\)</span>.</p>
+<p>SDF can also be defined as <span class="math inline">\(\phi(x) =
+0\)</span> at boundary.</p>
 <p>SDF can handle topological change easily. To merge two surface, just
 get minimum value of two SDF.</p>
 <figure style="width: 595px" class="align-center">
@@ -734,87 +720,87 @@ Fig: SDF Reinitializing. Taken from "Fluid Engine Development"
 <p>We can use the advection equation (Equation 3.23) with extra source
 term to model this propagation problem.</p>
 <p><span
-class="math display">\[\dfrac{\partial{\phi}}{\partial{\tau}}+\mathbf{u}
-\cdot \nabla \phi = 1\]</span></p>
-<p><span class="math display">\[\tau\]</span> is pseudo-time, because it
+class="math inline">\(\dfrac{\partial{\phi}}{\partial{\tau}}+\mathbf{u}
+\cdot \nabla \phi = 1\)</span></p>
+<p><span class="math inline">\(\tau\)</span> is pseudo-time, because it
 is not physics simulation but more like a geometric postprocessing.</p>
 <p>If source term in right hand side is 0, it means <span
-class="math display">\[\phi\]</span> is only carried by the vector field
-<span class="math display">\[\mathbf{u}\]</span>. If a constant <span
-class="math display">\[c\]</span> is assigned, it means <span
-class="math display">\[c\]</span> is added to <span
-class="math display">\[\phi\]</span> when it travels one distance unit
-along <span class="math display">\[\mathbf{u}\]</span>.</p>
+class="math inline">\(\phi\)</span> is only carried by the vector field
+<span class="math inline">\(\mathbf{u}\)</span>. If a constant <span
+class="math inline">\(c\)</span> is assigned, it means <span
+class="math inline">\(c\)</span> is added to <span
+class="math inline">\(\phi\)</span> when it travels one distance unit
+along <span class="math inline">\(\mathbf{u}\)</span>.</p>
 <p>Thus, setting the right-hand side to 1 means we will assign the
-traveled distance to <span class="math display">\[\phi\]</span>.</p>
+traveled distance to <span class="math inline">\(\phi\)</span>.</p>
 <p>We have discuss the gredient of <span
-class="math display">\[\phi\]</span> before, we know that if we assign
-<span class="math display">\[\phi\]</span> as distance, then the
-gredient is 1, it means when <span class="math display">\[\phi\]</span>
-travels one distance unit in space along the steepest direction, the
-value of <span class="math display">\[\phi\]</span> increase 1.</p>
-<p>So if we assign gredient of <span
-class="math display">\[\phi\]</span> as direction of reinitializing
-velocity, then the advection equation will fit its physical meaning.</p>
+class="math inline">\(\phi\)</span> before, we know that if we assign
+<span class="math inline">\(\phi\)</span> as distance, then the gredient
+is 1, it means when <span class="math inline">\(\phi\)</span> travels
+one distance unit in space along the steepest direction, the value of
+<span class="math inline">\(\phi\)</span> increase 1.</p>
+<p>So if we assign gredient of <span class="math inline">\(\phi\)</span>
+as direction of reinitializing velocity, then the advection equation
+will fit its physical meaning.</p>
 <p>In other word, substitute</p>
-<p><span class="math display">\[\mathbf{u} = \dfrac{\nabla \phi}{\vert
-\nabla \phi \vert}\]</span></p>
+<p><span class="math inline">\(\mathbf{u} = \dfrac{\nabla \phi}{\vert
+\nabla \phi \vert}\)</span></p>
 <p>into advection equation, get</p>
 <p><span
-class="math display">\[\dfrac{\partial{\phi}}{\partial{\tau}}+\dfrac{\nabla
-\phi}{\vert \nabla \phi \vert} \cdot \nabla \phi = 1\]</span></p>
+class="math inline">\(\dfrac{\partial{\phi}}{\partial{\tau}}+\dfrac{\nabla
+\phi}{\vert \nabla \phi \vert} \cdot \nabla \phi = 1\)</span></p>
 <p>which can be further simplified to</p>
 <p><span
-class="math display">\[\dfrac{\partial{\phi}}{\partial{\tau}}+(\vert
-\nabla \phi \vert - 1) = 0\]</span></p>
+class="math inline">\(\dfrac{\partial{\phi}}{\partial{\tau}}+(\vert
+\nabla \phi \vert - 1) = 0\)</span></p>
 <p>Reinitialize outward from the surface, the direction is the same as
-the gradient, <span class="math display">\[\mathbf{u} = \dfrac{\nabla
-\phi}{\vert \nabla \phi \vert}\]</span>.</p>
+the gradient, <span class="math inline">\(\mathbf{u} = \dfrac{\nabla
+\phi}{\vert \nabla \phi \vert}\)</span>.</p>
 <p>On the contrary, reinitialize inward from the surface, we have <span
-class="math display">\[\mathbf{u} = -\dfrac{\nabla \phi}{\vert \nabla
-\phi \vert}\]</span>. Similarly, we have</p>
+class="math inline">\(\mathbf{u} = -\dfrac{\nabla \phi}{\vert \nabla
+\phi \vert}\)</span>. Similarly, we have</p>
 <p><span
-class="math display">\[\dfrac{\partial{\phi}}{\partial{\tau}}-(\vert
-\nabla \phi \vert - 1) = 0\]</span></p>
+class="math inline">\(\dfrac{\partial{\phi}}{\partial{\tau}}-(\vert
+\nabla \phi \vert - 1) = 0\)</span></p>
 <p>In summary, reinitializing equation is</p>
 <p><span
-class="math display">\[\dfrac{\partial{\phi}}{\partial{\tau}}+sign(\phi)(\vert
-\nabla \phi \vert - 1) = 0\]</span></p>
+class="math inline">\(\dfrac{\partial{\phi}}{\partial{\tau}}+sign(\phi)(\vert
+\nabla \phi \vert - 1) = 0\)</span></p>
 <h4 id="medial-axis">Medial Axis</h4>
 <p>SDF is smooth everywhere except on the medial axis</p>
 <p>The medial axis is exactly where there isn't a unique closest point,
 such as the center of a sphere and the middle plane inside a flat
 slab.</p>
-<p>Discussion about the gradient <span class="math display">\[\nabla
-\phi(x)\]</span> breaks down on the medial axis, because the function
+<p>Discussion about the gradient <span class="math inline">\(\nabla
+\phi(x)\)</span> breaks down on the medial axis, because the function
 isn't differentiable there.</p>
 <h4 id="discretizing-signed-distance-functions">Discretizing Signed
 Distance Functions</h4>
 <p>Level set method: signed distance function that has been sampled on a
 grid</p>
 <p>How to get <span
-class="math display">\[\dfrac{\partial{\phi}}{\partial{x}}\]</span> at
+class="math inline">\(\dfrac{\partial{\phi}}{\partial{x}}\)</span> at
 any point? There are two ways:</p>
 <ol type="1">
-<li><p>Interpolate <span class="math display">\[\phi\]</span> nearby the
+<li><p>Interpolate <span class="math inline">\(\phi\)</span> nearby the
 given point, then differentiate the interpolant of <span
-class="math display">\[\phi\]</span></p></li>
-<li><p>Differentiate <span class="math display">\[\phi\]</span> at the
+class="math inline">\(\phi\)</span></p></li>
+<li><p>Differentiate <span class="math inline">\(\phi\)</span> at the
 grid point nearby the given point, then interpolate between <span
-class="math display">\[\dfrac{\partial{\phi}}{\partial{x}}\]</span>
-which lie in grid.</p></li>
+class="math inline">\(\dfrac{\partial{\phi}}{\partial{x}}\)</span> which
+lie in grid.</p></li>
 </ol>
 <p>Usually use thel later way, because if interpolate first, interpolant
-of <span class="math display">\[\phi\]</span> may have discontinuities
-in their derivative between grid cells.</p>
+of <span class="math inline">\(\phi\)</span> may have discontinuities in
+their derivative between grid cells.</p>
 <h4 id="computing-signed-distance">Computing Signed Distance</h4>
 <ol type="1">
 <li><p>from geom etry (finding closest points and measuring the distance
 to them).</p>
 <p>geometry is explicitly known</p></li>
 <li><p>from PDEs (solving the Eikonal equation <span
-class="math display">\[\vert\vert \nabla \phi(x) \vert\vert =
-1\]</span>).</p>
+class="math inline">\(\vert\vert \nabla \phi(x) \vert\vert =
+1\)</span>).</p>
 <p>geometry isn't explicitly known</p></li>
 </ol>
 <h5 id="distance-to-points">Distance to Points</h5>
@@ -885,43 +871,41 @@ Te. Firstly, we should find closest point for pe in the triangle,</p>
 Incompressible</h2>
 <h3 id="project">Project</h3>
 <p>To solve <span
-class="math display">\[\frac{\mathrm{D}\mathbf{u}}{\mathrm{D}t}+\frac{1}{\rho}\nabla
-p=0\]</span>, use forward euler:</p>
-<p><span class="math display">\[\mathbf{u}_{n+1} = \mathbf{u} - \Delta t
-\dfrac{1}{\rho}\nabla p\]</span></p>
+class="math inline">\(\frac{\mathrm{D}\mathbf{u}}{\mathrm{D}t}+\frac{1}{\rho}\nabla
+p=0\)</span>, use forward euler:</p>
+<p><span class="math inline">\(\mathbf{u}_{n+1} = \mathbf{u} - \Delta t
+\dfrac{1}{\rho}\nabla p\)</span></p>
 <p>The solving result should met divergence-free condition:</p>
 <p><span
-class="math display">\[\nabla\cdot\mathbf{u}^{n+1}=0\]</span></p>
+class="math inline">\(\nabla\cdot\mathbf{u}^{n+1}=0\)</span></p>
 <p>These two equations should be combined to solve pressure, we will see
 how to discrete them next, and how to substitute one into another.</p>
 <p>For the first equation:</p>
-<p><span class="math display">\[u_{i+1/2,j,k}^{n+1}=u_{i+1/2,j,k}-\Delta
-t \dfrac{1}{\rho} \dfrac{p_{i+1,j,k}-p_{i,j,k}}{\Delta x}\]</span></p>
-<p><span class="math display">\[v_{i,j+1/2,k}^{n+1}=v_{i,j+1/2,k}-\Delta
-t \dfrac{1}{\rho} \dfrac{p_{i,j+1,k}-p_{i,j,k}}{\Delta y}\]</span></p>
-<p><span class="math display">\[w_{i,j,k+1/2}^{n+1}=w_{i,j,k+1/2}-\Delta
-t \dfrac{1}{\rho} \dfrac{p_{i,j,k+1}-p_{i,j,k}}{\Delta z}\]</span></p>
+<p><span class="math inline">\(u_{i+1/2,j,k}^{n+1}=u_{i+1/2,j,k}-\Delta
+t \dfrac{1}{\rho} \dfrac{p_{i+1,j,k}-p_{i,j,k}}{\Delta x}\)</span></p>
+<p><span class="math inline">\(v_{i,j+1/2,k}^{n+1}=v_{i,j+1/2,k}-\Delta
+t \dfrac{1}{\rho} \dfrac{p_{i,j+1,k}-p_{i,j,k}}{\Delta y}\)</span></p>
+<p><span class="math inline">\(w_{i,j,k+1/2}^{n+1}=w_{i,j,k+1/2}-\Delta
+t \dfrac{1}{\rho} \dfrac{p_{i,j,k+1}-p_{i,j,k}}{\Delta z}\)</span></p>
 <p>For the second equation:</p>
 <p><span
-class="math display">\[\dfrac{u^{n+1}_{i+1/2,j,k}-u^{n+1}_{i-1/2,j,k}}{\Delta
+class="math inline">\(\dfrac{u^{n+1}_{i+1/2,j,k}-u^{n+1}_{i-1/2,j,k}}{\Delta
 x} + \dfrac{v^{n+1}_{i,j+1/2,k}-v^{n+1}_{i,j-1/2,k}}{\Delta y} +
 \dfrac{w^{n+1}_{i,j,k+1/2}-w^{n+1}_{i,j,k-1/2}}{\Delta z} =
-0\]</span></p>
-<p>Assume <span class="math display">\[\Delta x = \Delta y = \Delta
-z\]</span>, substitute the <span
-class="math display">\[u^{n+1},v^{n+1},w^{n+1}\]</span>:</p>
-<p><span class="math display">\[
-\begin{align*}
+0\)</span></p>
+<p>Assume <span class="math inline">\(\Delta x = \Delta y = \Delta
+z\)</span>, substitute the <span
+class="math inline">\(u^{n+1},v^{n+1},w^{n+1}\)</span>:</p>
+<p><span class="math inline">\(\begin{align*}
    &amp; \dfrac{\Delta t}{\rho\Delta
 x^2}(6p_{i,j,k}-p_{i+1,j,k}-p_{i,j+1,k}-p_{i,j,k+1}-p_{i-1,j,k}-p_{i,j-1,k}-p_{i,j,k-1})
 = \\
     &amp; -(\dfrac{u_{i+1/2,j,k}-u_{i-1/2,j,k}}{\Delta x} +
 \dfrac{v_{i,j+1/2,k}-v_{i,j-1/2,k}}{\Delta x} +
 \dfrac{w_{i,j,k+1/2}-w_{i,j,k-1/2}}{\Delta x})
-\end{align*}
-\]</span></p>
+\end{align*}\)</span></p>
 <p>This equation can be written in matrix form as <span
-class="math display">\[Ap=b\]</span>. It is easy to know that A is a
+class="math inline">\(Ap=b\)</span>. It is easy to know that A is a
 sparse matrix.</p>
 <p>This system of linear algebraic equations can be solved using direct
 or iterative methods.</p>
@@ -946,41 +930,40 @@ neighbor points' old value. These old value are read-only. But in
 backward Euler, to update a point, the neighbor you fetch is also
 required to be writed when updating other points.</p>
 <p>Elements are coupled means that you should solve a <span
-class="math display">\[Ax=b\]</span> problem.</p>
+class="math inline">\(Ax=b\)</span> problem.</p>
 <p>As for pressure solving, The forward-style method would take the
 current density error to compute pressure. So, in backward sense, we
 would deduce the pressure by saying that this still-unknown pressure
 will make the density error to zero. The zero density error means that
 the density should remain constant, and that leads to <span
-class="math display">\[\nabla\cdot\mathbf{u}^{n+1}=0\]</span></p>
+class="math inline">\(\nabla\cdot\mathbf{u}^{n+1}=0\)</span></p>
 <p>So it is natural to substitute <span
-class="math display">\[\mathbf{u}_{n+1} = \mathbf{u} - \Delta t
-\dfrac{1}{\rho}\nabla p\]</span> into <span
-class="math display">\[\nabla\cdot\mathbf{u}^{n+1}=0\]</span>.</p>
+class="math inline">\(\mathbf{u}_{n+1} = \mathbf{u} - \Delta t
+\dfrac{1}{\rho}\nabla p\)</span> into <span
+class="math inline">\(\nabla\cdot\mathbf{u}^{n+1}=0\)</span>.</p>
 </blockquote>
 <h3 id="why-is-it-called-projection">Why is it called projection?</h3>
 <p>According to Helmholtz-Hodge Decomposition, states that any vector
-field <span class="math display">\[\mathrm{\mathbf{w}}\]</span> can
+field <span class="math inline">\(\mathrm{\mathbf{w}}\)</span> can
 uniquely be decomposed into a divergence-free vector field adding with a
 gredient of a scalar field.</p>
-<p><span class="math display">\[\mathrm{\mathbf{w}} =
-\mathrm{\mathbf{u}} + \nabla q.\]</span></p>
-<p>Where <span class="math display">\[\nabla \cdot \mathrm{\mathbf{u}} =
-0\]</span>.</p>
+<p><span class="math inline">\(\mathrm{\mathbf{w}} = \mathrm{\mathbf{u}}
++ \nabla q.\)</span></p>
+<p>Where <span class="math inline">\(\nabla \cdot \mathrm{\mathbf{u}} =
+0\)</span>.</p>
 <p>Poisson equation can be derived from this equation by multiplying
-both sides by "<span class="math display">\[\nabla\]</span>".</p>
-<p><span class="math display">\[\nabla \cdot \mathrm{\mathbf{w}} =
-\nabla^2 q.\]</span></p>
+both sides by "<span class="math inline">\(\nabla\)</span>".</p>
+<p><span class="math inline">\(\nabla \cdot \mathrm{\mathbf{w}} =
+\nabla^2 q.\)</span></p>
 <p>So now we can say the Poisson eq is equivalent to Helmholtz-Hodge
 Decomposition, while the Helmholtz-Hodge Decomposition can be written as
 projection:</p>
-<p><span class="math display">\[\mathrm{\mathbf{u}} =
-\mathrm{\mathbf{P}} \mathrm{\mathbf{w}} = \mathrm{\mathbf{w}} - \nabla
-q.\]</span></p>
-<p>Where <span class="math display">\[\mathrm{\mathbf{P}}\]</span>
-satisfies <span class="math display">\[\mathrm{\mathbf{P}}
-\mathrm{\mathbf{u}} = \mathrm{\mathbf{u}}\]</span>, <span
-class="math display">\[\mathrm{\mathbf{P}} \nabla q = 0\]</span>.</p>
+<p><span class="math inline">\(\mathrm{\mathbf{u}} = \mathrm{\mathbf{P}}
+\mathrm{\mathbf{w}} = \mathrm{\mathbf{w}} - \nabla q.\)</span></p>
+<p>Where <span class="math inline">\(\mathrm{\mathbf{P}}\)</span>
+satisfies <span class="math inline">\(\mathrm{\mathbf{P}}
+\mathrm{\mathbf{u}} = \mathrm{\mathbf{u}}\)</span>, <span
+class="math inline">\(\mathrm{\mathbf{P}} \nabla q = 0\)</span>.</p>
 <p>So you can see, solving Poisson eq is projecting velocity field to
 pressure field.</p>
 <figure style="width: 513px" class="align-center">
@@ -994,12 +977,12 @@ Fig: Velocity Projection. Taken from "Stable Fluid"
 divergence-free condition, there is simpler algorithm.</p>
 <p>Take 2D as an example,</p>
 <p>we need to accomplish <span
-class="math display">\[\dfrac{u^{n+1}_{i+1/2,j,k}-u^{n+1}_{i-1/2,j,k}}{\Delta
+class="math inline">\(\dfrac{u^{n+1}_{i+1/2,j,k}-u^{n+1}_{i-1/2,j,k}}{\Delta
 x} + \dfrac{v^{n+1}_{i,j+1/2,k}-v^{n+1}_{i,j-1/2,k}}{\Delta y} =
-0\]</span>.</p>
+0\)</span>.</p>
 <p>It can be shorten as:</p>
-<p><span class="math display">\[u_{i+1/2,j,k}-u_{i-1/2,j,k} +
-v_{i,j+1/2,k}-v_{i,j-1/2,k} = 0\]</span></p>
+<p><span class="math inline">\(u_{i+1/2,j,k}-u_{i-1/2,j,k} +
+v_{i,j+1/2,k}-v_{i,j-1/2,k} = 0\)</span></p>
 <p>A quick way is calculating the difference, and distribute it onto the
 four velocity.</p>
 <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">d = u[i+<span class="number">1</span>][j] - u[i][j] + v[i][j+<span class="number">1</span>] - v[i][j]</span><br><span class="line"></span><br><span class="line">u[i][j] += d/<span class="number">4</span></span><br><span class="line">u[i+<span class="number">1</span>][j] -= d/<span class="number">4</span></span><br><span class="line">v[i][j] += d/<span class="number">4</span></span><br><span class="line">v[i][j+<span class="number">1</span>] -= d/<span class="number">4</span></span><br></pre></td></tr></table></figure>
@@ -1011,8 +994,8 @@ if using MAC grid, velocity is defined in cell faces.</p>
 flux of the cell to cell face, to make the cell 0 flux.</p>
 <p>But there isn't flux from wall or to wall, so things change:</p>
 <h5 id="boolean-flag">Boolean flag</h5>
-<p>Set <span class="math display">\[s = 1\]</span> represent fluid,
-<span class="math display">\[s = 0\]</span> represent wall.</p>
+<p>Set <span class="math inline">\(s = 1\)</span> represent fluid, <span
+class="math inline">\(s = 0\)</span> represent wall.</p>
 <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">d = u[i+<span class="number">1</span>][j] - u[i][j] + v[i][j+<span class="number">1</span>] - v[i][j]</span><br><span class="line">s = s[i+<span class="number">1</span>][j] + s[i-<span class="number">1</span>][j] + s[i][j+<span class="number">1</span>] + s[i][j-<span class="number">1</span>]</span><br><span class="line"></span><br><span class="line">u[i][j] += d * s[i-<span class="number">1</span>][j] / s</span><br><span class="line">u[i+<span class="number">1</span>][j] -= d * s[i+<span class="number">1</span>][j] / s</span><br><span class="line">v[i][j] += d * s[i][j-<span class="number">1</span>] / s</span><br><span class="line">v[i][j+<span class="number">1</span>] -= d * s[i][j+<span class="number">1</span>] / s</span><br></pre></td></tr></table></figure>
 <p>Here we may access cells out of boundary. A solution is adding border
 cells.</p>
@@ -1024,7 +1007,7 @@ divergence again.</p>
 coverge.</p>
 <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">while</span> velocity field doesn<span class="string">&#x27;t converge:</span></span><br><span class="line"><span class="string">    d = u[i+1][j] - u[i][j] + v[i][j+1] - v[i][j]</span></span><br><span class="line"><span class="string">    s = s[i+1][j] + s[i-1][j] + s[i][j+1] + s[i][j-1]</span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string">    u[i][j] += d * s[i-1][j] / s</span></span><br><span class="line"><span class="string">    u[i+1][j] -= d * s[i+1][j] / s</span></span><br><span class="line"><span class="string">    v[i][j] += d * s[i][j-1] / s</span></span><br><span class="line"><span class="string">    v[i][j+1] -= d * s[i][j+1] / s</span></span><br></pre></td></tr></table></figure>
 <h5 id="copying-value">Copying value</h5>
-<p>Set <span class="math display">\[s = 0\]</span> for border cells is
+<p>Set <span class="math inline">\(s = 0\)</span> for border cells is
 one method, another method is copying neighbor fluid cell value to
 border cell.</p>
 <h4 id="drift-problem">Drift problem</h4>
@@ -1055,7 +1038,7 @@ changes.</p>
 <p>One is checking collision of all particles pairs. Obviously, it is
 very slow.</p>
 <p>Another is computing particles density <span
-class="math display">\[d\]</span> at the center of each cell.</p>
+class="math inline">\(d\)</span> at the center of each cell.</p>
 <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">clear rho <span class="keyword">for</span> <span class="built_in">all</span> particles</span><br><span class="line"></span><br><span class="line"><span class="keyword">for</span> <span class="built_in">all</span> particles:</span><br><span class="line">    rho1 += w1</span><br><span class="line">    rho2 += w2</span><br><span class="line">    rho3 += w3</span><br><span class="line">    rho4 += w4</span><br></pre></td></tr></table></figure>
 <p>Then considering density when computing delta flux.</p>
 <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">d = u[i+<span class="number">1</span>][j] - u[i][j] + v[i][j+<span class="number">1</span>] - v[i][j] + k (rho - rho_rest)</span><br></pre></td></tr></table></figure>
@@ -1088,23 +1071,22 @@ increase the frequency of singal.</p>
 Distortion</h4>
 <p>Even for a pure translation velocity field with no distortion, the
 Nyquist limit essentially means that, the maximum spatial frequency that
-can be reliably advected has period <span class="math display">\[4
-\Delta x\]</span>.</p>
+can be reliably advected has period <span class="math inline">\(4 \Delta
+x\)</span>.</p>
 <blockquote>
-<p>The book says <span class="math display">\[4 \Delta x\]</span>? Does
-it should be <span class="math display">\[2 \Delta x\]</span>?</p>
+<p>The book says <span class="math inline">\(4 \Delta x\)</span>? Does
+it should be <span class="math inline">\(2 \Delta x\)</span>?</p>
 </blockquote>
 <p>Higher-frequency signals, even though you might resolve them on the
 grid at a particular instant in time, cannot be handled in general:
 e.g., just in one dimension the highest-frequency component you can see
-on the grid, <span class="math display">\[\cos{\pi x / \Delta
-x}\]</span>, exactly disappears from the grid once you advect it by a
-distance of <span class="math display">\[1/2 \Delta x\]</span>.</p>
+on the grid, <span class="math inline">\(\cos{\pi x / \Delta
+x}\)</span>, exactly disappears from the grid once you advect it by a
+distance of <span class="math inline">\(1/2 \Delta x\)</span>.</p>
 <blockquote>
 <p>Why highest-frequency component of 1D is <span
-class="math display">\[\cos{\pi x / \Delta x}\]</span>? Why it
-disappears by a distance of <span class="math display">\[1/2 \Delta
-x\]</span>?</p>
+class="math inline">\(\cos{\pi x / \Delta x}\)</span>? Why it disappears
+by a distance of <span class="math inline">\(1/2 \Delta x\)</span>?</p>
 </blockquote>
 <h4 id="eulerian-scheme-filtering-ability">Eulerian scheme filtering
 ability</h4>
@@ -1131,14 +1113,14 @@ as much as possible.</p>
 <h4 id="why-dns-works-well">Why DNS works well</h4>
 <p>At small enough length scales, viscosity and other molecular
 diffusion processes end up dominating advection. That means, : if <span
-class="math display">\[\Delta x\]</span> is small enough, Eulerian
+class="math inline">\(\Delta x\)</span> is small enough, Eulerian
 schemes can behave perfectly well since the physics itself is
 effectively bandlimiting everything, dissipating information at higher
 frequencies.</p>
 <p>That is why DNS works well.</p>
 <p>But it is expensive for compute graphics.</p>
 <h4 id="adaptive-grids">Adaptive Grids</h4>
-<p>We have known that if <span class="math display">\[\Delta x\]</span>
+<p>We have known that if <span class="math inline">\(\Delta x\)</span>
 is smaller, the Eulerian scheme will filter higher frequencies and keep
 higher bandwidth of low frequencies.</p>
 <p>So adaptive grids can be used, where the grid resolution is increased
@@ -1163,15 +1145,13 @@ the quantity in question).</p>
 <p>Error in the semi-Lagrangian method: being reset each time step</p>
 <p>second-order Runge-Kutta</p>
 <p>three-stage third-order Runge-Kutta scheme</p>
-<p><span class="math display">\[
-\begin{align}
+<p><span class="math inline">\(\begin{align}
     k_1 &amp;= u(x_n), \\
     k_2 &amp;= u(x_n + \dfrac{1}{2}\Delta t k_1), \\
     k_3 &amp;= u(x_n + \dfrac{3}{4}\Delta t k_2), \\
     x_{n+1} &amp;= x_n + \dfrac{2}{9}\Delta t k_1 + \dfrac{3}{9}\Delta t
 k_2 + \dfrac{4}{9}\Delta t k_3.
-\end{align}
-\]</span></p>
+\end{align}\)</span></p>
 <h3 id="transferring-particles-to-the-grid">Transferring Particles to
 the Grid</h3>
 <p>Common:</p>
@@ -1204,10 +1184,10 @@ globally couples all the velocities together.</p>
 <p>Caution: For 2D as an example, if one grid velocity is undefined (the
 cell is not fluid), then in your bilinear interpolation, you only
 average three points. In other word, if <span
-class="math display">\[q_4\]</span> is undefined, then right calcuation
-is <span class="math display">\[q_p = \dfrac{q_1 + q_2 + q_3}{w_1 + w_2
-+ w_3}\]</span> but not <span class="math display">\[q_p = \dfrac{q_1 +
-q_2 + q_3 + 0}{w_1 + w_2 + w_3 + w_4}\]</span>.</p>
+class="math inline">\(q_4\)</span> is undefined, then right calcuation
+is <span class="math inline">\(q_p = \dfrac{q_1 + q_2 + q_3}{w_1 + w_2 +
+w_3}\)</span> but not <span class="math inline">\(q_p = \dfrac{q_1 + q_2
++ q_3 + 0}{w_1 + w_2 + w_3 + w_4}\)</span>.</p>
 <p>Because undefined is not 0.</p>
 <p>If you are using MAC grid, then grid position is not integer, it has
 an offset about h/2 from integer.</p>
@@ -1241,13 +1221,13 @@ free of numerical diffusion.</p>
 <ol type="1">
 <li><p>Velocity from particles to grids</p>
 <p>It stores a set of quantity <span
-class="math display">\[q\]</span></p></li>
+class="math inline">\(q\)</span></p></li>
 <li><p>Solve Advection in Grid</p>
 <p>It stores a set of updated quantity <span
-class="math display">\[q_{new}\]</span></p></li>
-<li><p>Get delta quantity <span class="math display">\[\Delta q =
-q_{new} - q\]</span> in Grid</p></li>
-<li><p>Interpolate <span class="math display">\[\Delta q\]</span> back
+class="math inline">\(q_{new}\)</span></p></li>
+<li><p>Get delta quantity <span class="math inline">\(\Delta q = q_{new}
+- q\)</span> in Grid</p></li>
+<li><p>Interpolate <span class="math inline">\(\Delta q\)</span> back
 from grid to particles</p></li>
 <li><p>Advect particles by the interpolated grid velocity field</p></li>
 </ol>
@@ -1294,14 +1274,13 @@ particles.</p>
 <p>Blobbies</p>
 <p>J. Blinn. A generalization of algebraic surface drawing. ACM Trans.
 Graph., 1(3):235–256, 1982</p>
-<p><span class="math display">\[F(x) = \sum_{i}{k(\dfrac{\vert\vert x -
-x_i\vert\vert}{h})}\]</span></p>
-<p><span class="math display">\[k(s) = \left\{\begin{align*}
-{(1-s^2)}^3, s &lt; 1 \\ 0, s \geqslant 1.
-\end{align*}\right.\]</span></p>
+<p><span class="math inline">\(F(x) = \sum_{i}{k(\dfrac{\vert\vert x -
+x_i\vert\vert}{h})}\)</span></p>
+<p><span class="math inline">\(k(s) = \left\{\begin{align*} {(1-s^2)}^3,
+s &lt; 1 \\ 0, s \geqslant 1. \end{align*}\right.\)</span></p>
 <p>The blobby surface is implicitly defined as the points <span
-class="math display">\[x\]</span> where <span
-class="math display">\[F(x) = \tau\]</span></p>
+class="math inline">\(x\)</span> where <span class="math inline">\(F(x)
+= \tau\)</span></p>
 <p>The blobby surface looks blobby. If using smoothing to mask blobby
 artifacts, the smoothing will also mask small-scale features.</p>
 <p>An improvement on blobbies is given by Zhu and Bridson</p>
@@ -1331,24 +1310,24 @@ liquid.</p></li>
 <li><p>Transfer velocity (and any other additional state) from particles
 to the grid, and extrapolate from known grid values to at least one grid
 cell around the fluid, giving a preliminary velocity field <span
-class="math display">\[u^*\]</span></p></li>
+class="math inline">\(u^*\)</span></p></li>
 <li><p>Add body forces such as gravity or artistic controls to the
 velocity field.</p></li>
 <li><p>Construct solid level sets and solid velocity fields.</p></li>
 <li><p>Solve for and apply pressure to get a divergence-free velocity
-<span class="math display">\[u^{n+1}\]</span> that respects the solid
+<span class="math inline">\(u^{n+1}\)</span> that respects the solid
 boundaries.</p></li>
 <li><p>Update particle velocities by interpolating the grid update <span
-class="math display">\[u^{n+1} - u^*\]</span> to add to the existing
+class="math inline">\(u^{n+1} - u^*\)</span> to add to the existing
 particle velocities (FLIP), or simply interpolating the grid velocity
 (PIC), or a mix thereof.</p></li>
 <li><p>Advect the particles through the divergence-free velocity field
-<span class="math display">\[u^{n+1}\]</span></p></li>
+<span class="math inline">\(u^{n+1}\)</span></p></li>
 </ol>
 <blockquote>
 <p>The final step should be advecting the particels through particles
 velocity? Instead of divergence-free velocity in grid? Or the
-"divergence-free velocity <span class="math display">\[u^{n+1}\]</span>"
+"divergence-free velocity <span class="math inline">\(u^{n+1}\)</span>"
 means velocity in particles?</p>
 </blockquote>
 <h4 id="why-we-need-more-accurate-pressure-solves-voxelized-surface">Why
@@ -1371,53 +1350,53 @@ pressure equations.</p>
 <p>We modify pressure solver and add an additional process about
 water-air interface?</p>
 <p>OK. See the ghost fluid method section, I realize it is about how to
-determine <span class="math display">\[p = 0\]</span> location.</p>
+determine <span class="math inline">\(p = 0\)</span> location.</p>
 </blockquote>
 <h4 id="ghost-fluid-method">Ghost fluid Method</h4>
 <p>Assume that we have known that how to update velocity:</p>
-<p><span class="math display">\[u_{i+1/2,j,k}^{n+1} = u_{i+1/2,j,k} -
+<p><span class="math inline">\(u_{i+1/2,j,k}^{n+1} = u_{i+1/2,j,k} -
 \dfrac{\Delta t}{\rho_{i+1/2,j,k}}\dfrac{p_{i+1,j,k}-p_{i,j,k}}{\Delta
-x}\]</span></p>
-<p>Suppose that <span class="math display">\[(i,j,k)\]</span> is in the
-water, i.e. <span class="math display">\[\phi_{i,j,k} \leqslant
-0\]</span> and <span class="math display">\[(i+1,j,k)\]</span> is in the
-air, i.e. <span class="math display">\[\phi_{i+1,j,k} &gt;
-0\]</span>.</p>
+x}\)</span></p>
+<p>Suppose that <span class="math inline">\((i,j,k)\)</span> is in the
+water, i.e. <span class="math inline">\(\phi_{i,j,k} \leqslant
+0\)</span> and <span class="math inline">\((i+1,j,k)\)</span> is in the
+air, i.e. <span class="math inline">\(\phi_{i+1,j,k} &gt;
+0\)</span>.</p>
 <p>Simple solver, which causes voxelized surface, set <span
-class="math display">\[p_{i+1,j,k} = 0\]</span>.</p>
+class="math inline">\(p_{i+1,j,k} = 0\)</span>.</p>
 <p>But it would be more accurate to say that <span
-class="math display">\[p = 0\]</span> happens at the water-air
-interface, and <span class="math display">\[(i+1,j,k)\]</span> doesn't
-represent interface.</p>
-<p>So we set a <span class="math display">\[p^G_{i+1,j,k}\]</span> to
+class="math inline">\(p = 0\)</span> happens at the water-air interface,
+and <span class="math inline">\((i+1,j,k)\)</span> doesn't represent
+interface.</p>
+<p>So we set a <span class="math inline">\(p^G_{i+1,j,k}\)</span> to
 present the "ghost" pressure in the air. Now the update is:</p>
-<p><span class="math display">\[u_{i+1/2,j,k}^{n+1} = u_{i+1/2,j,k} -
+<p><span class="math inline">\(u_{i+1/2,j,k}^{n+1} = u_{i+1/2,j,k} -
 \dfrac{\Delta t}{\rho_{i+1/2,j,k}}\dfrac{p^G_{i+1,j,k}-p_{i,j,k}}{\Delta
-x}\]</span></p>
+x}\)</span></p>
 <p>Now we should solve the unknown <span
-class="math display">\[p^G_{i+1,j,k}\]</span>, we know we should use the
+class="math inline">\(p^G_{i+1,j,k}\)</span>, we know we should use the
 water-air interface condition that:</p>
-<p><span class="math display">\[(1-\theta)p_{i,j,k}+\theta p^G_{i+1,j,k}
-= 0\]</span></p>
-<p>Where <span class="math display">\[\theta\]</span> means we do
+<p><span class="math inline">\((1-\theta)p_{i,j,k}+\theta p^G_{i+1,j,k}
+= 0\)</span></p>
+<p>Where <span class="math inline">\(\theta\)</span> means we do
 linearly interpolating between <span
-class="math display">\[\phi_{i,j,k}\]</span> and <span
-class="math display">\[\phi_{i+1,j,k}\]</span> gives the location of the
-interface at <span class="math display">\[(i + \theta \Delta x, j,
-k)\]</span> where</p>
-<p><span class="math display">\[\theta =
-\dfrac{\phi_{i,j,k}}{\phi_{i,j,k} - \phi_{i+1,j,k}}\]</span></p>
-<p>Solve <span class="math display">\[p^G_{i+1,j,k}\]</span>:</p>
-<p><span class="math display">\[p^G_{i+1,j,k} =
-\dfrac{(\theta-1)p_{i,j,k}}{\theta}\]</span></p>
+class="math inline">\(\phi_{i,j,k}\)</span> and <span
+class="math inline">\(\phi_{i+1,j,k}\)</span> gives the location of the
+interface at <span class="math inline">\((i + \theta \Delta x, j,
+k)\)</span> where</p>
+<p><span class="math inline">\(\theta =
+\dfrac{\phi_{i,j,k}}{\phi_{i,j,k} - \phi_{i+1,j,k}}\)</span></p>
+<p>Solve <span class="math inline">\(p^G_{i+1,j,k}\)</span>:</p>
+<p><span class="math inline">\(p^G_{i+1,j,k} =
+\dfrac{(\theta-1)p_{i,j,k}}{\theta}\)</span></p>
 <p>and then substitute it into update eq:</p>
-<p><span class="math display">\[\begin{align*}
+<p><span class="math inline">\(\begin{align*}
 u_{i+1/2,j,k}^{n+1} &amp; = u_{i+1/2,j,k} - \dfrac{\Delta
 t}{\rho_{i+1/2,j,k}}\dfrac{\dfrac{(\theta-1)p_{i,j,k}}{\theta}-p_{i,j,k}}{\Delta
 x} \\
 &amp; = u_{i+1/2,j,k} + \dfrac{\Delta
 t}{\rho}\dfrac{1}{\theta}\dfrac{p_{i,j,k}}{\Delta x}
-\end{align*}\]</span></p>
+\end{align*}\)</span></p>
 <p>that is all.</p>
 <figure style="width: 600px" class="align-center">
 <img src="/images/fluid_sim_reading_note/ghost_fluid_method.svg">
@@ -1480,7 +1459,7 @@ surface tension.</p>
           <div class="post-attach">
             <span class="post-pubtime">
               <i class="iconfont icon-updatetime mr-10" title="Update time"></i>
-              2024-09-02 20:44:49
+              2024-09-02 21:27:02
             </span>
             
                   <span class="post-tags">

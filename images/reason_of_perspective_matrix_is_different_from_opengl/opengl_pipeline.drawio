@@ -43,7 +43,7 @@
             <mxPoint x="210" y="369.71" as="targetPoint" />
           </mxGeometry>
         </mxCell>
-        <mxCell id="bFkyOgFpB4Z5TkVInOip-11" value="$$M_{model}$$" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" parent="1" vertex="1">
+        <mxCell id="bFkyOgFpB4Z5TkVInOip-11" value="$M_{model}$" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" parent="1" vertex="1">
           <mxGeometry x="150" y="390" width="60" height="30" as="geometry" />
         </mxCell>
         <mxCell id="bFkyOgFpB4Z5TkVInOip-12" value="" style="endArrow=classic;html=1;rounded=0;" parent="1" edge="1">
@@ -94,7 +94,7 @@
             <mxPoint x="440" y="369.71" as="targetPoint" />
           </mxGeometry>
         </mxCell>
-        <mxCell id="bFkyOgFpB4Z5TkVInOip-26" value="$$M_{view}$$" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" parent="1" vertex="1">
+        <mxCell id="bFkyOgFpB4Z5TkVInOip-26" value="$M_{view}$" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" parent="1" vertex="1">
           <mxGeometry x="380" y="390" width="60" height="30" as="geometry" />
         </mxCell>
         <mxCell id="bFkyOgFpB4Z5TkVInOip-27" value="" style="endArrow=classic;html=1;rounded=0;" parent="1" edge="1">
@@ -184,7 +184,7 @@
             <mxPoint x="680" y="369.71" as="targetPoint" />
           </mxGeometry>
         </mxCell>
-        <mxCell id="bFkyOgFpB4Z5TkVInOip-48" value="$$M_{perspective}$$" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" parent="1" vertex="1">
+        <mxCell id="bFkyOgFpB4Z5TkVInOip-48" value="$M_{perspective}$" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" parent="1" vertex="1">
           <mxGeometry x="620" y="390" width="60" height="30" as="geometry" />
         </mxCell>
         <mxCell id="bFkyOgFpB4Z5TkVInOip-49" value="" style="endArrow=classic;html=1;rounded=0;" parent="1" edge="1">
