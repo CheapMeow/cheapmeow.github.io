@@ -13,8 +13,8 @@
   
   <title>
     
-      Tag 
-       : Culling
+      理解渲染方程 
+      
       
       |
     
@@ -112,30 +112,170 @@
 
 
       <div class="flex-container">
-        <!-- 标签详情页，展示某个标签下的文章列表，url形式：https://yoursite/tags/某个标签/ -->
+        <!-- 文章详情页，展示文章具体内容，url形式：https://yoursite/文章标题/ -->
+<!-- 同时为「标签tag」，「朋友friend」，「分类categories」，「关于about」页面的承载页面，具体展示取决于page.type -->
 
-<div class="container tag-details">
-  <div class="content-title">
-    <h2>
-      <span>Culling</span>
-    </h2>
-  </div>
+
+  <!-- LaTex Display -->
+
   
-    <div class="post-list">
-      <div class="post-item" title="CPU 视锥体剔除">
-        <span class="time-m-d">2024-09-03</span>
-        <a href="/2024/09/03/2024-09-03-cpu_frustum_culling/">
-          <span>CPU 视锥体剔除</span>
-        </a>
+    <script async type="text/javascript" src="/plugins/mathjax/tex-chtml.js"></script>
+  
+  <script>
+    MathJax = {
+      tex: {
+        inlineMath: [['$', '$'], ['\\(', '\\)']]
+      }
+    }
+  </script>
+
+
+
+
+
+  <!-- clipboard -->
+
+  
+    <script async type="text/javascript" src="/plugins/clipboard.min.js"></script>
+  
+  
+<script src="/js/codeCopy.js"></script>
+
+
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  <!-- 文章内容页 url形式：https://yoursite/文章标题/ -->
+  <div class="container post-details" id="post-details">
+    <div class="post-content">
+      <div class="post-title">理解渲染方程</div>
+      <div class="post-attach">
+        <span class="post-pubtime">
+          <i class="iconfont icon-updatetime mr-10" title="Update time"></i>
+          2025-03-17 01:58:12
+        </span>
+        
+              <span class="post-tags">
+                <i class="iconfont icon-tags mr-10" title="Tags"></i>
+                
+                <span class="span--tag mr-8">
+                  <a href="/tags/Grphics/" title="Grphics">
+                    #Grphics
+                  </a>
+                </span>
+                
+                <span class="span--tag mr-8">
+                  <a href="/tags/Render-Equation/" title="Render Equation">
+                    #Render Equation
+                  </a>
+                </span>
+                
+              </span>
+          
       </div>
+      <div class="markdown-body">
+        <p>理解渲染方程最重要的一点是，由微分定义外推到方向向量和点。</p>
+<h2 id="反射率方程">反射率方程</h2>
+<p>反射率方程</p>
+<p style="filter: opacity(90%);transform:scale(0.85);text-align:center;"><img src="https://math.now.sh?from=L_o%28p%2C%5Comega_o%29%20%3D%20%5Cint%5Climits_%7B%5COmega%7D%20f_r(p%2C%5Comega_i%2C%5Comega_o)%20L_i(p%2C%5Comega_i)%20n%20%5Ccdot%20%5Comega_i%20%20d%5Comega_i%0A" /></p><p>L 表示辐射率</p>
+<p style="filter: opacity(90%);transform:scale(0.85);text-align:center;"><img src="https://math.now.sh?from=L%3D%5Cfrac%7Bd%5E2%5CPhi%7D%7B%20dA%20d%5Comega%20%5Ccos%5Ctheta%7D%0A" /></p><p><img src="https://learnopengl-cn.github.io/img/07/01/radiance.png" alt=""></p>
+<p>learnOpenGL 已经讲得很清晰了</p>
+<p><a target="_blank" rel="noopener" href="https://learnopengl-cn.github.io/07%20PBR/01%20Theory/">https://learnopengl-cn.github.io/07 PBR/01 Theory/</a></p>
+<blockquote>
+<p>如果我们把立体角 ω 和面积 A 看作是无穷小的，那么我们就能用辐射率来表示单束光线穿过空间中的一个点的通量。这就使我们可以计算得出作用于单个（片段）点上的单束光线的辐射率，我们实际上把立体角 ω 转变为方向向量 ω 然后把面 A 转换为点 p。这样我们就能直接在我们的着色器中使用辐射率来计算单束光线对每个片段的作用了。</p>
+</blockquote>
+<p>最重要的就是这里，<strong>外推到无穷小，立体角 ω 就对应光线（方向向量），面积 A 就对应着色点</strong></p>
+<p>那么其实从定义到实践就打通了</p>
+<script src="https://utteranc.es/client.js"
+        repo="CheapMeow/cheapmeow.github.io"
+        issue-term="pathname"
+        theme="github-light"
+        crossorigin="anonymous"
+        async>
+</script>
+      </div>
+      
+        <div class="prev-or-next">
+          <div class="post-foot-next">
+            
+              <a href="/2024/09/18/2024-09-18-two_kinds_of_poisson_eq/" target="_self">
+                <i class="iconfont icon-chevronleft"></i>
+                <span>Prev</span>
+              </a>
+            
+          </div>
+          <div class="post-attach">
+            <span class="post-pubtime">
+              <i class="iconfont icon-updatetime mr-10" title="Update time"></i>
+              2025-03-17 01:58:12
+            </span>
+            
+                  <span class="post-tags">
+                    <i class="iconfont icon-tags mr-10" title="Tags"></i>
+                    
+                    <span class="span--tag mr-8">
+                      <a href="/tags/Grphics/" title="Grphics">
+                        #Grphics
+                      </a>
+                    </span>
+                    
+                    <span class="span--tag mr-8">
+                      <a href="/tags/Render-Equation/" title="Render Equation">
+                        #Render Equation
+                      </a>
+                    </span>
+                    
+                  </span>
+              
+          </div>
+          <div class="post-foot-prev">
+            
+          </div>
+        </div>
+      
     </div>
+    
+  <div id="btn-catalog" class="btn-catalog">
+    <i class="iconfont icon-catalog"></i>
+  </div>
+  <div class="post-catalog hidden" id="catalog">
+    <div class="title">Contents</div>
+    <div class="catalog-content">
+      
+        <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%8F%8D%E5%B0%84%E7%8E%87%E6%96%B9%E7%A8%8B"><span class="toc-text">反射率方程</span></a></li></ol>
+      
+    </div>
+  </div>
+
   
-  <nav class="post-navigation">
+<script src="/js/catalog.js"></script>
+
+
+
+
     
-    <span class="page-num">1 / 1</span>
+      <div class="comments-container">
+        
+
+
+
+
+
+
+
+      </div>
     
-  </nav>
-</div>
+  </div>
+
 
         
 <div class="footer">
@@ -392,6 +532,24 @@
 
 
         
+  
+    <div class="share-icon tools-bar-item">
+      <a href="javascript: void(0)" id="share-icon">
+        <i class="iconfont iconshare"></i>
+      </a>
+      <div class="share-content hidden">
+        
+          <a class="share-item" href="https://twitter.com/intent/tweet?text=' + %E7%90%86%E8%A7%A3%E6%B8%B2%E6%9F%93%E6%96%B9%E7%A8%8B + '&url=' + https%3A%2F%2Fcheapmeow.github.io%2F2025%2F03%2F17%2F2025-03-17-understand_the_render_equation%2F + '" target="_blank" title="Twitter">
+            <i class="iconfont icon-twitter"></i>
+          </a>
+        
+        
+          <a class="share-item" href="https://www.facebook.com/sharer.php?u=https://cheapmeow.github.io/2025/03/17/2025-03-17-understand_the_render_equation/" target="_blank" title="Facebook">
+            <i class="iconfont icon-facebooksquare"></i>
+          </a>
+        
+      </div>
+    </div>
   
   
 <script src="/js/shares.js"></script>

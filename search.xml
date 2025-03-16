@@ -4,6 +4,27 @@
   
     
     <entry>
+      <title>理解渲染方程</title>
+      <link href="/2025/03/17/2025-03-17-understand_the_render_equation/"/>
+      <url>/2025/03/17/2025-03-17-understand_the_render_equation/</url>
+      
+        <content type="html"><![CDATA[<p>理解渲染方程最重要的一点是，由微分定义外推到方向向量和点。</p><h2 id="反射率方程">反射率方程</h2><p>反射率方程</p><p style="filter: opacity(90%);transform:scale(0.85);text-align:center;"><img src="https://math.now.sh?from=L_o%28p%2C%5Comega_o%29%20%3D%20%5Cint%5Climits_%7B%5COmega%7D%20f_r(p%2C%5Comega_i%2C%5Comega_o)%20L_i(p%2C%5Comega_i)%20n%20%5Ccdot%20%5Comega_i%20%20d%5Comega_i%0A" /></p><p>L 表示辐射率</p><p style="filter: opacity(90%);transform:scale(0.85);text-align:center;"><img src="https://math.now.sh?from=L%3D%5Cfrac%7Bd%5E2%5CPhi%7D%7B%20dA%20d%5Comega%20%5Ccos%5Ctheta%7D%0A" /></p><p><img src="https://learnopengl-cn.github.io/img/07/01/radiance.png" alt=""></p><p>learnOpenGL 已经讲得很清晰了</p><p><a href="https://learnopengl-cn.github.io/07%20PBR/01%20Theory/">https://learnopengl-cn.github.io/07 PBR/01 Theory/</a></p><blockquote><p>如果我们把立体角 ω 和面积 A 看作是无穷小的，那么我们就能用辐射率来表示单束光线穿过空间中的一个点的通量。这就使我们可以计算得出作用于单个（片段）点上的单束光线的辐射率，我们实际上把立体角 ω 转变为方向向量 ω 然后把面 A 转换为点 p。这样我们就能直接在我们的着色器中使用辐射率来计算单束光线对每个片段的作用了。</p></blockquote><p>最重要的就是这里，<strong>外推到无穷小，立体角 ω 就对应光线（方向向量），面积 A 就对应着色点</strong></p><p>那么其实从定义到实践就打通了</p><script src="https://utteranc.es/client.js"        repo="CheapMeow/cheapmeow.github.io"        issue-term="pathname"        theme="github-light"        crossorigin="anonymous"        async></script>]]></content>
+      
+      
+      
+        <tags>
+            
+            <tag> Grphics </tag>
+            
+            <tag> Render Equation </tag>
+            
+        </tags>
+      
+    </entry>
+    
+    
+    
+    <entry>
       <title>Two kinds of poisson equation</title>
       <link href="/2024/09/18/2024-09-18-two_kinds_of_poisson_eq/"/>
       <url>/2024/09/18/2024-09-18-two_kinds_of_poisson_eq/</url>
@@ -42,6 +63,31 @@
             <tag> Reflection </tag>
             
             <tag> Libclang </tag>
+            
+        </tags>
+      
+    </entry>
+    
+    
+    
+    <entry>
+      <title>C++ 基于静态反射实现序列化 UI 与 IO 以及 Lua 绑定</title>
+      <link href="/2024/09/04/2024-09-04-cpp_static_reflection_usage/"/>
+      <url>/2024/09/04/2024-09-04-cpp_static_reflection_usage/</url>
+      
+        <content type="html"><![CDATA[<p>本文介绍了我对 C++ 中静态反射的实现，并展示了我是怎么将静态反射应用在 UI、IO 以及 Lua 绑定的。</p><h2 id="静态反射实现思路">静态反射实现思路</h2><p>我个人的静态反射实现思路是</p><p>使用 <code>LLVM</code> 中的 <code>libclang</code> 解析头文件，识别 cpp 头文件的类型、变量、函数声明中的 <code>attribute</code> 属性</p><p><code>libclang</code> 对传入的每一个头文件的 AST 都执行如下操作：首先记录那些属性为 <code>clang::annotate</code> 的类，然后以这些类为根 cursor 开始遍历。含有 <code>clang::annotate</code> 的字段和方法被记录下来</p><p>已知被反射的类的名称，字段和方法的名称，就可以生成反射代码文件</p><p>主目标中已经写好了 <code>TypeDescriptor</code> 类，<code>TypeDescriptor</code> 类会提供注册反射信息的功能，其中存储字段信息 <code>FieldAccessor</code> 和方法信息 <code>MethodAccessor</code>。生成的反射代码注册反射信息，也就是提取出类的成员变量指针，成员函数指针，存到 lambda 中。这个 lambda 接受 <code>void*</code>，<code>static_cast</code> 成被反射的类型。这样就完成了反射信息在 cpp 中的存储。</p><p>外部使用反射接口时，传入 <code>std::string</code> 类型名称，可以从全局单例的 map 中获得对应的 <code>TypeDescriptor</code>。而已知 <code>TypeDescriptor</code>，就可以获得他其中存储的字段信息 <code>FieldAccessor</code> 和方法信息 <code>MethodAccessor</code> 列表</p><p>向 <code>FieldAccessor</code> <code>MethodAccessor</code> 传入 <code>void*</code> 类型的实例指针，调用存储的 lambda 就能获得这个实例对应的成员和方法的指针</p><p>因为只有 <code>static_cast</code>，所以类型不匹配时会报错中断，程序容错性会很差</p><h2 id="使用-libclang-解析-AST，获取所需信息">使用 libclang 解析 AST，获取所需信息</h2><script src="https://utteranc.es/client.js"        repo="CheapMeow/cheapmeow.github.io"        issue-term="pathname"        theme="github-light"        crossorigin="anonymous"        async></script>]]></content>
+      
+      
+      
+        <tags>
+            
+            <tag> Cpp </tag>
+            
+            <tag> Reflection </tag>
+            
+            <tag> Template programming </tag>
+            
+            <tag> Serialization </tag>
             
         </tags>
       

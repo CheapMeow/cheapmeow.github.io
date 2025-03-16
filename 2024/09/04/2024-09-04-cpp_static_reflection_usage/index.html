@@ -13,8 +13,8 @@
   
   <title>
     
-      Tag 
-       : Culling
+      C++ 基于静态反射实现序列化 UI 与 IO 以及 Lua 绑定 
+      
       
       |
     
@@ -112,30 +112,198 @@
 
 
       <div class="flex-container">
-        <!-- 标签详情页，展示某个标签下的文章列表，url形式：https://yoursite/tags/某个标签/ -->
+        <!-- 文章详情页，展示文章具体内容，url形式：https://yoursite/文章标题/ -->
+<!-- 同时为「标签tag」，「朋友friend」，「分类categories」，「关于about」页面的承载页面，具体展示取决于page.type -->
 
-<div class="container tag-details">
-  <div class="content-title">
-    <h2>
-      <span>Culling</span>
-    </h2>
-  </div>
+
+  <!-- LaTex Display -->
+
   
-    <div class="post-list">
-      <div class="post-item" title="CPU 视锥体剔除">
-        <span class="time-m-d">2024-09-03</span>
-        <a href="/2024/09/03/2024-09-03-cpu_frustum_culling/">
-          <span>CPU 视锥体剔除</span>
-        </a>
+    <script async type="text/javascript" src="/plugins/mathjax/tex-chtml.js"></script>
+  
+  <script>
+    MathJax = {
+      tex: {
+        inlineMath: [['$', '$'], ['\\(', '\\)']]
+      }
+    }
+  </script>
+
+
+
+
+
+  <!-- clipboard -->
+
+  
+    <script async type="text/javascript" src="/plugins/clipboard.min.js"></script>
+  
+  
+<script src="/js/codeCopy.js"></script>
+
+
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  <!-- 文章内容页 url形式：https://yoursite/文章标题/ -->
+  <div class="container post-details" id="post-details">
+    <div class="post-content">
+      <div class="post-title">C++ 基于静态反射实现序列化 UI 与 IO 以及 Lua 绑定</div>
+      <div class="post-attach">
+        <span class="post-pubtime">
+          <i class="iconfont icon-updatetime mr-10" title="Update time"></i>
+          2024-09-18 09:54:00
+        </span>
+        
+              <span class="post-tags">
+                <i class="iconfont icon-tags mr-10" title="Tags"></i>
+                
+                <span class="span--tag mr-8">
+                  <a href="/tags/Cpp/" title="Cpp">
+                    #Cpp
+                  </a>
+                </span>
+                
+                <span class="span--tag mr-8">
+                  <a href="/tags/Reflection/" title="Reflection">
+                    #Reflection
+                  </a>
+                </span>
+                
+                <span class="span--tag mr-8">
+                  <a href="/tags/Template-programming/" title="Template programming">
+                    #Template programming
+                  </a>
+                </span>
+                
+                <span class="span--tag mr-8">
+                  <a href="/tags/Serialization/" title="Serialization">
+                    #Serialization
+                  </a>
+                </span>
+                
+              </span>
+          
       </div>
+      <div class="markdown-body">
+        <p>本文介绍了我对 C++ 中静态反射的实现，并展示了我是怎么将静态反射应用在 UI、IO 以及 Lua 绑定的。</p>
+<h2 id="静态反射实现思路">静态反射实现思路</h2>
+<p>我个人的静态反射实现思路是</p>
+<p>使用 <code>LLVM</code> 中的 <code>libclang</code> 解析头文件，识别 cpp 头文件的类型、变量、函数声明中的 <code>attribute</code> 属性</p>
+<p><code>libclang</code> 对传入的每一个头文件的 AST 都执行如下操作：首先记录那些属性为 <code>clang::annotate</code> 的类，然后以这些类为根 cursor 开始遍历。含有 <code>clang::annotate</code> 的字段和方法被记录下来</p>
+<p>已知被反射的类的名称，字段和方法的名称，就可以生成反射代码文件</p>
+<p>主目标中已经写好了 <code>TypeDescriptor</code> 类，<code>TypeDescriptor</code> 类会提供注册反射信息的功能，其中存储字段信息 <code>FieldAccessor</code> 和方法信息 <code>MethodAccessor</code>。生成的反射代码注册反射信息，也就是提取出类的成员变量指针，成员函数指针，存到 lambda 中。这个 lambda 接受 <code>void*</code>，<code>static_cast</code> 成被反射的类型。这样就完成了反射信息在 cpp 中的存储。</p>
+<p>外部使用反射接口时，传入 <code>std::string</code> 类型名称，可以从全局单例的 map 中获得对应的 <code>TypeDescriptor</code>。而已知 <code>TypeDescriptor</code>，就可以获得他其中存储的字段信息 <code>FieldAccessor</code> 和方法信息 <code>MethodAccessor</code> 列表</p>
+<p>向 <code>FieldAccessor</code> <code>MethodAccessor</code> 传入 <code>void*</code> 类型的实例指针，调用存储的 lambda 就能获得这个实例对应的成员和方法的指针</p>
+<p>因为只有 <code>static_cast</code>，所以类型不匹配时会报错中断，程序容错性会很差</p>
+<h2 id="使用-libclang-解析-AST，获取所需信息">使用 libclang 解析 AST，获取所需信息</h2>
+<script src="https://utteranc.es/client.js"
+        repo="CheapMeow/cheapmeow.github.io"
+        issue-term="pathname"
+        theme="github-light"
+        crossorigin="anonymous"
+        async>
+</script>
+      </div>
+      
+        <div class="prev-or-next">
+          <div class="post-foot-next">
+            
+              <a href="/2024/09/03/2024-09-03-cpu_frustum_culling/" target="_self">
+                <i class="iconfont icon-chevronleft"></i>
+                <span>Prev</span>
+              </a>
+            
+          </div>
+          <div class="post-attach">
+            <span class="post-pubtime">
+              <i class="iconfont icon-updatetime mr-10" title="Update time"></i>
+              2024-09-18 09:54:00
+            </span>
+            
+                  <span class="post-tags">
+                    <i class="iconfont icon-tags mr-10" title="Tags"></i>
+                    
+                    <span class="span--tag mr-8">
+                      <a href="/tags/Cpp/" title="Cpp">
+                        #Cpp
+                      </a>
+                    </span>
+                    
+                    <span class="span--tag mr-8">
+                      <a href="/tags/Reflection/" title="Reflection">
+                        #Reflection
+                      </a>
+                    </span>
+                    
+                    <span class="span--tag mr-8">
+                      <a href="/tags/Template-programming/" title="Template programming">
+                        #Template programming
+                      </a>
+                    </span>
+                    
+                    <span class="span--tag mr-8">
+                      <a href="/tags/Serialization/" title="Serialization">
+                        #Serialization
+                      </a>
+                    </span>
+                    
+                  </span>
+              
+          </div>
+          <div class="post-foot-prev">
+            
+              <a href="/2024/09/04/2024-09-04-libclang_solve_type_name_parsing_error/" target="_self">
+                <span>Next</span>
+                <i class="iconfont icon-chevronright"></i>
+              </a>
+            
+          </div>
+        </div>
+      
     </div>
+    
+  <div id="btn-catalog" class="btn-catalog">
+    <i class="iconfont icon-catalog"></i>
+  </div>
+  <div class="post-catalog hidden" id="catalog">
+    <div class="title">Contents</div>
+    <div class="catalog-content">
+      
+        <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E9%9D%99%E6%80%81%E5%8F%8D%E5%B0%84%E5%AE%9E%E7%8E%B0%E6%80%9D%E8%B7%AF"><span class="toc-text">静态反射实现思路</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BD%BF%E7%94%A8-libclang-%E8%A7%A3%E6%9E%90-AST%EF%BC%8C%E8%8E%B7%E5%8F%96%E6%89%80%E9%9C%80%E4%BF%A1%E6%81%AF"><span class="toc-text">使用 libclang 解析 AST，获取所需信息</span></a></li></ol>
+      
+    </div>
+  </div>
+
   
-  <nav class="post-navigation">
+<script src="/js/catalog.js"></script>
+
+
+
+
     
-    <span class="page-num">1 / 1</span>
+      <div class="comments-container">
+        
+
+
+
+
+
+
+
+      </div>
     
-  </nav>
-</div>
+  </div>
+
 
         
 <div class="footer">
@@ -392,6 +560,24 @@
 
 
         
+  
+    <div class="share-icon tools-bar-item">
+      <a href="javascript: void(0)" id="share-icon">
+        <i class="iconfont iconshare"></i>
+      </a>
+      <div class="share-content hidden">
+        
+          <a class="share-item" href="https://twitter.com/intent/tweet?text=' + C%2B%2B%20%E5%9F%BA%E4%BA%8E%E9%9D%99%E6%80%81%E5%8F%8D%E5%B0%84%E5%AE%9E%E7%8E%B0%E5%BA%8F%E5%88%97%E5%8C%96%20UI%20%E4%B8%8E%20IO%20%E4%BB%A5%E5%8F%8A%20Lua%20%E7%BB%91%E5%AE%9A + '&url=' + https%3A%2F%2Fcheapmeow.github.io%2F2024%2F09%2F04%2F2024-09-04-cpp_static_reflection_usage%2F + '" target="_blank" title="Twitter">
+            <i class="iconfont icon-twitter"></i>
+          </a>
+        
+        
+          <a class="share-item" href="https://www.facebook.com/sharer.php?u=https://cheapmeow.github.io/2024/09/04/2024-09-04-cpp_static_reflection_usage/" target="_blank" title="Facebook">
+            <i class="iconfont icon-facebooksquare"></i>
+          </a>
+        
+      </div>
+    </div>
   
   
 <script src="/js/shares.js"></script>
