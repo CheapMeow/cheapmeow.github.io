@@ -162,7 +162,7 @@
       <div class="post-attach">
         <span class="post-pubtime">
           <i class="iconfont icon-updatetime mr-10" title="Update time"></i>
-          2025-05-11 18:20:03
+          2025-05-12 01:36:43
         </span>
         
               <span class="post-tags">
@@ -203,9 +203,21 @@
 <p>该脚本前面的部分是准备编译环境，比如找到 MSBuild，然后调用 MSBuild 构建 UnrealBuildTool</p>
 <p><code>UnrealBuildTool.csproj</code> 是提前写好的，所以可以直接编译</p>
 <p>然后就是调用 UnrealBuildTool 来构建 VS 工程。于是开始看 UnrealBuildTool 代码。</p>
+<h2 id="如何调试-UnrealBuildTool-生成项目">如何调试 UnrealBuildTool 生成项目</h2>
+<p><code>Engine\Build\BatchFiles\GenerateProjectFiles.bat</code> 里面写得很清楚了，就是用这个命令行参数</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">-ProjectFiles</span><br></pre></td></tr></table></figure>
 <p>UnrealBuildTool 入口函数根据参数选择创建 <code>ToolMode</code> 调用 <code>Execute</code> 虚函数。不同的 mode 对应不同的构建行为</p>
-<p>显然 <code>GenerateProjectFilesMode</code> 类对应构建 VS 工程的逻辑，就不看了。</p>
-<h2 id="如何调试-UnrealBuildTool">如何调试 UnrealBuildTool</h2>
+<p>显然 <code>GenerateProjectFilesMode</code> 类对应构建 VS 工程的逻辑。</p>
+<p>我想知道自己创建出来的模块是怎么让 UE 识别到的，于是还是要看看他是怎么生成项目文件的</p>
+<h2 id="生成项目时，自定义模块如何被识别">生成项目时，自定义模块如何被识别</h2>
+<p>查看 <code>GenerateProjectFilesMode</code> 类的 <code>Execute</code> 实现</p>
+<p>可以看到他对于不同平台有不同的项目生成器 <code>Generator</code>，最终调用 <code>Generator.GenerateProjectFiles</code></p>
+<p>点进来看 <code>Generator.GenerateProjectFiles</code>，前面的配置就不说了</p>
+<p>然后是他寻找 game, target 和 module 的部分</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// Build the list of games to generate projects for</span></span><br><span class="line">List&lt;FileReference&gt; AllGameProjects = <span class="built_in">FindGameProjects</span>();</span><br><span class="line"></span><br><span class="line"><span class="comment">// Find all of the target files.  This will filter out any modules or targets that don&#x27;t</span></span><br><span class="line"><span class="comment">// belong to platforms we&#x27;re generating project files for.</span></span><br><span class="line">List&lt;FileReference&gt; AllTargetFiles = <span class="built_in">DiscoverTargets</span>(AllGameProjects);</span><br><span class="line"></span><br><span class="line">...</span><br><span class="line"></span><br><span class="line"><span class="comment">// Find all of the module files.  This will filter out any modules or targets that don&#x27;t belong to platforms</span></span><br><span class="line"><span class="comment">// we&#x27;re generating project files for.</span></span><br><span class="line">List&lt;FileReference&gt; AllModuleFiles = <span class="built_in">DiscoverModules</span>(AllGameProjects);</span><br></pre></td></tr></table></figure>
+<p>之后就是把找到的这些目标添加到工程</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line">ProjectFile EngineProject;</span><br><span class="line">ProjectFile EnterpriseProject;</span><br><span class="line">List&lt;ProjectFile&gt; GameProjects;</span><br><span class="line">List&lt;ProjectFile&gt; ModProjects;</span><br><span class="line">Dictionary&lt;FileReference, ProjectFile&gt; ProgramProjects;</span><br><span class="line">&#123;</span><br><span class="line">  <span class="comment">// Setup buildable projects for all targets</span></span><br><span class="line">  <span class="built_in">AddProjectsForAllTargets</span>( PlatformProjectGenerators, AllGameProjects, AllTargetFiles, Arguments, out EngineProject, out EnterpriseProject, out GameProjects, out ProgramProjects );</span><br><span class="line"></span><br><span class="line">  <span class="comment">// Add projects for mods</span></span><br><span class="line">  <span class="built_in">AddProjectsForMods</span>(GameProjects, out ModProjects);</span><br><span class="line"></span><br><span class="line">  <span class="comment">// Add all game projects and game config files</span></span><br><span class="line">  <span class="built_in">AddAllGameProjects</span>(GameProjects, SupportedPlatformNames, RootFolder);</span><br><span class="line">  </span><br><span class="line">  ...</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">...</span><br><span class="line"></span><br><span class="line"><span class="comment">// Setup &quot;stub&quot; projects for all modules</span></span><br><span class="line"><span class="built_in">AddProjectsForAllModules</span>(AllGameProjects, ProgramProjects, ModProjects, AllModuleFiles, bGatherThirdPartySource);</span><br></pre></td></tr></table></figure>
+<h2 id="如何调试-UnrealBuildTool-构建项目">如何调试 UnrealBuildTool 构建项目</h2>
 <p>已经配置好 VS 项目后，直接在 VS 工程中点击调试，在输出窗口中可以看到构建命令</p>
 <p>比如我这里的构建命令是</p>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">&lt;path to engine&gt;\Engine\Build\BatchFiles\Build.bat -Target=&quot;&lt;project name&gt;Editor Win64 Development -Project=\&quot;E:\Unreal Projects\&lt;project name&gt;\&lt;project name&gt;.uproject\&quot;&quot; -Target=&quot;ShaderCompileWorker Win64 Development -Quiet&quot; -WaitMutex -FromMsBuild</span><br></pre></td></tr></table></figure>
@@ -266,7 +278,7 @@
           <div class="post-attach">
             <span class="post-pubtime">
               <i class="iconfont icon-updatetime mr-10" title="Update time"></i>
-              2025-05-11 18:20:03
+              2025-05-12 01:36:43
             </span>
             
                   <span class="post-tags">
@@ -313,7 +325,7 @@
     <div class="title">Contents</div>
     <div class="catalog-content">
       
-        <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%A8%A1%E5%9D%97%E4%BB%A5%E5%8F%8A%E7%9B%AE%E6%A0%87%E7%B1%BB%E5%9E%8B"><span class="toc-text">模块以及目标类型</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%9E%84%E5%BB%BA-UBT%EF%BC%8C%E5%88%9B%E5%BB%BA-VS-%E5%B7%A5%E7%A8%8B"><span class="toc-text">构建 UBT，创建 VS 工程</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%A6%82%E4%BD%95%E8%B0%83%E8%AF%95-UnrealBuildTool"><span class="toc-text">如何调试 UnrealBuildTool</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#UnrealBuildTool-%E6%9E%84%E5%BB%BA%E6%A8%A1%E5%BC%8F%E7%9A%84%E9%80%BB%E8%BE%91"><span class="toc-text">UnrealBuildTool 构建模式的逻辑</span></a></li></ol>
+        <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%A8%A1%E5%9D%97%E4%BB%A5%E5%8F%8A%E7%9B%AE%E6%A0%87%E7%B1%BB%E5%9E%8B"><span class="toc-text">模块以及目标类型</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%9E%84%E5%BB%BA-UBT%EF%BC%8C%E5%88%9B%E5%BB%BA-VS-%E5%B7%A5%E7%A8%8B"><span class="toc-text">构建 UBT，创建 VS 工程</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%A6%82%E4%BD%95%E8%B0%83%E8%AF%95-UnrealBuildTool-%E7%94%9F%E6%88%90%E9%A1%B9%E7%9B%AE"><span class="toc-text">如何调试 UnrealBuildTool 生成项目</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%94%9F%E6%88%90%E9%A1%B9%E7%9B%AE%E6%97%B6%EF%BC%8C%E8%87%AA%E5%AE%9A%E4%B9%89%E6%A8%A1%E5%9D%97%E5%A6%82%E4%BD%95%E8%A2%AB%E8%AF%86%E5%88%AB"><span class="toc-text">生成项目时，自定义模块如何被识别</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%A6%82%E4%BD%95%E8%B0%83%E8%AF%95-UnrealBuildTool-%E6%9E%84%E5%BB%BA%E9%A1%B9%E7%9B%AE"><span class="toc-text">如何调试 UnrealBuildTool 构建项目</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#UnrealBuildTool-%E6%9E%84%E5%BB%BA%E6%A8%A1%E5%BC%8F%E7%9A%84%E9%80%BB%E8%BE%91"><span class="toc-text">UnrealBuildTool 构建模式的逻辑</span></a></li></ol>
       
     </div>
   </div>
