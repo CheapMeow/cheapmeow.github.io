@@ -162,7 +162,7 @@
       <div class="post-attach">
         <span class="post-pubtime">
           <i class="iconfont icon-updatetime mr-10" title="Update time"></i>
-          2025-05-10 15:46:01
+          2025-05-12 21:51:17
         </span>
         
               <span class="post-tags">
@@ -204,7 +204,7 @@
       <div class="markdown-body">
         <h2 id="UAT-调用">UAT 调用</h2>
 <p>从 UI 点击，触发回调，最终调用到 <code>FLauncherUATTask::PerformTask</code>，它内部就是唤起了一个 UAT Command</p>
-<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">FString UATCommandLine;</span><br><span class="line">FString ProjectPath = *ChainState.Profile-&gt;<span class="built_in">GetProjectPath</span>();</span><br><span class="line">ProjectPath = FPaths::<span class="built_in">ConvertRelativePathToFull</span>(ProjectPath);</span><br><span class="line">UATCommandLine = FString::<span class="built_in">Printf</span>(<span class="built_in">TEXT</span>(<span class="string">&quot;-ScriptsForProject=\&quot;%s\&quot; BuildCookRun -project=\&quot;%s\&quot; -noP4 -clientconfig=%s -serverconfig=%s&quot;</span>),</span><br><span class="line">    *ProjectPath,</span><br><span class="line">    *ProjectPath,</span><br><span class="line">    <span class="built_in">LexToString</span>(ChainState.Profile-&gt;<span class="built_in">GetBuildConfiguration</span>()),</span><br><span class="line">    <span class="built_in">LexToString</span>(ChainState.Profile-&gt;<span class="built_in">GetBuildConfiguration</span>()));</span><br></pre></td></tr></table></figure>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">FString UATCommandLine;</span><br><span class="line">FString ProjectPath = *ChainState.Profile-&gt;<span class="built_in">GetProjectPath</span>();</span><br><span class="line">ProjectPath = FPaths::<span class="built_in">ConvertRelativePathToFull</span>(ProjectPath);</span><br><span class="line">UATCommandLine = FString::<span class="built_in">Printf</span>(<span class="built_in">TEXT</span>(<span class="string">&quot;-ScriptsForProject=\&quot;%s\&quot; BuildCookRun -project=\&quot;%s\&quot; -noP4 -clientconfig=%s -serverconfig=%s&quot;</span>),</span><br><span class="line">    *ProjectPath,</span><br><span class="line">    *ProjectPath,</span><br><span class="line">    <span class="built_in">LexToString</span>(ChainState.Profile-&gt;<span class="built_in">GetBuildConfiguration</span>()),</span><br><span class="line">    <span class="built_in">LexToString</span>(ChainState.Profile-&gt;<span class="built_in">GetBuildConfiguration</span>()));</span><br><span class="line"></span><br><span class="line">...</span><br><span class="line"></span><br><span class="line"><span class="comment">// launch UAT and monitor its progress</span></span><br><span class="line">ProcessHandle = FPlatformProcess::<span class="built_in">CreateProc</span>(*(ExecutablePath / Executable), *UATCommandLine, <span class="literal">false</span>, <span class="literal">true</span>, <span class="literal">true</span>, <span class="literal">NULL</span>, <span class="number">0</span>, *ExecutablePath, WritePipe);</span><br></pre></td></tr></table></figure>
 <p>以安卓为例</p>
 <p>打包时，调用的 UAT 进程的参数是</p>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">L&quot;/c &quot;&quot;&lt;my position&gt;/UnrealEngine/Engine/Build/BatchFiles/RunUAT.bat&quot; -ScriptsForProject=&quot;&lt;my position&gt;/&lt;my project name&gt;/&lt;my project name&gt;.uproject&quot; BuildCookRun -nocompileeditor -nop4 -project=&quot;&lt;my position&gt;/&lt;my project name&gt;/&lt;my project name&gt;.uproject&quot; -cook -stage -archive -archivedirectory=&quot;&lt;my position&gt;/&lt;my project name&gt;AndroidPackage&quot; -package -ue4exe=&quot;&lt;my position&gt;\UnrealEngine\Engine\Binaries\Win64\UE4Editor-Win64-DebugGame-Cmd.exe&quot;  -compressed -ddc=DerivedDataBackendGraph -pak -prereqs -nodebuginfo -targetplatform=Android -cookflavor=ETC2 -build -target=&lt;my project name&gt; -clientconfig=Development -utf8output&quot;&quot;</span><br></pre></td></tr></table></figure>
@@ -290,7 +290,7 @@
           <div class="post-attach">
             <span class="post-pubtime">
               <i class="iconfont icon-updatetime mr-10" title="Update time"></i>
-              2025-05-10 15:46:01
+              2025-05-12 21:51:17
             </span>
             
                   <span class="post-tags">
