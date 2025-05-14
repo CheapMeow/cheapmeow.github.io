@@ -14,7 +14,7 @@
   
   <title>
     
-      UE4 构建项目放在 SolutionDirectory 
+      UE4 UnrealPAK Repack 功能分析 
       
       
       |
@@ -158,11 +158,11 @@
   <!-- 文章内容页 url形式：https://yoursite/文章标题/ -->
   <div class="container post-details" id="post-details">
     <div class="post-content">
-      <div class="post-title">UE4 构建项目放在 SolutionDirectory</div>
+      <div class="post-title">UE4 UnrealPAK Repack 功能分析</div>
       <div class="post-attach">
         <span class="post-pubtime">
           <i class="iconfont icon-updatetime mr-10" title="Update time"></i>
-          2025-05-12 21:51:17
+          2025-05-14 22:05:01
         </span>
         
               <span class="post-tags">
@@ -193,20 +193,8 @@
                 </span>
                 
                 <span class="span--tag mr-8">
-                  <a href="/tags/Build-System/" title="Build System">
-                    #Build System
-                  </a>
-                </span>
-                
-                <span class="span--tag mr-8">
-                  <a href="/tags/UnrealBuildTool/" title="UnrealBuildTool">
-                    #UnrealBuildTool
-                  </a>
-                </span>
-                
-                <span class="span--tag mr-8">
-                  <a href="/tags/UnrealPakViewer/" title="UnrealPakViewer">
-                    #UnrealPakViewer
+                  <a href="/tags/Repack/" title="Repack">
+                    #Repack
                   </a>
                 </span>
                 
@@ -214,30 +202,23 @@
           
       </div>
       <div class="markdown-body">
-        <h2 id="UnrealPakViewer">UnrealPakViewer</h2>
-<p>我是希望构建别人的一个查看 pak 的工具，来学习 PAK 的使用的</p>
-<p><a target="_blank" rel="noopener" href="https://github.com/jashking/UnrealPakViewer">https://github.com/jashking/UnrealPakViewer</a></p>
-<p>根据他的介绍，把他源码放到 Engine\Source\Programs 就可以了</p>
-<p>我虽然放了，但是运行 <code>GenerateProjectFiles.bat</code>，重新编译之后没有出现 UnrealPakViewer 的项目</p>
-<p>刚好看过 UE 构建系统，于是想找下问题在哪</p>
-<h2 id="调试-UnrealBuildTool-生成项目">调试 UnrealBuildTool 生成项目</h2>
-<p>调试到 <code>ProjectFileGenerator.AddProjectsForAllTargets</code></p>
-<p>这个函数开头遍历 <code>AllTargetFiles</code></p>
-<p>每一个 Target 判断是否在特定目录下，在才执行之后的逻辑</p>
-<p>这个判断的结果存在 <code>WantProjectFileForTarget</code>，我调试的时候，UnrealPakViewer 也是通过了的</p>
-<p>于是之后一堆生成项目的逻辑，假设暂时跳过</p>
-<p>最后调试到生成项目的代码都是可以击中的</p>
-<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">ProjectTarget ProjectTarget = <span class="keyword">new</span> <span class="built_in">ProjectTarget</span>()</span><br><span class="line">&#123;</span><br><span class="line">    TargetRules = TargetRulesObject,</span><br><span class="line">    TargetFilePath = TargetFilePath,</span><br><span class="line">    ProjectFilePath = ProjectFilePath,</span><br><span class="line">    UnrealProjectFilePath = CheckProjectFile,</span><br><span class="line">    SupportedPlatforms = TargetRulesObject.<span class="built_in">GetSupportedPlatforms</span>().<span class="built_in">Where</span>(</span><br><span class="line">                            x =&gt; UEBuildPlatform.<span class="built_in">GetBuildPlatform</span>(x, <span class="literal">true</span>) != null &amp;&amp; </span><br><span class="line">                            (TargetRulesObject.LinkType != TargetLinkType.Modular || !UEBuildPlatform.<span class="built_in">PlatformRequiresMonolithicBuilds</span>(x, TargetRulesObject.Configuration))</span><br><span class="line">                            ).<span class="built_in">ToArray</span>(),</span><br><span class="line">    CreateRulesDelegate = (Platform, Configuration) =&gt; RulesAssembly.<span class="built_in">CreateTargetRules</span>(TargetName, Platform, Configuration, <span class="string">&quot;&quot;</span>, CheckProjectFile, <span class="keyword">new</span> <span class="built_in">CommandLineArguments</span>(<span class="built_in">GetTargetArguments</span>(Arguments)))</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
-<p>这里给出了生成的路径</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">&lt;path to engine&gt;\UnrealEngine\Engine\Intermediate\ProjectFiles\UnrealPakViewer.vcxproj</span><br></pre></td></tr></table></figure>
-<p>我一看，也是有的。构建也会成功，也会生成 exe。</p>
-<p>那为什么我在 VS 项目视图看不到呢</p>
-<h2 id="刷新项目的方法">刷新项目的方法</h2>
-<p>于是看了别人是怎么做的。别人是</p>
-<figure class="highlight bat"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">Engine\Binaries\DotNET\UnrealBuildTool.exe -ProjectFiles Engine\Source\Programs\UnrealPakViewer</span><br></pre></td></tr></table></figure>
-<p>然后用 Visual Studio 重新打开 VS 项目，我这里还真的就可以了。</p>
-<p>我再重新用 Rider 打开，就看不到新项目。所以这还是 IDE 的问题。</p>
-<p>好吧，后来才发现，是这个插件写到了 <code>ExternalPrograms</code> 文件夹下，这个是写在 UnrealPakViewer.Target.cs 的 <code>SolutionDirectory</code> 的</p>
+        <p>从入口进来</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// Engine/Source/Developer/PakFileUtilities/Private/PakFileUtilities.cpp: </span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="type">bool</span> <span class="title">ExecuteUnrealPak</span><span class="params">(<span class="type">const</span> TCHAR* CmdLine)</span></span></span><br></pre></td></tr></table></figure>
+<p>进到 Repack 选项这个 if else</p>
+<p>这里可以读取相同文件名后缀所有 pak 文件，输出的 pak 文件一一对应</p>
+<p>然后可以配置 ExcludeDeleted 选项，是否跳过输入的 pak 文件中被删除的内容，这个很有意思</p>
+<p>然后就是具体的重新打包的逻辑</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// Engine/Source/Developer/PakFileUtilities/Private/PakFileUtilities.cpp: </span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="type">bool</span> <span class="title">Repack</span><span class="params">(<span class="type">const</span> FString&amp; InputPakFile, <span class="type">const</span> FString&amp; OutputPakFile, <span class="type">const</span> FPakCommandLineParameters&amp; CmdLineParameters, <span class="type">const</span> FKeyChain&amp; InKeyChain, <span class="type">bool</span> bIncludeDeleted)</span></span></span><br></pre></td></tr></table></figure>
+<p>这里一开始就是剔除掉删除的文件的内容</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> (<span class="built_in">ExtractFilesFromPak</span>(*InputPakFile, Hashes, *TempDir, <span class="literal">false</span>, InKeyChain, <span class="literal">nullptr</span>, &amp;Entries, &amp;DeletedEntries, &amp;OrderMap, &amp;EncryptionKeys, &amp;bAnySigned))</span><br><span class="line">&#123;</span><br><span class="line">  TArray&lt;FPakInputPair&gt; FilesToAdd;</span><br><span class="line">  <span class="built_in">CollectFilesToAdd</span>(FilesToAdd, Entries, OrderMap, CmdLineParameters);</span><br><span class="line"></span><br><span class="line">  <span class="keyword">if</span> (bIncludeDeleted)</span><br><span class="line">  &#123;</span><br><span class="line">    <span class="keyword">for</span>( <span class="type">const</span> FPakInputPair&amp; Entry : DeletedEntries )</span><br><span class="line">    &#123;</span><br><span class="line">      FilesToAdd.<span class="built_in">Add</span>(Entry);</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">else</span> <span class="keyword">if</span> (DeletedEntries.<span class="built_in">Num</span>() &gt; <span class="number">0</span>)</span><br><span class="line">  &#123;</span><br><span class="line">    <span class="built_in">UE_LOG</span>(LogPakFile, Display, <span class="built_in">TEXT</span>(<span class="string">&quot;%s has %d delete records - these will not be included in the repackage. Specify -IncludeDeleted to include them&quot;</span>), *InputPakFile, DeletedEntries.<span class="built_in">Num</span>() );</span><br><span class="line">  &#125;</span><br></pre></td></tr></table></figure>
+<p>具体进到 <code>ExtractFilesFromPak</code> 里面是可以看到，如果传入的 <code>OutDeletedEntries</code> 不是 null，那么也会把源 PAK 中 tag 被标记为 deleted 的文件给解压出来</p>
+<p>之后就是重新压缩的事了</p>
+<p>其实比较简单，但是就是需要走他自己的一些特殊处理的流程</p>
+<p>本来我想修改这个函数来实现自己的目的，但是这是一个私有文件</p>
+<p>如果要把函数暴露出来，就要改源码</p>
+<p>如果是一些非得改不可的功能，那公开了也行</p>
+<p>但是仔细考虑的话，其实我从 cpp 调用 command 也不是不能接受</p>
+<p>因为已经看过了 cpp 的 repack 实现，跟我自己通过 command 解压再压缩是一样的</p>
 <script src="https://utteranc.es/client.js"
         repo="CheapMeow/cheapmeow.github.io"
         issue-term="pathname"
@@ -250,7 +231,7 @@
         <div class="prev-or-next">
           <div class="post-foot-next">
             
-              <a href="/2025/05/11/2025-05-11-ue4_build_system/" target="_self">
+              <a href="/2025/05/13/2025-05-13-ue4_find_asset_file_path/" target="_self">
                 <i class="iconfont icon-chevronleft"></i>
                 <span>Prev</span>
               </a>
@@ -259,7 +240,7 @@
           <div class="post-attach">
             <span class="post-pubtime">
               <i class="iconfont icon-updatetime mr-10" title="Update time"></i>
-              2025-05-12 21:51:17
+              2025-05-14 22:05:01
             </span>
             
                   <span class="post-tags">
@@ -290,20 +271,8 @@
                     </span>
                     
                     <span class="span--tag mr-8">
-                      <a href="/tags/Build-System/" title="Build System">
-                        #Build System
-                      </a>
-                    </span>
-                    
-                    <span class="span--tag mr-8">
-                      <a href="/tags/UnrealBuildTool/" title="UnrealBuildTool">
-                        #UnrealBuildTool
-                      </a>
-                    </span>
-                    
-                    <span class="span--tag mr-8">
-                      <a href="/tags/UnrealPakViewer/" title="UnrealPakViewer">
-                        #UnrealPakViewer
+                      <a href="/tags/Repack/" title="Repack">
+                        #Repack
                       </a>
                     </span>
                     
@@ -312,7 +281,7 @@
           </div>
           <div class="post-foot-prev">
             
-              <a href="/2025/05/13/2025-05-13-ue4_find_asset_file_path/" target="_self">
+              <a href="/2025/05/14/2025-05-14-ue4_debug_standalone_game/" target="_self">
                 <span>Next</span>
                 <i class="iconfont icon-chevronright"></i>
               </a>
@@ -322,23 +291,6 @@
       
     </div>
     
-  <div id="btn-catalog" class="btn-catalog">
-    <i class="iconfont icon-catalog"></i>
-  </div>
-  <div class="post-catalog hidden" id="catalog">
-    <div class="title">Contents</div>
-    <div class="catalog-content">
-      
-        <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#UnrealPakViewer"><span class="toc-text">UnrealPakViewer</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E8%B0%83%E8%AF%95-UnrealBuildTool-%E7%94%9F%E6%88%90%E9%A1%B9%E7%9B%AE"><span class="toc-text">调试 UnrealBuildTool 生成项目</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%88%B7%E6%96%B0%E9%A1%B9%E7%9B%AE%E7%9A%84%E6%96%B9%E6%B3%95"><span class="toc-text">刷新项目的方法</span></a></li></ol>
-      
-    </div>
-  </div>
-
-  
-<script src="/js/catalog.js"></script>
-
-
-
 
     
       <div class="comments-container">
@@ -617,12 +569,12 @@
       </a>
       <div class="share-content hidden">
         
-          <a class="share-item" href="https://twitter.com/intent/tweet?text=' + UE4%20%E6%9E%84%E5%BB%BA%E9%A1%B9%E7%9B%AE%E6%94%BE%E5%9C%A8%20SolutionDirectory + '&url=' + https%3A%2F%2Fcheapmeow.github.io%2F2025%2F05%2F12%2F2025-05-12-ue4_build_target_is_in_SolutionDirectory%2F + '" target="_blank" title="Twitter">
+          <a class="share-item" href="https://twitter.com/intent/tweet?text=' + UE4%20UnrealPAK%20Repack%20%E5%8A%9F%E8%83%BD%E5%88%86%E6%9E%90 + '&url=' + https%3A%2F%2Fcheapmeow.github.io%2F2025%2F05%2F13%2F2025-05-13-ue4_UnrealPAK_repack%2F + '" target="_blank" title="Twitter">
             <i class="iconfont icon-twitter"></i>
           </a>
         
         
-          <a class="share-item" href="https://www.facebook.com/sharer.php?u=https://cheapmeow.github.io/2025/05/12/2025-05-12-ue4_build_target_is_in_SolutionDirectory/" target="_blank" title="Facebook">
+          <a class="share-item" href="https://www.facebook.com/sharer.php?u=https://cheapmeow.github.io/2025/05/13/2025-05-13-ue4_UnrealPAK_repack/" target="_blank" title="Facebook">
             <i class="iconfont icon-facebooksquare"></i>
           </a>
         

@@ -14,7 +14,7 @@
   
   <title>
     
-      UE4 构建项目放在 SolutionDirectory 
+      UE4 调试 Standalone 游戏的方法 
       
       
       |
@@ -158,11 +158,11 @@
   <!-- 文章内容页 url形式：https://yoursite/文章标题/ -->
   <div class="container post-details" id="post-details">
     <div class="post-content">
-      <div class="post-title">UE4 构建项目放在 SolutionDirectory</div>
+      <div class="post-title">UE4 调试 Standalone 游戏的方法</div>
       <div class="post-attach">
         <span class="post-pubtime">
           <i class="iconfont icon-updatetime mr-10" title="Update time"></i>
-          2025-05-12 21:51:17
+          2025-05-14 22:12:09
         </span>
         
               <span class="post-tags">
@@ -187,26 +187,8 @@
                 </span>
                 
                 <span class="span--tag mr-8">
-                  <a href="/tags/PAK/" title="PAK">
-                    #PAK
-                  </a>
-                </span>
-                
-                <span class="span--tag mr-8">
-                  <a href="/tags/Build-System/" title="Build System">
-                    #Build System
-                  </a>
-                </span>
-                
-                <span class="span--tag mr-8">
-                  <a href="/tags/UnrealBuildTool/" title="UnrealBuildTool">
-                    #UnrealBuildTool
-                  </a>
-                </span>
-                
-                <span class="span--tag mr-8">
-                  <a href="/tags/UnrealPakViewer/" title="UnrealPakViewer">
-                    #UnrealPakViewer
+                  <a href="/tags/Debug/" title="Debug">
+                    #Debug
                   </a>
                 </span>
                 
@@ -214,43 +196,45 @@
           
       </div>
       <div class="markdown-body">
-        <h2 id="UnrealPakViewer">UnrealPakViewer</h2>
-<p>我是希望构建别人的一个查看 pak 的工具，来学习 PAK 的使用的</p>
-<p><a target="_blank" rel="noopener" href="https://github.com/jashking/UnrealPakViewer">https://github.com/jashking/UnrealPakViewer</a></p>
-<p>根据他的介绍，把他源码放到 Engine\Source\Programs 就可以了</p>
-<p>我虽然放了，但是运行 <code>GenerateProjectFiles.bat</code>，重新编译之后没有出现 UnrealPakViewer 的项目</p>
-<p>刚好看过 UE 构建系统，于是想找下问题在哪</p>
-<h2 id="调试-UnrealBuildTool-生成项目">调试 UnrealBuildTool 生成项目</h2>
-<p>调试到 <code>ProjectFileGenerator.AddProjectsForAllTargets</code></p>
-<p>这个函数开头遍历 <code>AllTargetFiles</code></p>
-<p>每一个 Target 判断是否在特定目录下，在才执行之后的逻辑</p>
-<p>这个判断的结果存在 <code>WantProjectFileForTarget</code>，我调试的时候，UnrealPakViewer 也是通过了的</p>
-<p>于是之后一堆生成项目的逻辑，假设暂时跳过</p>
-<p>最后调试到生成项目的代码都是可以击中的</p>
-<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">ProjectTarget ProjectTarget = <span class="keyword">new</span> <span class="built_in">ProjectTarget</span>()</span><br><span class="line">&#123;</span><br><span class="line">    TargetRules = TargetRulesObject,</span><br><span class="line">    TargetFilePath = TargetFilePath,</span><br><span class="line">    ProjectFilePath = ProjectFilePath,</span><br><span class="line">    UnrealProjectFilePath = CheckProjectFile,</span><br><span class="line">    SupportedPlatforms = TargetRulesObject.<span class="built_in">GetSupportedPlatforms</span>().<span class="built_in">Where</span>(</span><br><span class="line">                            x =&gt; UEBuildPlatform.<span class="built_in">GetBuildPlatform</span>(x, <span class="literal">true</span>) != null &amp;&amp; </span><br><span class="line">                            (TargetRulesObject.LinkType != TargetLinkType.Modular || !UEBuildPlatform.<span class="built_in">PlatformRequiresMonolithicBuilds</span>(x, TargetRulesObject.Configuration))</span><br><span class="line">                            ).<span class="built_in">ToArray</span>(),</span><br><span class="line">    CreateRulesDelegate = (Platform, Configuration) =&gt; RulesAssembly.<span class="built_in">CreateTargetRules</span>(TargetName, Platform, Configuration, <span class="string">&quot;&quot;</span>, CheckProjectFile, <span class="keyword">new</span> <span class="built_in">CommandLineArguments</span>(<span class="built_in">GetTargetArguments</span>(Arguments)))</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
-<p>这里给出了生成的路径</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">&lt;path to engine&gt;\UnrealEngine\Engine\Intermediate\ProjectFiles\UnrealPakViewer.vcxproj</span><br></pre></td></tr></table></figure>
-<p>我一看，也是有的。构建也会成功，也会生成 exe。</p>
-<p>那为什么我在 VS 项目视图看不到呢</p>
-<h2 id="刷新项目的方法">刷新项目的方法</h2>
-<p>于是看了别人是怎么做的。别人是</p>
-<figure class="highlight bat"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">Engine\Binaries\DotNET\UnrealBuildTool.exe -ProjectFiles Engine\Source\Programs\UnrealPakViewer</span><br></pre></td></tr></table></figure>
-<p>然后用 Visual Studio 重新打开 VS 项目，我这里还真的就可以了。</p>
-<p>我再重新用 Rider 打开，就看不到新项目。所以这还是 IDE 的问题。</p>
-<p>好吧，后来才发现，是这个插件写到了 <code>ExternalPrograms</code> 文件夹下，这个是写在 UnrealPakViewer.Target.cs 的 <code>SolutionDirectory</code> 的</p>
-<script src="https://utteranc.es/client.js"
-        repo="CheapMeow/cheapmeow.github.io"
-        issue-term="pathname"
-        theme="github-light"
-        crossorigin="anonymous"
-        async>
-</script>
+        <h2 id="从任务管理器发起调试">从任务管理器发起调试</h2>
+<p>使用 Debug 或者 DebugGame 构建选项来打包游戏</p>
+<p>应该会在如下目录出现对应配置的 exe 和 pdb，文件名类似 <code>&lt;Your Project Name&gt;-Win64-Debug.exe</code></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">&lt;Your Project Root&gt;\&lt;Your Project Name&gt;\Binaries\Win64\</span><br></pre></td></tr></table></figure>
+<p>把这个 exe 和 pdb 复制到如下目录</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">&lt;Your Package Game Root&gt;\WindowsNoEditor\&lt;Your Project Name&gt;\Binaries\Win64\</span><br></pre></td></tr></table></figure>
+<p>然后启动 exe，在任务管理器右键游戏进程，调试，选 VS 作为调试器，然后把要调试的文件拖进 IDE，打断点，应该可以看到断点正常，没有显示“未加载符号，断点无法命中”的错</p>
+<h2 id="其他失败的尝试">其他失败的尝试</h2>
+<p>如果复制到别的目录，比如直觉上是打包后的根目录</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">&lt;Your Package Game Root&gt;\WindowsNoEditor\&lt;Your Project Name&gt;\</span><br></pre></td></tr></table></figure>
+<p>或者如果就是游戏工程里的目录放在那里不动</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">&lt;Your Project Root&gt;\&lt;Your Project Name&gt;\Binaries\Win64\</span><br></pre></td></tr></table></figure>
+<p>则会出现 content 路径找不到的错误</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">game files required to initialize the global shader library are missing from:</span><br><span class="line">&lt;Your Project Root&gt;\&lt;Your Project Name&gt;/Content/</span><br><span class="line">Please make sure the game is installed correctly</span><br></pre></td></tr></table></figure>
+<p>题外话，不确定为什么，我把 pdb 复制到</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">&lt;Your Package Game Root&gt;\WindowsNoEditor\&lt;Your Project Name&gt;\</span><br></pre></td></tr></table></figure>
+<p>调试时 VS 也无法加载 pdb，难道是因为我之前有编译过 shipping 导致的？</p>
+<h2 id="从任务管理器发起调试的问题：看不到变量的值">从任务管理器发起调试的问题：看不到变量的值</h2>
+<p>这样虽然可以调试</p>
+<p>但是看不到变量的值</p>
+<p><img src="/images/ue4_debug_standalone_game/cannot_see_variables.png" alt="alt text"></p>
+<p>只能说，可以看到 log 还是有点用的</p>
+<h2 id="兼得查看变量值的方法：调试-Game-Target">兼得查看变量值的方法：调试 Game Target</h2>
+<p>在 IDE 构建配置里面的 Target 配置里面选择 Game，开启调试</p>
+<p>也会遇到 content 路径找不到的错误</p>
+<p>于是先按照之前说的，把游戏工程里构建出来的 exe 和 pdb 复制到打包工程的路径 \Binaries\Win64，然后把 IDE（以 Rider 为例）调试设置里面的 exe 路径从</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$(LocalDebuggerCommand)</span><br></pre></td></tr></table></figure>
+<p>改为</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">&lt;Your Package Game Root&gt;\WindowsNoEditor\&lt;Your Project Name&gt;\Binaries\Win64\&lt;Your Project Name&gt;-Win64-Debug.exe</span><br></pre></td></tr></table></figure>
+<p>这样调试就可以看到变量值了</p>
+<p><img src="/images/ue4_debug_standalone_game/can_see_variables.png" alt="alt text"></p>
+<p>具体原因不想思考了</p>
+
       </div>
       
         <div class="prev-or-next">
           <div class="post-foot-next">
             
-              <a href="/2025/05/11/2025-05-11-ue4_build_system/" target="_self">
+              <a href="/2025/05/13/2025-05-13-ue4_UnrealPAK_repack/" target="_self">
                 <i class="iconfont icon-chevronleft"></i>
                 <span>Prev</span>
               </a>
@@ -259,7 +243,7 @@
           <div class="post-attach">
             <span class="post-pubtime">
               <i class="iconfont icon-updatetime mr-10" title="Update time"></i>
-              2025-05-12 21:51:17
+              2025-05-14 22:12:09
             </span>
             
                   <span class="post-tags">
@@ -284,26 +268,8 @@
                     </span>
                     
                     <span class="span--tag mr-8">
-                      <a href="/tags/PAK/" title="PAK">
-                        #PAK
-                      </a>
-                    </span>
-                    
-                    <span class="span--tag mr-8">
-                      <a href="/tags/Build-System/" title="Build System">
-                        #Build System
-                      </a>
-                    </span>
-                    
-                    <span class="span--tag mr-8">
-                      <a href="/tags/UnrealBuildTool/" title="UnrealBuildTool">
-                        #UnrealBuildTool
-                      </a>
-                    </span>
-                    
-                    <span class="span--tag mr-8">
-                      <a href="/tags/UnrealPakViewer/" title="UnrealPakViewer">
-                        #UnrealPakViewer
+                      <a href="/tags/Debug/" title="Debug">
+                        #Debug
                       </a>
                     </span>
                     
@@ -312,7 +278,7 @@
           </div>
           <div class="post-foot-prev">
             
-              <a href="/2025/05/13/2025-05-13-ue4_find_asset_file_path/" target="_self">
+              <a href="/2025/05/14/2025-05-14-ue4_load_pak_at_runtime/" target="_self">
                 <span>Next</span>
                 <i class="iconfont icon-chevronright"></i>
               </a>
@@ -329,7 +295,7 @@
     <div class="title">Contents</div>
     <div class="catalog-content">
       
-        <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#UnrealPakViewer"><span class="toc-text">UnrealPakViewer</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E8%B0%83%E8%AF%95-UnrealBuildTool-%E7%94%9F%E6%88%90%E9%A1%B9%E7%9B%AE"><span class="toc-text">调试 UnrealBuildTool 生成项目</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%88%B7%E6%96%B0%E9%A1%B9%E7%9B%AE%E7%9A%84%E6%96%B9%E6%B3%95"><span class="toc-text">刷新项目的方法</span></a></li></ol>
+        <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BB%8E%E4%BB%BB%E5%8A%A1%E7%AE%A1%E7%90%86%E5%99%A8%E5%8F%91%E8%B5%B7%E8%B0%83%E8%AF%95"><span class="toc-text">从任务管理器发起调试</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%85%B6%E4%BB%96%E5%A4%B1%E8%B4%A5%E7%9A%84%E5%B0%9D%E8%AF%95"><span class="toc-text">其他失败的尝试</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BB%8E%E4%BB%BB%E5%8A%A1%E7%AE%A1%E7%90%86%E5%99%A8%E5%8F%91%E8%B5%B7%E8%B0%83%E8%AF%95%E7%9A%84%E9%97%AE%E9%A2%98%EF%BC%9A%E7%9C%8B%E4%B8%8D%E5%88%B0%E5%8F%98%E9%87%8F%E7%9A%84%E5%80%BC"><span class="toc-text">从任务管理器发起调试的问题：看不到变量的值</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%85%BC%E5%BE%97%E6%9F%A5%E7%9C%8B%E5%8F%98%E9%87%8F%E5%80%BC%E7%9A%84%E6%96%B9%E6%B3%95%EF%BC%9A%E8%B0%83%E8%AF%95-Game-Target"><span class="toc-text">兼得查看变量值的方法：调试 Game Target</span></a></li></ol>
       
     </div>
   </div>
@@ -617,12 +583,12 @@
       </a>
       <div class="share-content hidden">
         
-          <a class="share-item" href="https://twitter.com/intent/tweet?text=' + UE4%20%E6%9E%84%E5%BB%BA%E9%A1%B9%E7%9B%AE%E6%94%BE%E5%9C%A8%20SolutionDirectory + '&url=' + https%3A%2F%2Fcheapmeow.github.io%2F2025%2F05%2F12%2F2025-05-12-ue4_build_target_is_in_SolutionDirectory%2F + '" target="_blank" title="Twitter">
+          <a class="share-item" href="https://twitter.com/intent/tweet?text=' + UE4%20%E8%B0%83%E8%AF%95%20Standalone%20%E6%B8%B8%E6%88%8F%E7%9A%84%E6%96%B9%E6%B3%95 + '&url=' + https%3A%2F%2Fcheapmeow.github.io%2F2025%2F05%2F14%2F2025-05-14-ue4_debug_standalone_game%2F + '" target="_blank" title="Twitter">
             <i class="iconfont icon-twitter"></i>
           </a>
         
         
-          <a class="share-item" href="https://www.facebook.com/sharer.php?u=https://cheapmeow.github.io/2025/05/12/2025-05-12-ue4_build_target_is_in_SolutionDirectory/" target="_blank" title="Facebook">
+          <a class="share-item" href="https://www.facebook.com/sharer.php?u=https://cheapmeow.github.io/2025/05/14/2025-05-14-ue4_debug_standalone_game/" target="_blank" title="Facebook">
             <i class="iconfont icon-facebooksquare"></i>
           </a>
         
