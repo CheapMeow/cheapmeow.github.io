@@ -162,7 +162,7 @@
       <div class="post-attach">
         <span class="post-pubtime">
           <i class="iconfont icon-updatetime mr-10" title="Update time"></i>
-          2025-05-16 07:58:54
+          2025-05-16 15:43:44
         </span>
         
               <span class="post-tags">
@@ -345,7 +345,7 @@
 <p>Engine/Source/Runtime/CoreUObject/Private/UObject/PackageReload.cpp</p>
 <figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="type">void</span> <span class="title">ReloadPackages</span><span class="params">(<span class="type">const</span> TArrayView&lt;FReloadPackageData&gt;&amp; InPackagesToReload, TArray&lt;UPackage*&gt;&amp; OutReloadedPackages, int32 InNumPackagesPerBatch)</span></span></span><br></pre></td></tr></table></figure>
 <p>这个函数在 CoreUObject 模块，所以还是可以在游戏中使用的！</p>
-<p>这里面只穿入了一个 package 对象，但是代码里面是明显有新旧包的概念</p>
+<p>这里面只传入了一个 package 对象，但是代码里面是明显有新旧包的概念</p>
 <p>要被替换的旧包被 <code>PackageReloadInternal::ValidateAndPreparePackageForReload</code> 处理。</p>
 <figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">for</span> (<span class="type">const</span> FReloadPackageData&amp; PackageToReloadData : InPackagesToReload)</span><br><span class="line">&#123;</span><br><span class="line">	PreparingPackagesForReloadSlowTask.<span class="built_in">EnterProgressFrame</span>(<span class="number">1.0f</span>);</span><br><span class="line">	ExistingPackages.Refs.<span class="built_in">Emplace</span>(PackageReloadInternal::<span class="built_in">ValidateAndPreparePackageForReload</span>(PackageToReloadData.PackageToReload));</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 <p>该函数首先对 package 做 validation：如果这个 package 是 in memory only 的，也就是仅存在内存中的，那么就没有从磁盘重新加载这一说了</p>
@@ -382,7 +382,7 @@
           <div class="post-attach">
             <span class="post-pubtime">
               <i class="iconfont icon-updatetime mr-10" title="Update time"></i>
-              2025-05-16 07:58:54
+              2025-05-16 15:43:44
             </span>
             
                   <span class="post-tags">
