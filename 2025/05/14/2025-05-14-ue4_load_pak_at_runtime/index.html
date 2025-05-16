@@ -162,7 +162,7 @@
       <div class="post-attach">
         <span class="post-pubtime">
           <i class="iconfont icon-updatetime mr-10" title="Update time"></i>
-          2025-05-15 23:01:33
+          2025-05-16 07:58:54
         </span>
         
               <span class="post-tags">
@@ -202,6 +202,19 @@
 <p><code>AssetRegistry.ScanPathsSynchronous</code> 实际干了什么？为什么我挂载了 pak 之后，调用了它，我还是找不到我 pak 中的资产？</p>
 <p><code>FPakPlatformFile::MountAllPakFiles</code> 是游戏开始时加载所有 pak 的入口，这个内部也是调用 <code>FPakPlatformFile::Mount</code></p>
 <p><code>LoadObject</code> 怎么找到这些文件的？</p>
+<h2 id="挂载-PAK-文件">挂载 PAK 文件</h2>
+<p>通过 <code>FPakPlatformFile::Mount</code> 来挂载 pak 文件</p>
+<p>前半部分是创建 <code>FPakFile</code> 对象，加到 <code>FPakPlatformFile</code> 自己的数组里面</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">TRefCountPtr&lt;FPakFile&gt; Pak = <span class="keyword">new</span> <span class="built_in">FPakFile</span>(LowerLevel, InPakFilename, bSigned, bLoadIndex);</span><br></pre></td></tr></table></figure>
+<p>那么其实这里相当于仅仅是创建对象而已</p>
+<p>要么具体从磁盘加载到 package 的逻辑在后面，要么在 <code>FPakFile</code> 构造函数里面</p>
+<p>那么可以看到 <code>FPakFile</code> 构造函数调用了 <code>FPakFile::Initialize</code>。这里面也仅仅是读取 pak 文件信息，而不是读取所有内容。</p>
+<p>于是看到 <code>FPakPlatformFile::Mount</code> 的后面的部分</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> (FIoDispatcher::<span class="built_in">IsInitialized</span>())</span><br><span class="line">&#123;</span><br><span class="line">	FIoStoreEnvironment IoStoreEnvironment;</span><br><span class="line">	IoStoreEnvironment.<span class="built_in">InitializeFileEnvironment</span>(FPaths::<span class="built_in">ChangeExtension</span>(InPakFilename, <span class="built_in">FString</span>()), PakOrder);</span><br><span class="line">	FIoStatus IoStatus = FIoDispatcher::<span class="built_in">Get</span>().<span class="built_in">Mount</span>(IoStoreEnvironment, EncryptionKeyGuid, EncryptionKey);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p><code>FIoDispatcher::Mount</code> -&gt; <code>FIoDispatcherImpl::Mount</code> -&gt; <code>FFileIoStore::Mount</code></p>
+<p>于是看到是要加载 utoc 文件</p>
+<p>这跟我想看的不一样</p>
+<p>所以我还是没有看到 pak mount 之后，是怎么影响 package 的</p>
 <h2 id="LoadObject">LoadObject</h2>
 <p><code>LoadObject</code> 是 <code>StaticLoadObject</code> 的一层包装，只是转换参数，没做别的事</p>
 <p><code>StaticLoadObject</code> 是 <code>StaticLoadObjectInternal</code> 的一层包装，检查了线程状态和返回值</p>
@@ -369,7 +382,7 @@
           <div class="post-attach">
             <span class="post-pubtime">
               <i class="iconfont icon-updatetime mr-10" title="Update time"></i>
-              2025-05-15 23:01:33
+              2025-05-16 07:58:54
             </span>
             
                   <span class="post-tags">
@@ -416,7 +429,7 @@
     <div class="title">Contents</div>
     <div class="catalog-content">
       
-        <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%88%86%E6%9E%90%E7%9B%AE%E6%A0%87%EF%BC%9A%E6%8C%82%E8%BD%BD%E4%BA%86-pak-%E4%B9%8B%E5%90%8E%E6%80%8E%E4%B9%88%E5%8A%A0%E8%BD%BD%E5%85%B6%E4%B8%AD%E7%9A%84%E8%B5%84%E4%BA%A7%EF%BC%9F"><span class="toc-text">分析目标：挂载了 pak 之后怎么加载其中的资产？</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#LoadObject"><span class="toc-text">LoadObject</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#LoadPackage"><span class="toc-text">LoadPackage</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%8C%A3%E6%89%8E%E4%BA%8E-LoadPackageInternal-%E7%9A%84%E5%89%8D%E5%8D%8A%E9%83%A8%E5%88%86"><span class="toc-text">挣扎于 LoadPackageInternal 的前半部分</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%B8%BA%E4%BB%80%E4%B9%88%E4%B8%80%E7%9B%B4%E7%95%99%E5%9C%A8-LoadPackageInternal-%E5%89%8D%E5%8D%8A%E9%83%A8%E5%88%86"><span class="toc-text">为什么一直留在 LoadPackageInternal 前半部分</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#LoadPackageInternal-%E7%9A%84%E5%90%8E%E9%9D%A2%E7%9A%84%E9%83%A8%E5%88%86"><span class="toc-text">LoadPackageInternal 的后面的部分</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#FLinkerLoad-%E8%A2%AB%E5%88%9B%E5%BB%BA%E4%B9%8B%E5%90%8E%E7%AB%8B%E5%8D%B3-Tick-%E4%B8%80%E6%AC%A1"><span class="toc-text">FLinkerLoad 被创建之后立即 Tick 一次</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#FLinkerLoad"><span class="toc-text">FLinkerLoad</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%AF%BC%E5%85%A5%E5%AF%BC%E5%87%BA%E8%A1%A8"><span class="toc-text">导入导出表</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#FLinkerLoad-Tick"><span class="toc-text">FLinkerLoad::Tick</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#FLinkerLoad-LoadAllObjects"><span class="toc-text">FLinkerLoad::LoadAllObjects</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#FLinkerLoad-CreateExportAndPreload"><span class="toc-text">FLinkerLoad::CreateExportAndPreload</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#FLinkerLoad-Preload"><span class="toc-text">FLinkerLoad::Preload</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#UObject-Serialize"><span class="toc-text">UObject::Serialize</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%9B%9E%E9%A1%BE"><span class="toc-text">回顾</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%85%88%E5%B0%9D%E8%AF%95-ReloadPackages"><span class="toc-text">先尝试 ReloadPackages</span></a></li></ol>
+        <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%88%86%E6%9E%90%E7%9B%AE%E6%A0%87%EF%BC%9A%E6%8C%82%E8%BD%BD%E4%BA%86-pak-%E4%B9%8B%E5%90%8E%E6%80%8E%E4%B9%88%E5%8A%A0%E8%BD%BD%E5%85%B6%E4%B8%AD%E7%9A%84%E8%B5%84%E4%BA%A7%EF%BC%9F"><span class="toc-text">分析目标：挂载了 pak 之后怎么加载其中的资产？</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%8C%82%E8%BD%BD-PAK-%E6%96%87%E4%BB%B6"><span class="toc-text">挂载 PAK 文件</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#LoadObject"><span class="toc-text">LoadObject</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#LoadPackage"><span class="toc-text">LoadPackage</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%8C%A3%E6%89%8E%E4%BA%8E-LoadPackageInternal-%E7%9A%84%E5%89%8D%E5%8D%8A%E9%83%A8%E5%88%86"><span class="toc-text">挣扎于 LoadPackageInternal 的前半部分</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%B8%BA%E4%BB%80%E4%B9%88%E4%B8%80%E7%9B%B4%E7%95%99%E5%9C%A8-LoadPackageInternal-%E5%89%8D%E5%8D%8A%E9%83%A8%E5%88%86"><span class="toc-text">为什么一直留在 LoadPackageInternal 前半部分</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#LoadPackageInternal-%E7%9A%84%E5%90%8E%E9%9D%A2%E7%9A%84%E9%83%A8%E5%88%86"><span class="toc-text">LoadPackageInternal 的后面的部分</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#FLinkerLoad-%E8%A2%AB%E5%88%9B%E5%BB%BA%E4%B9%8B%E5%90%8E%E7%AB%8B%E5%8D%B3-Tick-%E4%B8%80%E6%AC%A1"><span class="toc-text">FLinkerLoad 被创建之后立即 Tick 一次</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#FLinkerLoad"><span class="toc-text">FLinkerLoad</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%AF%BC%E5%85%A5%E5%AF%BC%E5%87%BA%E8%A1%A8"><span class="toc-text">导入导出表</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#FLinkerLoad-Tick"><span class="toc-text">FLinkerLoad::Tick</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#FLinkerLoad-LoadAllObjects"><span class="toc-text">FLinkerLoad::LoadAllObjects</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#FLinkerLoad-CreateExportAndPreload"><span class="toc-text">FLinkerLoad::CreateExportAndPreload</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#FLinkerLoad-Preload"><span class="toc-text">FLinkerLoad::Preload</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#UObject-Serialize"><span class="toc-text">UObject::Serialize</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%9B%9E%E9%A1%BE"><span class="toc-text">回顾</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%85%88%E5%B0%9D%E8%AF%95-ReloadPackages"><span class="toc-text">先尝试 ReloadPackages</span></a></li></ol>
       
     </div>
   </div>
