@@ -14,7 +14,7 @@
   
   <title>
     
-      archive_a: 2024/1 
+      UE4.27.2 Reimport With New File 的调试分析 
       
       
       |
@@ -113,217 +113,171 @@
 
 
       <div class="flex-container">
-        <!-- 归档页，展示本站所有文章，按照年份降序归类，url形式：https://yoursite/archives/ -->
+        <!-- 文章详情页，展示文章具体内容，url形式：https://yoursite/文章标题/ -->
+<!-- 同时为「标签tag」，「朋友friend」，「分类categories」，「关于about」页面的承载页面，具体展示取决于page.type -->
 
-<!-- last: 按年份把文章分组，当前遍历到的年份 -->
-<!-- now: 当前遍历到的文章的发布年份 -->
 
-<div class="container archives">
-  <div class="post-list">
-    
-        <!-- 后续文章的发布年份呈现 -->
-        <div class="content-title">
-          <h2>
-            <span>2025</span>
-          </h2>
+  <!-- LaTex Display -->
+
+  
+    <script async type="text/javascript" src="/plugins/mathjax/tex-chtml.js"></script>
+  
+  <script>
+    MathJax = {
+      tex: {
+        inlineMath: [['$', '$'], ['\\(', '\\)']]
+      }
+    }
+  </script>
+
+
+
+
+
+  <!-- clipboard -->
+
+  
+    <script async type="text/javascript" src="/plugins/clipboard.min.js"></script>
+  
+  
+<script src="/js/codeCopy.js"></script>
+
+
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  <!-- 文章内容页 url形式：https://yoursite/文章标题/ -->
+  <div class="container post-details" id="post-details">
+    <div class="post-content">
+      <div class="post-title">UE4.27.2 Reimport With New File 的调试分析</div>
+      <div class="post-attach">
+        <span class="post-pubtime">
+          <i class="iconfont icon-updatetime mr-10" title="Update time"></i>
+          2025-05-20 23:07:49
+        </span>
+        
+              <span class="post-tags">
+                <i class="iconfont icon-tags mr-10" title="Tags"></i>
+                
+                <span class="span--tag mr-8">
+                  <a href="/tags/Cpp/" title="Cpp">
+                    #Cpp
+                  </a>
+                </span>
+                
+                <span class="span--tag mr-8">
+                  <a href="/tags/Unreal-Engine-4/" title="Unreal Engine 4">
+                    #Unreal Engine 4
+                  </a>
+                </span>
+                
+                <span class="span--tag mr-8">
+                  <a href="/tags/Render/" title="Render">
+                    #Render
+                  </a>
+                </span>
+                
+              </span>
+          
+      </div>
+      <div class="markdown-body">
+        <h2 id="Reimport-With-New-File-入口">Reimport With New File 入口</h2>
+<script src="https://utteranc.es/client.js"
+        repo="CheapMeow/cheapmeow.github.io"
+        issue-term="pathname"
+        theme="github-light"
+        crossorigin="anonymous"
+        async>
+</script>
+      </div>
+      
+        <div class="prev-or-next">
+          <div class="post-foot-next">
+            
+              <a href="/2025/05/20/2025-05-20_ue4_deferred_render_mesh_opaque_draw_call/" target="_self">
+                <i class="iconfont icon-chevronleft"></i>
+                <span>Prev</span>
+              </a>
+            
+          </div>
+          <div class="post-attach">
+            <span class="post-pubtime">
+              <i class="iconfont icon-updatetime mr-10" title="Update time"></i>
+              2025-05-20 23:07:49
+            </span>
+            
+                  <span class="post-tags">
+                    <i class="iconfont icon-tags mr-10" title="Tags"></i>
+                    
+                    <span class="span--tag mr-8">
+                      <a href="/tags/Cpp/" title="Cpp">
+                        #Cpp
+                      </a>
+                    </span>
+                    
+                    <span class="span--tag mr-8">
+                      <a href="/tags/Unreal-Engine-4/" title="Unreal Engine 4">
+                        #Unreal Engine 4
+                      </a>
+                    </span>
+                    
+                    <span class="span--tag mr-8">
+                      <a href="/tags/Render/" title="Render">
+                        #Render
+                      </a>
+                    </span>
+                    
+                  </span>
+              
+          </div>
+          <div class="post-foot-prev">
+            
+          </div>
         </div>
       
-      <div class="post-item" title="UE4.27.2 Reimport With New File 的调试分析">
-        <div class="time-m-d">05-21</div>
-        <div class="title">
-          <a href="/2025/05/21/2025-05-21_ue4_reimport_with_new_file/">
-            <span>UE4.27.2 Reimport With New File 的调试分析</span>
-          </a>
-        </div>
-      </div>
+    </div>
     
-      <div class="post-item" title="UE4.27.2 不透明物体延迟渲染 Draw Call 的调试分析">
-        <div class="time-m-d">05-20</div>
-        <div class="title">
-          <a href="/2025/05/20/2025-05-20_ue4_deferred_render_mesh_opaque_draw_call/">
-            <span>UE4.27.2 不透明物体延迟渲染 Draw Call 的调试分析</span>
-          </a>
-        </div>
-      </div>
-    
-      <div class="post-item" title="UE4.27.2 PAK 文件运行时加载的调试分析">
-        <div class="time-m-d">05-14</div>
-        <div class="title">
-          <a href="/2025/05/14/2025-05-14-ue4_load_pak_at_runtime/">
-            <span>UE4.27.2 PAK 文件运行时加载的调试分析</span>
-          </a>
-        </div>
-      </div>
-    
-      <div class="post-item" title="UE4.27.2 调试 Standalone 游戏的方法">
-        <div class="time-m-d">05-14</div>
-        <div class="title">
-          <a href="/2025/05/14/2025-05-14-ue4_debug_standalone_game/">
-            <span>UE4.27.2 调试 Standalone 游戏的方法</span>
-          </a>
-        </div>
-      </div>
-    
-      <div class="post-item" title="UE4.27.2 UnrealPAK Repack 功能分析">
-        <div class="time-m-d">05-13</div>
-        <div class="title">
-          <a href="/2025/05/13/2025-05-13-ue4_UnrealPAK_repack/">
-            <span>UE4.27.2 UnrealPAK Repack 功能分析</span>
-          </a>
-        </div>
-      </div>
-    
-      <div class="post-item" title="UE4.27.2 转换虚拟资产路径到实际资产路径">
-        <div class="time-m-d">05-13</div>
-        <div class="title">
-          <a href="/2025/05/13/2025-05-13-ue4_find_asset_file_path/">
-            <span>UE4.27.2 转换虚拟资产路径到实际资产路径</span>
-          </a>
-        </div>
-      </div>
-    
-      <div class="post-item" title="UE4.27.2 构建项目放在 SolutionDirectory">
-        <div class="time-m-d">05-12</div>
-        <div class="title">
-          <a href="/2025/05/12/2025-05-12-ue4_build_target_is_in_SolutionDirectory/">
-            <span>UE4.27.2 构建项目放在 SolutionDirectory</span>
-          </a>
-        </div>
-      </div>
-    
-      <div class="post-item" title="UE4.27.2 构建系统 UnrealBuildTool 的调试分析">
-        <div class="time-m-d">05-11</div>
-        <div class="title">
-          <a href="/2025/05/11/2025-05-11-ue4_build_system/">
-            <span>UE4.27.2 构建系统 UnrealBuildTool 的调试分析</span>
-          </a>
-        </div>
-      </div>
-    
-      <div class="post-item" title="UE4.27.2 PAK 打包流程的调试分析">
-        <div class="time-m-d">05-10</div>
-        <div class="title">
-          <a href="/2025/05/10/2025-05-10-ue4_package_pipeline/">
-            <span>UE4.27.2 PAK 打包流程的调试分析</span>
-          </a>
-        </div>
-      </div>
-    
-      <div class="post-item" title="UE4.27.2 着色器的延迟编译的调试分析">
-        <div class="time-m-d">05-10</div>
-        <div class="title">
-          <a href="/2025/05/10/2025-05-10-ue4_deferred_shader_compilation/">
-            <span>UE4.27.2 着色器的延迟编译的调试分析</span>
-          </a>
-        </div>
-      </div>
-    
-      <div class="post-item" title="理解渲染方程">
-        <div class="time-m-d">03-17</div>
-        <div class="title">
-          <a href="/2025/03/17/2025-03-17-understand_the_render_equation/">
-            <span>理解渲染方程</span>
-          </a>
-        </div>
-      </div>
-    
-        <!-- 后续文章的发布年份呈现 -->
-        <div class="content-title">
-          <h2>
-            <span>2024</span>
-          </h2>
-        </div>
+  <div id="btn-catalog" class="btn-catalog">
+    <i class="iconfont icon-catalog"></i>
+  </div>
+  <div class="post-catalog hidden" id="catalog">
+    <div class="title">Contents</div>
+    <div class="catalog-content">
       
-      <div class="post-item" title="Two kinds of poisson equation">
-        <div class="time-m-d">09-18</div>
-        <div class="title">
-          <a href="/2024/09/18/2024-09-18-two_kinds_of_poisson_eq/">
-            <span>Two kinds of poisson equation</span>
-          </a>
-        </div>
-      </div>
-    
-      <div class="post-item" title="C++ libclang 解决变量类型解析失败为 int 的问题">
-        <div class="time-m-d">09-04</div>
-        <div class="title">
-          <a href="/2024/09/04/2024-09-04-libclang_solve_type_name_parsing_error/">
-            <span>C++ libclang 解决变量类型解析失败为 int 的问题</span>
-          </a>
-        </div>
-      </div>
-    
-      <div class="post-item" title="C++ 基于静态反射实现序列化 UI 与 IO 以及 Lua 绑定">
-        <div class="time-m-d">09-04</div>
-        <div class="title">
-          <a href="/2024/09/04/2024-09-04-cpp_static_reflection_usage/">
-            <span>C++ 基于静态反射实现序列化 UI 与 IO 以及 Lua 绑定</span>
-          </a>
-        </div>
-      </div>
-    
-      <div class="post-item" title="CPU 视锥体剔除">
-        <div class="time-m-d">09-03</div>
-        <div class="title">
-          <a href="/2024/09/03/2024-09-03-cpu_frustum_culling/">
-            <span>CPU 视锥体剔除</span>
-          </a>
-        </div>
-      </div>
-    
-      <div class="post-item" title="OpenGL 和 Vulkan 的投影矩阵">
-        <div class="time-m-d">09-02</div>
-        <div class="title">
-          <a href="/2024/09/02/2024-09-02-perspective_matrix_for_opengl_and_vulkan/">
-            <span>OpenGL 和 Vulkan 的投影矩阵</span>
-          </a>
-        </div>
-      </div>
-    
-      <div class="post-item" title="C++ 多维数组的性能测试">
-        <div class="time-m-d">07-21</div>
-        <div class="title">
-          <a href="/2024/07/21/2024-07-21-cpp_multiple_dimensional_array/">
-            <span>C++ 多维数组的性能测试</span>
-          </a>
-        </div>
-      </div>
-    
-      <div class="post-item" title="C++ 静态反射学习">
-        <div class="time-m-d">05-13</div>
-        <div class="title">
-          <a href="/2024/05/13/2024-05-13-cpp_static_reflection/">
-            <span>C++ 静态反射学习</span>
-          </a>
-        </div>
-      </div>
-    
-      <div class="post-item" title="Fluid Simulation for Computer Graphics Reading Note">
-        <div class="time-m-d">01-10</div>
-        <div class="title">
-          <a href="/2024/01/10/2024-01-10-fluid_simulation_for_computer_graphics_reading_note/">
-            <span>Fluid Simulation for Computer Graphics Reading Note</span>
-          </a>
-        </div>
-      </div>
-    
-        <!-- 后续文章的发布年份呈现 -->
-        <div class="content-title">
-          <h2>
-            <span>2023</span>
-          </h2>
-        </div>
+        <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#Reimport-With-New-File-%E5%85%A5%E5%8F%A3"><span class="toc-text">Reimport With New File 入口</span></a></li></ol>
       
-      <div class="post-item" title="Create SPH Fluid using UE5 Niagara System">
-        <div class="time-m-d">12-19</div>
-        <div class="title">
-          <a href="/2023/12/19/2023-12-19-ue5_niagara_sph/">
-            <span>Create SPH Fluid using UE5 Niagara System</span>
-          </a>
-        </div>
+    </div>
+  </div>
+
+  
+<script src="/js/catalog.js"></script>
+
+
+
+
+    
+      <div class="comments-container">
+        
+
+
+
+
+
+
+
       </div>
     
   </div>
-</div>
+
 
         
 <div class="footer">
@@ -580,6 +534,24 @@
 
 
         
+  
+    <div class="share-icon tools-bar-item">
+      <a href="javascript: void(0)" id="share-icon">
+        <i class="iconfont iconshare"></i>
+      </a>
+      <div class="share-content hidden">
+        
+          <a class="share-item" href="https://twitter.com/intent/tweet?text=' + UE4.27.2%20Reimport%20With%20New%20File%20%E7%9A%84%E8%B0%83%E8%AF%95%E5%88%86%E6%9E%90 + '&url=' + https%3A%2F%2Fcheapmeow.github.io%2F2025%2F05%2F21%2F2025-05-21_ue4_reimport_with_new_file%2F + '" target="_blank" title="Twitter">
+            <i class="iconfont icon-twitter"></i>
+          </a>
+        
+        
+          <a class="share-item" href="https://www.facebook.com/sharer.php?u=https://cheapmeow.github.io/2025/05/21/2025-05-21_ue4_reimport_with_new_file/" target="_blank" title="Facebook">
+            <i class="iconfont icon-facebooksquare"></i>
+          </a>
+        
+      </div>
+    </div>
   
   
 <script src="/js/shares.js"></script>
