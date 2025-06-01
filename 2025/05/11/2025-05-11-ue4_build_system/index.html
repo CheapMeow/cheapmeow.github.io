@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html lang="en" color-mode="light">
+
+  <head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="author" content="John Doe" />
+  <!-- Open Graph Description 简短摘要-->
+  
+  <!-- 用于搜索引擎的文章摘要 -->
+  
+  
+  
+  <title>
+    
+      UE4.27.2 构建系统 UnrealBuildTool 的调试分析 
+      
+      
+      |
+    
+     CheapMeow
+  </title>
+
+  
+    <link rel="apple-touch-icon" href="/images/avatar.png">
+    <link rel="icon" href="/images/avatar.png">
+  
+
+  <!-- Raleway-Font -->
+  <link href="https://fonts.googleapis.com/css?family=Raleway&display=swap" rel="stylesheet">
+
+  <!-- hexo site css -->
+  <link rel="stylesheet" href="/css/main.css" />
+  <link rel="stylesheet" href="//at.alicdn.com/t/font_1886449_67xjft27j1l.css" />
+  <!-- 代码块风格 -->
+  
+    
+<link rel="stylesheet" href="/css/figcaption/mac-block.css">
+
+  
+
+  <!-- jquery3.3.1 -->
+  
+    <script defer type="text/javascript" src="/plugins/jquery.min.js"></script>
+  
+
+  <!-- fancybox -->
+  
+    <link href="/plugins/jquery.fancybox.min.css" rel="stylesheet">
+    <script defer type="text/javascript" src="/plugins/jquery.fancybox.min.js"></script>
+  
+  
+<script src="/js/fancybox.js"></script>
+
+
+  
+
+  
+
+  <script>
+    var html = document.documentElement
+    const colorMode = localStorage.getItem('color-mode')
+    if (colorMode) {
+      document.documentElement.setAttribute('color-mode', colorMode)
+    }
+  </script>
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+
+  <body>
+    <div id="app">
+      <div class="header">
+  <div class="avatar">
+    <a href="/">
+      <!-- 头像取消懒加载，添加no-lazy -->
+      
+        <img src="/images/avatar.png" alt="">
+      
+    </a>
+    <div class="nickname"><a href="/">CheapMeow</a></div>
+  </div>
+  <div class="navbar">
+    <ul>
+      
+        <li class="nav-item" data-path="/">
+          <a href="/">Home</a>
+        </li>
+      
+        <li class="nav-item" data-path="/archives/">
+          <a href="/archives/">Archives</a>
+        </li>
+      
+        <li class="nav-item" data-path="/tags/">
+          <a href="/tags/">Tags</a>
+        </li>
+      
+        <li class="nav-item" data-path="/friends/">
+          <a href="/friends/">Friends</a>
+        </li>
+      
+        <li class="nav-item" data-path="/about/">
+          <a href="/about/">About</a>
+        </li>
+      
+    </ul>
+  </div>
+</div>
+
+
+<script src="/js/activeNav.js"></script>
+
+
+
+      <div class="flex-container">
+        <!-- 文章详情页，展示文章具体内容，url形式：https://yoursite/文章标题/ -->
+<!-- 同时为「标签tag」，「朋友friend」，「分类categories」，「关于about」页面的承载页面，具体展示取决于page.type -->
+
+
+  <!-- LaTex Display -->
+
+  
+    <script async type="text/javascript" src="/plugins/mathjax/tex-chtml.js"></script>
+  
+  <script>
+    MathJax = {
+      tex: {
+        inlineMath: [['$', '$'], ['\\(', '\\)']]
+      }
+    }
+  </script>
+
+
+
+
+
+  <!-- clipboard -->
+
+  
+    <script async type="text/javascript" src="/plugins/clipboard.min.js"></script>
+  
+  
+<script src="/js/codeCopy.js"></script>
+
+
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  <!-- 文章内容页 url形式：https://yoursite/文章标题/ -->
+  <div class="container post-details" id="post-details">
+    <div class="post-content">
+      <div class="post-title">UE4.27.2 构建系统 UnrealBuildTool 的调试分析</div>
+      <div class="post-attach">
+        <span class="post-pubtime">
+          <i class="iconfont icon-updatetime mr-10" title="Update time"></i>
+          2025-06-01 10:52:45
+        </span>
+        
+              <span class="post-tags">
+                <i class="iconfont icon-tags mr-10" title="Tags"></i>
+                
+                <span class="span--tag mr-8">
+                  <a href="/tags/Cpp/" title="Cpp">
+                    #Cpp
+                  </a>
+                </span>
+                
+                <span class="span--tag mr-8">
+                  <a href="/tags/Unreal-Engine-4/" title="Unreal Engine 4">
+                    #Unreal Engine 4
+                  </a>
+                </span>
+                
+                <span class="span--tag mr-8">
+                  <a href="/tags/Build-System/" title="Build System">
+                    #Build System
+                  </a>
+                </span>
+                
+                <span class="span--tag mr-8">
+                  <a href="/tags/UnrealBuildTool/" title="UnrealBuildTool">
+                    #UnrealBuildTool
+                  </a>
+                </span>
+                
+              </span>
+          
+      </div>
+      <div class="markdown-body">
+        <h2 id="模块以及目标类型">模块以及目标类型</h2>
+<p>不再赘述</p>
+<h2 id="构建-UBT，创建-VS-工程">构建 UBT，创建 VS 工程</h2>
+<p><code>GenerateProjectFiles.bat</code> 调用 <code>Engine\Build\BatchFiles\GenerateProjectFiles.bat</code></p>
+<p>该脚本前面的部分是准备编译环境，比如找到 MSBuild，然后调用 MSBuild 构建 UnrealBuildTool</p>
+<p><code>UnrealBuildTool.csproj</code> 是提前写好的，所以可以直接编译</p>
+<p>然后就是调用 UnrealBuildTool 来构建 VS 工程。于是开始看 UnrealBuildTool 代码。</p>
+<h2 id="如何调试-UnrealBuildTool-生成项目">如何调试 UnrealBuildTool 生成项目</h2>
+<p><code>Engine\Build\BatchFiles\GenerateProjectFiles.bat</code> 里面写得很清楚了，就是用这个命令行参数</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">-ProjectFiles</span><br></pre></td></tr></table></figure>
+<p>UnrealBuildTool 入口函数根据参数选择创建 <code>ToolMode</code> 调用 <code>Execute</code> 虚函数。不同的 mode 对应不同的构建行为</p>
+<p>显然 <code>GenerateProjectFilesMode</code> 类对应构建 VS 工程的逻辑。</p>
+<p>我想知道自己创建出来的模块是怎么让 UE 识别到的，于是还是要看看他是怎么生成项目文件的</p>
+<h2 id="生成项目时，自定义模块如何被识别">生成项目时，自定义模块如何被识别</h2>
+<p>查看 <code>GenerateProjectFilesMode</code> 类的 <code>Execute</code> 实现</p>
+<p>可以看到他对于不同平台有不同的项目生成器 <code>Generator</code>，最终调用 <code>Generator.GenerateProjectFiles</code></p>
+<p>点进来看 <code>Generator.GenerateProjectFiles</code>，前面的配置就不说了</p>
+<p>然后是他寻找 game, target 和 module 的部分</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// Build the list of games to generate projects for</span></span><br><span class="line">List&lt;FileReference&gt; AllGameProjects = <span class="built_in">FindGameProjects</span>();</span><br><span class="line"></span><br><span class="line"><span class="comment">// Find all of the target files.  This will filter out any modules or targets that don&#x27;t</span></span><br><span class="line"><span class="comment">// belong to platforms we&#x27;re generating project files for.</span></span><br><span class="line">List&lt;FileReference&gt; AllTargetFiles = <span class="built_in">DiscoverTargets</span>(AllGameProjects);</span><br><span class="line"></span><br><span class="line">...</span><br><span class="line"></span><br><span class="line"><span class="comment">// Find all of the module files.  This will filter out any modules or targets that don&#x27;t belong to platforms</span></span><br><span class="line"><span class="comment">// we&#x27;re generating project files for.</span></span><br><span class="line">List&lt;FileReference&gt; AllModuleFiles = <span class="built_in">DiscoverModules</span>(AllGameProjects);</span><br></pre></td></tr></table></figure>
+<p>之后就是把找到的这些目标添加到工程</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line">ProjectFile EngineProject;</span><br><span class="line">ProjectFile EnterpriseProject;</span><br><span class="line">List&lt;ProjectFile&gt; GameProjects;</span><br><span class="line">List&lt;ProjectFile&gt; ModProjects;</span><br><span class="line">Dictionary&lt;FileReference, ProjectFile&gt; ProgramProjects;</span><br><span class="line">&#123;</span><br><span class="line">  <span class="comment">// Setup buildable projects for all targets</span></span><br><span class="line">  <span class="built_in">AddProjectsForAllTargets</span>( PlatformProjectGenerators, AllGameProjects, AllTargetFiles, Arguments, out EngineProject, out EnterpriseProject, out GameProjects, out ProgramProjects );</span><br><span class="line"></span><br><span class="line">  <span class="comment">// Add projects for mods</span></span><br><span class="line">  <span class="built_in">AddProjectsForMods</span>(GameProjects, out ModProjects);</span><br><span class="line"></span><br><span class="line">  <span class="comment">// Add all game projects and game config files</span></span><br><span class="line">  <span class="built_in">AddAllGameProjects</span>(GameProjects, SupportedPlatformNames, RootFolder);</span><br><span class="line">  </span><br><span class="line">  ...</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">...</span><br><span class="line"></span><br><span class="line"><span class="comment">// Setup &quot;stub&quot; projects for all modules</span></span><br><span class="line"><span class="built_in">AddProjectsForAllModules</span>(AllGameProjects, ProgramProjects, ModProjects, AllModuleFiles, bGatherThirdPartySource);</span><br></pre></td></tr></table></figure>
+<h2 id="如何调试-UnrealBuildTool-构建项目">如何调试 UnrealBuildTool 构建项目</h2>
+<p>已经配置好 VS 项目后，直接在 VS 工程中点击调试，在输出窗口中可以看到构建命令</p>
+<p>比如我这里的构建命令是</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">&lt;path to engine&gt;\Engine\Build\BatchFiles\Build.bat -Target=&quot;&lt;project name&gt;Editor Win64 Development -Project=\&quot;E:\Unreal Projects\&lt;project name&gt;\&lt;project name&gt;.uproject\&quot;&quot; -Target=&quot;ShaderCompileWorker Win64 Development -Quiet&quot; -WaitMutex -FromMsBuild</span><br></pre></td></tr></table></figure>
+<p>去看一下 <code>&lt;path to engine&gt;\Engine\Build\BatchFiles\Build.bat</code> 就可以看到，他只是 <code>UnrealBuildTool.exe</code> 的简单包装</p>
+<p>所以完全可以复制粘贴后面的命令行参数，以调试 UnrealBuildTool 项目</p>
+<h2 id="UnrealBuildTool-构建模式的逻辑">UnrealBuildTool 构建模式的逻辑</h2>
+<p>显然，<code>BuildMode</code> 类对应构建逻辑。</p>
+<p>其 <code>Execute</code> 内主要功能是收集构建目标，进行多目标构建。每个目标可以是远端构建或本地构建。</p>
+<p>然后它调用 <code>Build</code> 开始对具体目标开始构建。</p>
+<p>具体到本地构建 <code>public static void Build(List&lt;TargetDescriptor&gt; TargetDescriptors, BuildConfiguration BuildConfiguration, ISourceFileWorkingSet WorkingSet, BuildOptions Options, FileReference WriteOutdatedActionsFile, bool bSkipPreBuildTargets = false)</code>，每个不能被跳过构建的目标，都生成 makefile</p>
+<p>再下一层 <code>static void Build(TargetMakefile[] Makefiles, List&lt;TargetDescriptor&gt; TargetDescriptors, BuildConfiguration BuildConfiguration, ISourceFileWorkingSet WorkingSet, BuildOptions Options, FileReference WriteOutdatedActionsFile)</code> 对确认要构建的，具有 makefile 的目标进行处理。</p>
+<p>这里面，除了一些构建特性的支持，比如热重载，暂时跳过不看，剩下的主题是引入了一个 <code>Action</code> 的概念。每一项构建一个 <code>Action</code>，<code>Action</code> 之间有依赖关系，是一个图。<code>ActionGraph.ExecuteActions</code> 对这个图结构发起构建。</p>
+<p>这个图结构发起构建的逻辑是，根据构建配置创建不同类型的 <code>Executor</code>，然后调用 <code>Executor.ExecuteActions</code> 对 <code>Action</code> 列表发起构建</p>
+<p>在我的调试中，它创建的是 <code>ParallelExecutor</code> 类</p>
+<p>该 <code>Executor</code> 类里面对输入的 <code>Action</code> 列表遍历，转为 <code>BuildAction</code> 列表</p>
+<p>单纯从他创建的过程来看，<code>BuildAction</code> 相较于 <code>Action</code> 主要是多了个序号</p>
+<p>然后根据 <code>BuildAction</code> 的 <code>.Inner.PrerequisiteItems</code> 创建依赖关系</p>
+<p>最终从 <code>BuildAction</code> 列表遍历，创建 <code>BuildAction</code> 队列</p>
+<p>对 <code>BuildAction</code> 队列处理构建。这时可以根据依赖关系对 <code>BuildAction</code> 排序</p>
+<p>排序之后就可以对每一个 <code>BuildAction</code> 创建构建线程</p>
+<figure class="highlight csharp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">BuildAction Action = QueuedActions[QueuedActions.Count - <span class="number">1</span>];</span><br><span class="line">QueuedActions.RemoveAt(QueuedActions.Count - <span class="number">1</span>);</span><br><span class="line"></span><br><span class="line">Thread ExecutingThread = <span class="keyword">new</span> Thread(() =&gt; &#123; ExecuteAction(ProcessGroup, Action, CompletedActions, CompletedEvent); &#125;);</span><br><span class="line">ExecutingThread.Name = String.Format(<span class="string">&quot;Build:&#123;0&#125;&quot;</span>, Action.Inner.StatusDescription);</span><br><span class="line">ExecutingThread.Start();</span><br><span class="line"></span><br><span class="line">ExecutingActions.Add(Action, ExecutingThread);</span><br></pre></td></tr></table></figure>
+<p>之后就是怎么收集这些构建线程的事情了。</p>
+<p>这些线程工作完了，UBT 就结束了。于是步进调试到 <code>ParallelExecutor.ExecuteAction</code>。</p>
+<p>其中的核心是</p>
+<figure class="highlight csharp"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">ManagedProcess Process = <span class="keyword">new</span> ManagedProcess(ProcessGroup, Action.Inner.CommandPath.FullName, Action.Inner.CommandArguments, Action.Inner.WorkingDirectory.FullName, <span class="literal">null</span>, <span class="literal">null</span>, ProcessPriorityClass.BelowNormal)</span><br></pre></td></tr></table></figure>
+<p>可见，他也是最终调用一个可执行文件，然后传入各种文本作为构建参数</p>
+<p>我调试时，<code>Action.Inner.CommandPath.FullName</code> 是</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">&lt;path to engine&gt;\Engine\Build\Windows\cl-filter\cl-filter.exe</span><br></pre></td></tr></table></figure>
+<p>这个 cl-filter 甚至不在 Engine 的 VS 项目和 Project 的 VS 项目目录里，酷</p>
+<p>知道他是 cl 的包装，用来实现一些目的就够了</p>
+<p><code>Action.Inner.CommandArguments</code> 是</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">-dependencies=&quot;E:\Unreal Projects\&lt;project name&gt;\Intermediate\Build\Win64\UE4Editor\Development\&lt;project name&gt;\MyClass.cpp.txt&quot; -compiler=&quot;E:\software\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.29.30133\bin\HostX64\x64\cl.exe&quot; -- &quot;E:\software\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.29.30133\bin\HostX64\x64\cl.exe&quot;  @&quot;E:\Unreal Projects\&lt;project name&gt;\Intermediate\Build\Win64\UE4Editor\Development\&lt;project name&gt;\MyClass.cpp.obj.response&quot; /showIncludes</span><br></pre></td></tr></table></figure>
+<p>打开看这个 response 文件，可以看到他应该是为了传入编译选项、include 路径、输入输出目录</p>
+<p>前面的部分的节选</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line">/bigobj</span><br><span class="line">/fp:fast</span><br><span class="line">/Zp8</span><br><span class="line">/we4456</span><br><span class="line">/we4458</span><br><span class="line">/we4459</span><br><span class="line">/wd4463</span><br><span class="line">/we4668</span><br><span class="line">/wd4244</span><br><span class="line">/wd4838</span><br><span class="line">/I .</span><br><span class="line">/I &quot;E:\Unreal Projects\&lt;project name&gt;\Source&quot;</span><br><span class="line">/I Runtime</span><br><span class="line">/I Runtime\TraceLog\Public</span><br><span class="line">/I Runtime\Core\Public</span><br><span class="line">/I ..\Intermediate\Build\Win64\UE4Editor\Inc\CoreUObject</span><br><span class="line">/I Runtime\CoreUObject\Public</span><br><span class="line">/I ..\Intermediate\Build\Win64\UE4Editor\Inc\Engine</span><br><span class="line">/I Runtime\Engine\Classes</span><br><span class="line">/I Runtime\Engine\Public</span><br><span class="line">/I ..\Intermediate\Build\Win64\UE4Editor\Inc\NetCore</span><br><span class="line">/I Runtime\Net</span><br></pre></td></tr></table></figure>
+<p>后面的部分的节选</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">/I &quot;C:\Program Files (x86)\Windows Kits\10\include\10.0.22621.0\ucrt&quot;</span><br><span class="line">/I &quot;C:\Program Files (x86)\Windows Kits\10\include\10.0.22621.0\shared&quot;</span><br><span class="line">/I &quot;C:\Program Files (x86)\Windows Kits\10\include\10.0.22621.0\um&quot;</span><br><span class="line">/I &quot;C:\Program Files (x86)\Windows Kits\10\include\10.0.22621.0\winrt&quot;</span><br><span class="line">/FI&quot;&lt;path to engine&gt;\Engine\Intermediate\Build\Win64\UE4Editor\Development\Engine\SharedPCH.Engine.NonOptimized.ShadowErrors.h&quot;</span><br><span class="line">/Yu&quot;&lt;path to engine&gt;\Engine\Intermediate\Build\Win64\UE4Editor\Development\Engine\SharedPCH.Engine.NonOptimized.ShadowErrors.h&quot;</span><br><span class="line">/Fp&quot;&lt;path to engine&gt;\Engine\Intermediate\Build\Win64\UE4Editor\Development\Engine\SharedPCH.Engine.NonOptimized.ShadowErrors.h.pch&quot;</span><br><span class="line">&quot;E:\Unreal Projects\&lt;project name&gt;\Source\&lt;project name&gt;\MyClass.cpp&quot;</span><br><span class="line">/FI&quot;E:\Unreal Projects\&lt;project name&gt;\Intermediate\Build\Win64\UE4Editor\DebugGame\&lt;project name&gt;\Definitions.&lt;project name&gt;.h&quot;</span><br><span class="line">/Fo&quot;E:\Unreal Projects\&lt;project name&gt;\Intermediate\Build\Win64\UE4Editor\DebugGame\&lt;project name&gt;\MyClass.cpp.obj&quot;</span><br><span class="line">/TP</span><br><span class="line">/GR-</span><br><span class="line">/W4</span><br></pre></td></tr></table></figure>
+<p>到此就差不多了。剩下的，比如 cl 干了什么、cl-filter 干了什么、response 文件是怎么生成的、读 response 之后怎么构建的，应该就太细节了，我没有去调试</p>
+<p>虽然我没有调试，但是看了一些博客。cl-filter 这个包装，主要是为了解决，增量构建时，如何找到某次代码修改涉及到的所有的依赖项的问题。</p>
+<script src="https://utteranc.es/client.js"
+        repo="CheapMeow/cheapmeow.github.io"
+        issue-term="pathname"
+        theme="github-light"
+        crossorigin="anonymous"
+        async>
+</script>
+      </div>
+      
+        <div class="prev-or-next">
+          <div class="post-foot-next">
+            
+              <a href="/2025/05/10/2025-05-10-ue4_package_pipeline/" target="_self">
+                <i class="iconfont icon-chevronleft"></i>
+                <span>Prev</span>
+              </a>
+            
+          </div>
+          <div class="post-attach">
+            <span class="post-pubtime">
+              <i class="iconfont icon-updatetime mr-10" title="Update time"></i>
+              2025-06-01 10:52:45
+            </span>
+            
+                  <span class="post-tags">
+                    <i class="iconfont icon-tags mr-10" title="Tags"></i>
+                    
+                    <span class="span--tag mr-8">
+                      <a href="/tags/Cpp/" title="Cpp">
+                        #Cpp
+                      </a>
+                    </span>
+                    
+                    <span class="span--tag mr-8">
+                      <a href="/tags/Unreal-Engine-4/" title="Unreal Engine 4">
+                        #Unreal Engine 4
+                      </a>
+                    </span>
+                    
+                    <span class="span--tag mr-8">
+                      <a href="/tags/Build-System/" title="Build System">
+                        #Build System
+                      </a>
+                    </span>
+                    
+                    <span class="span--tag mr-8">
+                      <a href="/tags/UnrealBuildTool/" title="UnrealBuildTool">
+                        #UnrealBuildTool
+                      </a>
+                    </span>
+                    
+                  </span>
+              
+          </div>
+          <div class="post-foot-prev">
+            
+              <a href="/2025/05/12/2025-05-12-ue4_build_target_is_in_SolutionDirectory/" target="_self">
+                <span>Next</span>
+                <i class="iconfont icon-chevronright"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+    </div>
+    
+  <div id="btn-catalog" class="btn-catalog">
+    <i class="iconfont icon-catalog"></i>
+  </div>
+  <div class="post-catalog hidden" id="catalog">
+    <div class="title">Contents</div>
+    <div class="catalog-content">
+      
+        <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%A8%A1%E5%9D%97%E4%BB%A5%E5%8F%8A%E7%9B%AE%E6%A0%87%E7%B1%BB%E5%9E%8B"><span class="toc-text">模块以及目标类型</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%9E%84%E5%BB%BA-UBT%EF%BC%8C%E5%88%9B%E5%BB%BA-VS-%E5%B7%A5%E7%A8%8B"><span class="toc-text">构建 UBT，创建 VS 工程</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%A6%82%E4%BD%95%E8%B0%83%E8%AF%95-UnrealBuildTool-%E7%94%9F%E6%88%90%E9%A1%B9%E7%9B%AE"><span class="toc-text">如何调试 UnrealBuildTool 生成项目</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%94%9F%E6%88%90%E9%A1%B9%E7%9B%AE%E6%97%B6%EF%BC%8C%E8%87%AA%E5%AE%9A%E4%B9%89%E6%A8%A1%E5%9D%97%E5%A6%82%E4%BD%95%E8%A2%AB%E8%AF%86%E5%88%AB"><span class="toc-text">生成项目时，自定义模块如何被识别</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%A6%82%E4%BD%95%E8%B0%83%E8%AF%95-UnrealBuildTool-%E6%9E%84%E5%BB%BA%E9%A1%B9%E7%9B%AE"><span class="toc-text">如何调试 UnrealBuildTool 构建项目</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#UnrealBuildTool-%E6%9E%84%E5%BB%BA%E6%A8%A1%E5%BC%8F%E7%9A%84%E9%80%BB%E8%BE%91"><span class="toc-text">UnrealBuildTool 构建模式的逻辑</span></a></li></ol>
+      
+    </div>
+  </div>
+
+  
+<script src="/js/catalog.js"></script>
+
+
+
+
+    
+      <div class="comments-container">
+        
+
+
+
+
+
+
+
+      </div>
+    
+  </div>
+
+
+        
+<div class="footer">
+  <div class="social">
+    <ul>
+      
+        <li>
+          
+              <a title="github" target="_blank" rel="noopener" href="https://github.com/zchengsite/hexo-theme-oranges">
+                <i class="iconfont icon-github"></i>
+              </a>
+              
+        </li>
+        
+    </ul>
+  </div>
+  
+    
+    <div class="footer-more">
+      
+        <a target="_blank" rel="noopener" href="https://github.com/zchengsite/hexo-theme-oranges">Copyright © 2025 Oranges</a>
+        
+    </div>
+  
+    
+    <div class="footer-more">
+      
+        <a target="_blank" rel="noopener" href="https://github.com/zchengsite/hexo-theme-oranges">Theme by Oranges | Powered by Hexo</a>
+        
+    </div>
+  
+  
+</div>
+
+      </div>
+
+      <div class="tools-bar">
+        <div class="back-to-top tools-bar-item hidden">
+  <a href="javascript: void(0)">
+    <i class="iconfont icon-chevronup"></i>
+  </a>
+</div>
+
+
+<script src="/js/backtotop.js"></script>
+
+
+
+        
+  <div class="search-icon tools-bar-item" id="search-icon">
+    <a href="javascript: void(0)">
+      <i class="iconfont icon-search"></i>
+    </a>
+  </div>
+
+  <div class="search-overlay hidden">
+    <div class="search-content" tabindex="0">
+      <div class="search-title">
+        <span class="search-icon-input">
+          <a href="javascript: void(0)">
+            <i class="iconfont icon-search"></i>
+          </a>
+        </span>
+        
+          <input type="text" class="search-input" id="search-input" placeholder="搜索...">
+        
+        <span class="search-close-icon" id="search-close-icon">
+          <a href="javascript: void(0)">
+            <i class="iconfont icon-close"></i>
+          </a>
+        </span>
+      </div>
+      <div class="search-result" id="search-result"></div>
+    </div>
+  </div>
+
+  <script type="text/javascript">
+    var inputArea = document.querySelector("#search-input")
+    var searchOverlayArea = document.querySelector(".search-overlay")
+
+    inputArea.onclick = function() {
+      getSearchFile()
+      this.onclick = null
+    }
+
+    inputArea.onkeydown = function() {
+      if(event.keyCode == 13)
+        return false
+    }
+
+    function openOrHideSearchContent() {
+      let isHidden = searchOverlayArea.classList.contains('hidden')
+      if (isHidden) {
+        searchOverlayArea.classList.remove('hidden')
+        document.body.classList.add('hidden')
+        // inputArea.focus()
+      } else {
+        searchOverlayArea.classList.add('hidden')
+        document.body.classList.remove('hidden')
+      }
+    }
+
+    function blurSearchContent(e) {
+      if (e.target === searchOverlayArea) {
+        openOrHideSearchContent()
+      }
+    }
+
+    document.querySelector("#search-icon").addEventListener("click", openOrHideSearchContent, false)
+    document.querySelector("#search-close-icon").addEventListener("click", openOrHideSearchContent, false)
+    searchOverlayArea.addEventListener("click", blurSearchContent, false)
+
+    var searchFunc = function (path, search_id, content_id) {
+      'use strict';
+      var $input = document.getElementById(search_id);
+      var $resultContent = document.getElementById(content_id);
+      $resultContent.innerHTML = "<ul><span class='local-search-empty'>First search, index file loading, please wait...<span></ul>";
+      $.ajax({
+        // 0x01. load xml file
+        url: path,
+        dataType: "xml",
+        success: function (xmlResponse) {
+          // 0x02. parse xml file
+          var datas = $("entry", xmlResponse).map(function () {
+            return {
+              title: $("title", this).text(),
+              content: $("content", this).text(),
+              url: $("url", this).text()
+            };
+          }).get();
+          $resultContent.innerHTML = "";
+
+          $input.addEventListener('input', function () {
+            // 0x03. parse query to keywords list
+            var str = '<ul class=\"search-result-list\">';
+            var keywords = this.value.trim().toLowerCase().split(/[\s\-]+/);
+            $resultContent.innerHTML = "";
+            if (this.value.trim().length <= 0) {
+              return;
+            }
+            // 0x04. perform local searching
+            datas.forEach(function (data) {
+              var isMatch = true;
+              var content_index = [];
+              if (!data.title || data.title.trim() === '') {
+                data.title = "Untitled";
+              }
+              var orig_data_title = data.title.trim();
+              var data_title = orig_data_title.toLowerCase();
+              var orig_data_content = data.content.trim().replace(/<[^>]+>/g, "");
+              var data_content = orig_data_content.toLowerCase();
+              var data_url = data.url;
+              var index_title = -1;
+              var index_content = -1;
+              var first_occur = -1;
+              // only match artiles with not empty contents
+              if (data_content !== '') {
+                keywords.forEach(function (keyword, i) {
+                  index_title = data_title.indexOf(keyword);
+                  index_content = data_content.indexOf(keyword);
+
+                  if (index_title < 0 && index_content < 0) {
+                    isMatch = false;
+                  } else {
+                    if (index_content < 0) {
+                      index_content = 0;
+                    }
+                    if (i == 0) {
+                      first_occur = index_content;
+                    }
+                    // content_index.push({index_content:index_content, keyword_len:keyword_len});
+                  }
+                });
+              } else {
+                isMatch = false;
+              }
+              // 0x05. show search results
+              if (isMatch) {
+                str += "<li><a href='" + data_url + "' class='search-result-title'>" + orig_data_title + "</a>";
+                var content = orig_data_content;
+                if (first_occur >= 0) {
+                  // cut out 100 characters
+                  var start = first_occur - 20;
+                  var end = first_occur + 80;
+
+                  if (start < 0) {
+                    start = 0;
+                  }
+
+                  if (start == 0) {
+                    end = 100;
+                  }
+
+                  if (end > content.length) {
+                    end = content.length;
+                  }
+
+                  var match_content = content.substr(start, end);
+
+                  // highlight all keywords
+                  keywords.forEach(function (keyword) {
+                    var regS = new RegExp(keyword, "gi");
+                    match_content = match_content.replace(regS, "<span class=\"search-keyword\">" + keyword + "</span>");
+                  });
+
+                  str += "<p class=\"search-result-abstract\">" + match_content + "...</p>"
+                }
+                str += "</li>";
+              }
+            });
+            str += "</ul>";
+            if (str.indexOf('<li>') === -1) {
+              return $resultContent.innerHTML = "<ul><span class='local-search-empty'>No result<span></ul>";
+            }
+            $resultContent.innerHTML = str;
+          });
+        },
+        error: function(xhr, status, error) {
+          $resultContent.innerHTML = ""
+          if (xhr.status === 404) {
+            $resultContent.innerHTML = "<ul><span class='local-search-empty'>The search.xml file was not found, please refer to：<a href='https://github.com/zchengsite/hexo-theme-oranges#configuration' target='_black'>configuration</a><span></ul>";
+          } else {
+            $resultContent.innerHTML = "<ul><span class='local-search-empty'>The request failed, Try to refresh the page or try again later.<span></ul>";
+          }
+        }
+      });
+      $(document).on('click', '#search-close-icon', function() {
+        $('#search-input').val('');
+        $('#search-result').html('');
+      });
+    }
+
+    var getSearchFile = function() {
+        var path = "/search.xml";
+        searchFunc(path, 'search-input', 'search-result');
+    }
+  </script>
+
+
+
+
+        
+  <div class="tools-bar-item theme-icon" id="switch-color-scheme">
+    <a href="javascript: void(0)">
+      <i id="theme-icon" class="iconfont icon-moon"></i>
+    </a>
+  </div>
+
+  
+<script src="/js/colorscheme.js"></script>
+
+
+
+
+
+        
+  
+    <div class="share-icon tools-bar-item">
+      <a href="javascript: void(0)" id="share-icon">
+        <i class="iconfont iconshare"></i>
+      </a>
+      <div class="share-content hidden">
+        
+          <a class="share-item" href="https://twitter.com/intent/tweet?text=' + UE4.27.2%20%E6%9E%84%E5%BB%BA%E7%B3%BB%E7%BB%9F%20UnrealBuildTool%20%E7%9A%84%E8%B0%83%E8%AF%95%E5%88%86%E6%9E%90 + '&url=' + https%3A%2F%2Fcheapmeow.github.io%2F2025%2F05%2F11%2F2025-05-11-ue4_build_system%2F + '" target="_blank" title="Twitter">
+            <i class="iconfont icon-twitter"></i>
+          </a>
+        
+        
+          <a class="share-item" href="https://www.facebook.com/sharer.php?u=https://cheapmeow.github.io/2025/05/11/2025-05-11-ue4_build_system/" target="_blank" title="Facebook">
+            <i class="iconfont icon-facebooksquare"></i>
+          </a>
+        
+      </div>
+    </div>
+  
+  
+<script src="/js/shares.js"></script>
+
+
+
+      </div>
+    </div>
+  </body>
+</html>

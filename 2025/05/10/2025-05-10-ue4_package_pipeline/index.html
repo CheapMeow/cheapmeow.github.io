@@ -1,0 +1,658 @@
+<!DOCTYPE html>
+<html lang="en" color-mode="light">
+
+  <head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="author" content="John Doe" />
+  <!-- Open Graph Description 简短摘要-->
+  
+  <!-- 用于搜索引擎的文章摘要 -->
+  
+  
+  
+  <title>
+    
+      UE4.27.2 PAK 打包流程的调试分析 
+      
+      
+      |
+    
+     CheapMeow
+  </title>
+
+  
+    <link rel="apple-touch-icon" href="/images/avatar.png">
+    <link rel="icon" href="/images/avatar.png">
+  
+
+  <!-- Raleway-Font -->
+  <link href="https://fonts.googleapis.com/css?family=Raleway&display=swap" rel="stylesheet">
+
+  <!-- hexo site css -->
+  <link rel="stylesheet" href="/css/main.css" />
+  <link rel="stylesheet" href="//at.alicdn.com/t/font_1886449_67xjft27j1l.css" />
+  <!-- 代码块风格 -->
+  
+    
+<link rel="stylesheet" href="/css/figcaption/mac-block.css">
+
+  
+
+  <!-- jquery3.3.1 -->
+  
+    <script defer type="text/javascript" src="/plugins/jquery.min.js"></script>
+  
+
+  <!-- fancybox -->
+  
+    <link href="/plugins/jquery.fancybox.min.css" rel="stylesheet">
+    <script defer type="text/javascript" src="/plugins/jquery.fancybox.min.js"></script>
+  
+  
+<script src="/js/fancybox.js"></script>
+
+
+  
+
+  
+
+  <script>
+    var html = document.documentElement
+    const colorMode = localStorage.getItem('color-mode')
+    if (colorMode) {
+      document.documentElement.setAttribute('color-mode', colorMode)
+    }
+  </script>
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+
+  <body>
+    <div id="app">
+      <div class="header">
+  <div class="avatar">
+    <a href="/">
+      <!-- 头像取消懒加载，添加no-lazy -->
+      
+        <img src="/images/avatar.png" alt="">
+      
+    </a>
+    <div class="nickname"><a href="/">CheapMeow</a></div>
+  </div>
+  <div class="navbar">
+    <ul>
+      
+        <li class="nav-item" data-path="/">
+          <a href="/">Home</a>
+        </li>
+      
+        <li class="nav-item" data-path="/archives/">
+          <a href="/archives/">Archives</a>
+        </li>
+      
+        <li class="nav-item" data-path="/tags/">
+          <a href="/tags/">Tags</a>
+        </li>
+      
+        <li class="nav-item" data-path="/friends/">
+          <a href="/friends/">Friends</a>
+        </li>
+      
+        <li class="nav-item" data-path="/about/">
+          <a href="/about/">About</a>
+        </li>
+      
+    </ul>
+  </div>
+</div>
+
+
+<script src="/js/activeNav.js"></script>
+
+
+
+      <div class="flex-container">
+        <!-- 文章详情页，展示文章具体内容，url形式：https://yoursite/文章标题/ -->
+<!-- 同时为「标签tag」，「朋友friend」，「分类categories」，「关于about」页面的承载页面，具体展示取决于page.type -->
+
+
+  <!-- LaTex Display -->
+
+  
+    <script async type="text/javascript" src="/plugins/mathjax/tex-chtml.js"></script>
+  
+  <script>
+    MathJax = {
+      tex: {
+        inlineMath: [['$', '$'], ['\\(', '\\)']]
+      }
+    }
+  </script>
+
+
+
+
+
+  <!-- clipboard -->
+
+  
+    <script async type="text/javascript" src="/plugins/clipboard.min.js"></script>
+  
+  
+<script src="/js/codeCopy.js"></script>
+
+
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  <!-- 文章内容页 url形式：https://yoursite/文章标题/ -->
+  <div class="container post-details" id="post-details">
+    <div class="post-content">
+      <div class="post-title">UE4.27.2 PAK 打包流程的调试分析</div>
+      <div class="post-attach">
+        <span class="post-pubtime">
+          <i class="iconfont icon-updatetime mr-10" title="Update time"></i>
+          2025-06-01 10:52:45
+        </span>
+        
+              <span class="post-tags">
+                <i class="iconfont icon-tags mr-10" title="Tags"></i>
+                
+                <span class="span--tag mr-8">
+                  <a href="/tags/Cpp/" title="Cpp">
+                    #Cpp
+                  </a>
+                </span>
+                
+                <span class="span--tag mr-8">
+                  <a href="/tags/Unreal-Engine-4/" title="Unreal Engine 4">
+                    #Unreal Engine 4
+                  </a>
+                </span>
+                
+                <span class="span--tag mr-8">
+                  <a href="/tags/Package/" title="Package">
+                    #Package
+                  </a>
+                </span>
+                
+                <span class="span--tag mr-8">
+                  <a href="/tags/PAK/" title="PAK">
+                    #PAK
+                  </a>
+                </span>
+                
+                <span class="span--tag mr-8">
+                  <a href="/tags/Android/" title="Android">
+                    #Android
+                  </a>
+                </span>
+                
+              </span>
+          
+      </div>
+      <div class="markdown-body">
+        <h2 id="UAT-调用">UAT 调用</h2>
+<p>从 UI 点击，触发回调，最终调用到 <code>FLauncherUATTask::PerformTask</code>，它内部就是唤起了一个 UAT Command</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">FString UATCommandLine;</span><br><span class="line">FString ProjectPath = *ChainState.Profile-&gt;<span class="built_in">GetProjectPath</span>();</span><br><span class="line">ProjectPath = FPaths::<span class="built_in">ConvertRelativePathToFull</span>(ProjectPath);</span><br><span class="line">UATCommandLine = FString::<span class="built_in">Printf</span>(<span class="built_in">TEXT</span>(<span class="string">&quot;-ScriptsForProject=\&quot;%s\&quot; BuildCookRun -project=\&quot;%s\&quot; -noP4 -clientconfig=%s -serverconfig=%s&quot;</span>),</span><br><span class="line">    *ProjectPath,</span><br><span class="line">    *ProjectPath,</span><br><span class="line">    <span class="built_in">LexToString</span>(ChainState.Profile-&gt;<span class="built_in">GetBuildConfiguration</span>()),</span><br><span class="line">    <span class="built_in">LexToString</span>(ChainState.Profile-&gt;<span class="built_in">GetBuildConfiguration</span>()));</span><br><span class="line"></span><br><span class="line">...</span><br><span class="line"></span><br><span class="line"><span class="comment">// launch UAT and monitor its progress</span></span><br><span class="line">ProcessHandle = FPlatformProcess::<span class="built_in">CreateProc</span>(*(ExecutablePath / Executable), *UATCommandLine, <span class="literal">false</span>, <span class="literal">true</span>, <span class="literal">true</span>, <span class="literal">NULL</span>, <span class="number">0</span>, *ExecutablePath, WritePipe);</span><br></pre></td></tr></table></figure>
+<p>以安卓为例</p>
+<p>打包时，调用的 UAT 进程的参数是</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">L&quot;/c &quot;&quot;&lt;my position&gt;/UnrealEngine/Engine/Build/BatchFiles/RunUAT.bat&quot; -ScriptsForProject=&quot;&lt;my position&gt;/&lt;my project name&gt;/&lt;my project name&gt;.uproject&quot; BuildCookRun -nocompileeditor -nop4 -project=&quot;&lt;my position&gt;/&lt;my project name&gt;/&lt;my project name&gt;.uproject&quot; -cook -stage -archive -archivedirectory=&quot;&lt;my position&gt;/&lt;my project name&gt;AndroidPackage&quot; -package -ue4exe=&quot;&lt;my position&gt;\UnrealEngine\Engine\Binaries\Win64\UE4Editor-Win64-DebugGame-Cmd.exe&quot;  -compressed -ddc=DerivedDataBackendGraph -pak -prereqs -nodebuginfo -targetplatform=Android -cookflavor=ETC2 -build -target=&lt;my project name&gt; -clientconfig=Development -utf8output&quot;&quot;</span><br></pre></td></tr></table></figure>
+<p>不太理解为什么写成 <code>-utf8output&quot;&quot;</code>，那个后面的 <code>&quot;&quot;</code> 是啥意思</p>
+<p>分析一下我要是想自己调用的话，该怎么做</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">&quot;&lt;my position&gt;/UnrealEngine/Engine/Build/BatchFiles/RunUAT.bat&quot; -ScriptsForProject=&quot;&lt;my position&gt;/&lt;my project name&gt;/&lt;my project name&gt;.uproject&quot; BuildCookRun -nocompileeditor -nop4 -project=&quot;&lt;my position&gt;/&lt;my project name&gt;/&lt;my project name&gt;.uproject&quot; -cook -stage -archive -archivedirectory=&quot;&lt;my position&gt;/&lt;my project name&gt;AndroidPackage&quot; -package -ue4exe=&quot;&lt;my position&gt;\UnrealEngine\Engine\Binaries\Win64\UE4Editor-Win64-DebugGame-Cmd.exe&quot;  -compressed -ddc=DerivedDataBackendGraph -pak -prereqs -nodebuginfo -targetplatform=Android -cookflavor=ETC2 -build -target=&lt;my project name&gt; -clientconfig=Development -utf8output</span><br></pre></td></tr></table></figure>
+<p>这样是 work 的</p>
+<p>具体到 RunUAT.bat 里面看，他只是转发参数给 AutomationToolLauncher.exe</p>
+<p>于是在 IDE 中传入调试 UE 时获得的命令行参数。它最终转发参数给 AutomationTool.exe</p>
+<h2 id="UAT-打包生成-apk">UAT 打包生成 apk</h2>
+<p>AutomationTool.exe 最终会分析参数，分析出来 BuildCookRun</p>
+<p>它会根据字符串查询类型，最终创建出来 <code>public class BuildCookRun : BuildCommand</code> 这个类</p>
+<p>他最终会执行 <code>protected void DoBuildCookRun(ProjectParams Params)</code></p>
+<p>该函数调用构建、烘培、打包程序</p>
+<p>自然地，打包函数是虚函数，随平台而不同</p>
+<p>具体到安卓平台是 <code>AndroidPlatform</code> 实现了 <code>Package</code> 函数</p>
+<p>实际调试发现，<code>Package</code> 函数并不是简单的包揽所有，它只是负责 obb 文件的创建与更新，还有 apk 文件的创建的准备工作</p>
+<p>之后还有别的接口</p>
+<figure class="highlight csharp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">protected</span> <span class="keyword">void</span> <span class="title">DoBuildCookRun</span>(<span class="params">ProjectParams Params</span>)</span></span><br><span class="line">&#123;</span><br><span class="line">    ...</span><br><span class="line">    </span><br><span class="line">    Project.CopyBuildToStagingDirectory(Params);</span><br><span class="line">    Project.Package(Params, WorkingCL);</span><br><span class="line">    Project.Archive(Params);</span><br><span class="line">    Project.Deploy(Params);</span><br><span class="line">    PrintRunTime();</span><br><span class="line">    Project.Run(Params);</span><br><span class="line">    Project.GetFile(Params);</span><br><span class="line"></span><br><span class="line">    ...</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>这里 Deploy 似乎是没有执行。它是把 apk 部署到当前平台，但是我这里是 windows 所以他没有部署？</p>
+<p>重新跑一遍，是在 <code>Project.Archive(Params);</code> 执行之后，apk 和 obb 文件就都生成了</p>
+<p>点进来看，是在 <code>public static void Archive(ProjectParams Params)</code> 的 <code>ApplyArchiveManifest(Params, SC);</code> 这里创建出文件</p>
+<p>这仅仅是从文件浏览器的角度来看，我感觉可能之前对于文件的准备工作还是会很多</p>
+<p>不过目前还是从这个明显的创建出文件的这个函数作为入口来看</p>
+<p>进到 <code>ApplyArchiveManifest</code> 发现他只是拷贝文件而已。拷贝文件还可以只拷贝增量，神奇。</p>
+<p>所以是在这之间文件已经在 \Binaries\Android 打包好了，现在只是拷贝到输出目录。</p>
+<p>于是重新调试，发现 \Binaries\Android 里面的 apk, obb 确实是由 <code>Project.Package(Params, WorkingCL);</code> 创建</p>
+<p>于是还是回到 <code>AndroidPlatform.Package</code>，看到</p>
+<figure class="highlight csharp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">string</span> StageDirectoryPath = Path.Combine(SC.StageDirectory.FullName, SC.ShortProjectName);</span><br><span class="line">List&lt;FileReference&gt; FilesForObb = ObbFileFilter.ApplyToDirectory(<span class="keyword">new</span> DirectoryReference(StageDirectoryPath), <span class="literal">true</span>);</span><br></pre></td></tr></table></figure>
+<p>于是发现这里似乎是已经有文件可以处理了，这个文件看上去还是 pak 包</p>
+<p>于是看到 <code>FilesForObb</code> 的成员，看到 <code>&lt;my ue position&gt;\&lt;my project name&gt;\Saved\StagedBuilds\Android_ETC2\&lt;my project name&gt;\Content\Paks\&lt;my project name&gt;-Android_ETC2.pak</code></p>
+<p>于是发现，在 UAT 打包之前，我的 Saved\StagedBuilds\Android_ETC2 文件夹里面已经有 pak 文件了？</p>
+<p>那这个暂且搁置，回来看看 UAT 的打包是否都是复制文件</p>
+<p>一路调试到 <code>Deploy.PrepForUATPackageOrDeploy</code>，在这里执行之后生成了 apk</p>
+<p>重定向到 <code>UEDeployAndroid.PrepForUATPackageOrDeploy</code>，这里面的大头就是 <code>MakeApk</code></p>
+<p>最终调试到</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">RunCommandLineProgramWithExceptionAndFiltering</span>(UE4BuildGradlePath, ShellExecutable, ShellParametersBegin + <span class="string">&quot;\&quot;&quot;</span> + GradleScriptPath + <span class="string">&quot;\&quot; &quot;</span> + GradleOptions + ShellParametersEnd, <span class="string">&quot;Making .apk with Gradle...&quot;</span>);</span><br></pre></td></tr></table></figure>
+<p>是他调用了 Gradle 去生成 apk</p>
+<p>之后就是调用 <code>CopyFile(LocalObbName, ObbName);</code> 去拷贝 obb</p>
+<h2 id="UnrealPak-调用流程">UnrealPak 调用流程</h2>
+<p>再回来单步调试，<code>BuildCookRun.DoBuildCookRun</code> 中的 <code>Project.CopyBuildToStagingDirectory(Params);</code> 负责生成 Saved\StagedBuilds\Android_ETC2 中所有内容</p>
+<p>其中，<code>Project.ApplyStagingManifest</code> 生成了内容</p>
+<p>其中是各种 Manifest 的类型，假设先不管每个条件是什么，根据调试，进入 <code>Project.CreatePakUsingStagingManifest</code></p>
+<p>其中根据 manifest 有一些 rules 的处理，处理完之后调用 <code>Project.CreatePaks</code></p>
+<p>前面部分是压缩设置，优先级，然后就是遍历 <code>PakParamsList</code> 处理每个要打包的 pak</p>
+<p><code>PakParamsList</code> 中的一个 <code>CreatePakParams</code> 成员对应一个 pak</p>
+<p><code>CreatePakParams</code> 的 <code>UnrealPakResponseFile</code> 成员列出了需要打包的文件列表</p>
+<p>遍历 <code>PakParamsList</code> 时，开头是计算文件路径，然后是判断是否可以复用已经生成的 pak，判断是否生成增量补丁</p>
+<p>如果不能复用，那么开始生成 pak</p>
+<p>为了生成 pak，又要调用别的程序，所以要准备一下传递的参数</p>
+<p>最终调用为记录 command</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">Commands.<span class="built_in">Add</span>(<span class="built_in">GetUnrealPakArguments</span>(</span><br><span class="line">    Params.RawProjectPath,</span><br><span class="line">    UnrealPakResponseFile,</span><br><span class="line">    OutputLocation,</span><br><span class="line">    PrimaryOrderFiles,</span><br><span class="line">    SC.StageTargetPlatform.<span class="built_in">GetPlatformPakCommandLine</span>(Params, SC) + AdditionalArgs + BulkOption + CompressionFormats + <span class="string">&quot; &quot;</span> + Params.AdditionalPakOptions,</span><br><span class="line">    PakParams.bCompressed,</span><br><span class="line">    Params.SkipEncryption ? null : CryptoSettings,</span><br><span class="line">    Params.SkipEncryption ? null : CryptoKeysCacheFilename,</span><br><span class="line">    PatchSourceContentPath,</span><br><span class="line">    Params.SkipEncryption ? <span class="string">&quot;&quot;</span> : PakParams.EncryptionKeyGuid,</span><br><span class="line">    SecondaryOrderFiles));</span><br></pre></td></tr></table></figure>
+<p>进入 <code>Project.GetUnrealPakArguments</code> 可以看到 <code>Project.WritePakResponseFile</code> 也是写 txt 文件，把要打包什么写入到 txt 文件中，应该是要传递给 UnrealPak</p>
+<p>每个 pak 都记录一个 command，收集起来成为一个列表，然后并行调用</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// Actually execute UnrealPak</span></span><br><span class="line"><span class="keyword">if</span> (Commands.Count &gt; <span class="number">0</span>)</span><br><span class="line">&#123;</span><br><span class="line">    <span class="built_in">RunUnrealPakInParallel</span>( Commands, LogNames, AdditionalCompressionOptionsOnCommandLine);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>最终调用 UnrealPak 的参数就是</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">&lt;my ue position&gt;\&lt;my project name&gt;\&lt;my project name&gt;.uproject &lt;my ue position&gt;\&lt;my project name&gt;\Saved\StagedBuilds\Android_ETC2\&lt;my project name&gt;\Content\Paks\&lt;my project name&gt;-Android_ETC2.pak -create=&lt;my ue location&gt;\UnrealEngine\Engine\Programs\AutomationTool\Saved\Logs\PakList_&lt;my project name&gt;-Android_ETC2.txt -cryptokeys=&lt;my ue position&gt;\&lt;my project name&gt;\Saved\Cooked\Android_ETC2\&lt;my project name&gt;\Metadata\Crypto.json -secondaryOrder=&lt;my ue position&gt;\&lt;my project name&gt;\Build\Android_ETC2\FileOpenOrder\CookerOpenOrder.log -platform=Android -compressionformats=Oodle -compressmethod=Kraken -compresslevel=3  -multiprocess -abslog=&lt;my ue location&gt;\UnrealEngine\Engine\Programs\AutomationTool\Saved\Logs\UnrealPak-&lt;my project name&gt;-Android_ETC2-2025.05.09-19.04.31.txt -compressionblocksize=256KB</span><br></pre></td></tr></table></figure>
+<p>之后就是 UnrealPak 内部的逻辑了。直接把这段命令行传给 UnrealPak 项目就可以调试了</p>
+<h2 id="UnrealPak-内部流程">UnrealPak 内部流程</h2>
+<p>UnrealPak 是 cpp 项目，是对引擎内 <code>ExecuteUnrealPak</code> 函数的包装</p>
+<p>前面的部分是一些功能，比如生成补丁。除了这些功能，打包的逻辑最终是</p>
+<p>先收集打包文件列表 <code>CollectFilesToAdd(FilesToAdd, Entries, OrderMap, CmdLineParameters);</code></p>
+<p>根据文件列表创建 PAK <code>bool bResult = CreatePakFile(*PakFilename, FilesToAdd, CmdLineParameters, KeyChain);</code></p>
+<p><code>CreatePakFile</code> 里面涉及到挂载点、压缩机制、加密机制、对齐和填充、异步和多线程、索引结构，这个打包的细节还是很多的</p>
+<script src="https://utteranc.es/client.js"
+        repo="CheapMeow/cheapmeow.github.io"
+        issue-term="pathname"
+        theme="github-light"
+        crossorigin="anonymous"
+        async>
+</script>
+      </div>
+      
+        <div class="prev-or-next">
+          <div class="post-foot-next">
+            
+              <a href="/2025/05/10/2025-05-10-ue4_deferred_shader_compilation/" target="_self">
+                <i class="iconfont icon-chevronleft"></i>
+                <span>Prev</span>
+              </a>
+            
+          </div>
+          <div class="post-attach">
+            <span class="post-pubtime">
+              <i class="iconfont icon-updatetime mr-10" title="Update time"></i>
+              2025-06-01 10:52:45
+            </span>
+            
+                  <span class="post-tags">
+                    <i class="iconfont icon-tags mr-10" title="Tags"></i>
+                    
+                    <span class="span--tag mr-8">
+                      <a href="/tags/Cpp/" title="Cpp">
+                        #Cpp
+                      </a>
+                    </span>
+                    
+                    <span class="span--tag mr-8">
+                      <a href="/tags/Unreal-Engine-4/" title="Unreal Engine 4">
+                        #Unreal Engine 4
+                      </a>
+                    </span>
+                    
+                    <span class="span--tag mr-8">
+                      <a href="/tags/Package/" title="Package">
+                        #Package
+                      </a>
+                    </span>
+                    
+                    <span class="span--tag mr-8">
+                      <a href="/tags/PAK/" title="PAK">
+                        #PAK
+                      </a>
+                    </span>
+                    
+                    <span class="span--tag mr-8">
+                      <a href="/tags/Android/" title="Android">
+                        #Android
+                      </a>
+                    </span>
+                    
+                  </span>
+              
+          </div>
+          <div class="post-foot-prev">
+            
+              <a href="/2025/05/11/2025-05-11-ue4_build_system/" target="_self">
+                <span>Next</span>
+                <i class="iconfont icon-chevronright"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+    </div>
+    
+  <div id="btn-catalog" class="btn-catalog">
+    <i class="iconfont icon-catalog"></i>
+  </div>
+  <div class="post-catalog hidden" id="catalog">
+    <div class="title">Contents</div>
+    <div class="catalog-content">
+      
+        <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#UAT-%E8%B0%83%E7%94%A8"><span class="toc-text">UAT 调用</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#UAT-%E6%89%93%E5%8C%85%E7%94%9F%E6%88%90-apk"><span class="toc-text">UAT 打包生成 apk</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#UnrealPak-%E8%B0%83%E7%94%A8%E6%B5%81%E7%A8%8B"><span class="toc-text">UnrealPak 调用流程</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#UnrealPak-%E5%86%85%E9%83%A8%E6%B5%81%E7%A8%8B"><span class="toc-text">UnrealPak 内部流程</span></a></li></ol>
+      
+    </div>
+  </div>
+
+  
+<script src="/js/catalog.js"></script>
+
+
+
+
+    
+      <div class="comments-container">
+        
+
+
+
+
+
+
+
+      </div>
+    
+  </div>
+
+
+        
+<div class="footer">
+  <div class="social">
+    <ul>
+      
+        <li>
+          
+              <a title="github" target="_blank" rel="noopener" href="https://github.com/zchengsite/hexo-theme-oranges">
+                <i class="iconfont icon-github"></i>
+              </a>
+              
+        </li>
+        
+    </ul>
+  </div>
+  
+    
+    <div class="footer-more">
+      
+        <a target="_blank" rel="noopener" href="https://github.com/zchengsite/hexo-theme-oranges">Copyright © 2025 Oranges</a>
+        
+    </div>
+  
+    
+    <div class="footer-more">
+      
+        <a target="_blank" rel="noopener" href="https://github.com/zchengsite/hexo-theme-oranges">Theme by Oranges | Powered by Hexo</a>
+        
+    </div>
+  
+  
+</div>
+
+      </div>
+
+      <div class="tools-bar">
+        <div class="back-to-top tools-bar-item hidden">
+  <a href="javascript: void(0)">
+    <i class="iconfont icon-chevronup"></i>
+  </a>
+</div>
+
+
+<script src="/js/backtotop.js"></script>
+
+
+
+        
+  <div class="search-icon tools-bar-item" id="search-icon">
+    <a href="javascript: void(0)">
+      <i class="iconfont icon-search"></i>
+    </a>
+  </div>
+
+  <div class="search-overlay hidden">
+    <div class="search-content" tabindex="0">
+      <div class="search-title">
+        <span class="search-icon-input">
+          <a href="javascript: void(0)">
+            <i class="iconfont icon-search"></i>
+          </a>
+        </span>
+        
+          <input type="text" class="search-input" id="search-input" placeholder="搜索...">
+        
+        <span class="search-close-icon" id="search-close-icon">
+          <a href="javascript: void(0)">
+            <i class="iconfont icon-close"></i>
+          </a>
+        </span>
+      </div>
+      <div class="search-result" id="search-result"></div>
+    </div>
+  </div>
+
+  <script type="text/javascript">
+    var inputArea = document.querySelector("#search-input")
+    var searchOverlayArea = document.querySelector(".search-overlay")
+
+    inputArea.onclick = function() {
+      getSearchFile()
+      this.onclick = null
+    }
+
+    inputArea.onkeydown = function() {
+      if(event.keyCode == 13)
+        return false
+    }
+
+    function openOrHideSearchContent() {
+      let isHidden = searchOverlayArea.classList.contains('hidden')
+      if (isHidden) {
+        searchOverlayArea.classList.remove('hidden')
+        document.body.classList.add('hidden')
+        // inputArea.focus()
+      } else {
+        searchOverlayArea.classList.add('hidden')
+        document.body.classList.remove('hidden')
+      }
+    }
+
+    function blurSearchContent(e) {
+      if (e.target === searchOverlayArea) {
+        openOrHideSearchContent()
+      }
+    }
+
+    document.querySelector("#search-icon").addEventListener("click", openOrHideSearchContent, false)
+    document.querySelector("#search-close-icon").addEventListener("click", openOrHideSearchContent, false)
+    searchOverlayArea.addEventListener("click", blurSearchContent, false)
+
+    var searchFunc = function (path, search_id, content_id) {
+      'use strict';
+      var $input = document.getElementById(search_id);
+      var $resultContent = document.getElementById(content_id);
+      $resultContent.innerHTML = "<ul><span class='local-search-empty'>First search, index file loading, please wait...<span></ul>";
+      $.ajax({
+        // 0x01. load xml file
+        url: path,
+        dataType: "xml",
+        success: function (xmlResponse) {
+          // 0x02. parse xml file
+          var datas = $("entry", xmlResponse).map(function () {
+            return {
+              title: $("title", this).text(),
+              content: $("content", this).text(),
+              url: $("url", this).text()
+            };
+          }).get();
+          $resultContent.innerHTML = "";
+
+          $input.addEventListener('input', function () {
+            // 0x03. parse query to keywords list
+            var str = '<ul class=\"search-result-list\">';
+            var keywords = this.value.trim().toLowerCase().split(/[\s\-]+/);
+            $resultContent.innerHTML = "";
+            if (this.value.trim().length <= 0) {
+              return;
+            }
+            // 0x04. perform local searching
+            datas.forEach(function (data) {
+              var isMatch = true;
+              var content_index = [];
+              if (!data.title || data.title.trim() === '') {
+                data.title = "Untitled";
+              }
+              var orig_data_title = data.title.trim();
+              var data_title = orig_data_title.toLowerCase();
+              var orig_data_content = data.content.trim().replace(/<[^>]+>/g, "");
+              var data_content = orig_data_content.toLowerCase();
+              var data_url = data.url;
+              var index_title = -1;
+              var index_content = -1;
+              var first_occur = -1;
+              // only match artiles with not empty contents
+              if (data_content !== '') {
+                keywords.forEach(function (keyword, i) {
+                  index_title = data_title.indexOf(keyword);
+                  index_content = data_content.indexOf(keyword);
+
+                  if (index_title < 0 && index_content < 0) {
+                    isMatch = false;
+                  } else {
+                    if (index_content < 0) {
+                      index_content = 0;
+                    }
+                    if (i == 0) {
+                      first_occur = index_content;
+                    }
+                    // content_index.push({index_content:index_content, keyword_len:keyword_len});
+                  }
+                });
+              } else {
+                isMatch = false;
+              }
+              // 0x05. show search results
+              if (isMatch) {
+                str += "<li><a href='" + data_url + "' class='search-result-title'>" + orig_data_title + "</a>";
+                var content = orig_data_content;
+                if (first_occur >= 0) {
+                  // cut out 100 characters
+                  var start = first_occur - 20;
+                  var end = first_occur + 80;
+
+                  if (start < 0) {
+                    start = 0;
+                  }
+
+                  if (start == 0) {
+                    end = 100;
+                  }
+
+                  if (end > content.length) {
+                    end = content.length;
+                  }
+
+                  var match_content = content.substr(start, end);
+
+                  // highlight all keywords
+                  keywords.forEach(function (keyword) {
+                    var regS = new RegExp(keyword, "gi");
+                    match_content = match_content.replace(regS, "<span class=\"search-keyword\">" + keyword + "</span>");
+                  });
+
+                  str += "<p class=\"search-result-abstract\">" + match_content + "...</p>"
+                }
+                str += "</li>";
+              }
+            });
+            str += "</ul>";
+            if (str.indexOf('<li>') === -1) {
+              return $resultContent.innerHTML = "<ul><span class='local-search-empty'>No result<span></ul>";
+            }
+            $resultContent.innerHTML = str;
+          });
+        },
+        error: function(xhr, status, error) {
+          $resultContent.innerHTML = ""
+          if (xhr.status === 404) {
+            $resultContent.innerHTML = "<ul><span class='local-search-empty'>The search.xml file was not found, please refer to：<a href='https://github.com/zchengsite/hexo-theme-oranges#configuration' target='_black'>configuration</a><span></ul>";
+          } else {
+            $resultContent.innerHTML = "<ul><span class='local-search-empty'>The request failed, Try to refresh the page or try again later.<span></ul>";
+          }
+        }
+      });
+      $(document).on('click', '#search-close-icon', function() {
+        $('#search-input').val('');
+        $('#search-result').html('');
+      });
+    }
+
+    var getSearchFile = function() {
+        var path = "/search.xml";
+        searchFunc(path, 'search-input', 'search-result');
+    }
+  </script>
+
+
+
+
+        
+  <div class="tools-bar-item theme-icon" id="switch-color-scheme">
+    <a href="javascript: void(0)">
+      <i id="theme-icon" class="iconfont icon-moon"></i>
+    </a>
+  </div>
+
+  
+<script src="/js/colorscheme.js"></script>
+
+
+
+
+
+        
+  
+    <div class="share-icon tools-bar-item">
+      <a href="javascript: void(0)" id="share-icon">
+        <i class="iconfont iconshare"></i>
+      </a>
+      <div class="share-content hidden">
+        
+          <a class="share-item" href="https://twitter.com/intent/tweet?text=' + UE4.27.2%20PAK%20%E6%89%93%E5%8C%85%E6%B5%81%E7%A8%8B%E7%9A%84%E8%B0%83%E8%AF%95%E5%88%86%E6%9E%90 + '&url=' + https%3A%2F%2Fcheapmeow.github.io%2F2025%2F05%2F10%2F2025-05-10-ue4_package_pipeline%2F + '" target="_blank" title="Twitter">
+            <i class="iconfont icon-twitter"></i>
+          </a>
+        
+        
+          <a class="share-item" href="https://www.facebook.com/sharer.php?u=https://cheapmeow.github.io/2025/05/10/2025-05-10-ue4_package_pipeline/" target="_blank" title="Facebook">
+            <i class="iconfont icon-facebooksquare"></i>
+          </a>
+        
+      </div>
+    </div>
+  
+  
+<script src="/js/shares.js"></script>
+
+
+
+      </div>
+    </div>
+  </body>
+</html>

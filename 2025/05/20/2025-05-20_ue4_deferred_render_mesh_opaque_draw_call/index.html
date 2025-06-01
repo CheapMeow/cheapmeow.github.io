@@ -1,0 +1,809 @@
+<!DOCTYPE html>
+<html lang="en" color-mode="light">
+
+  <head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="author" content="John Doe" />
+  <!-- Open Graph Description 简短摘要-->
+  
+  <!-- 用于搜索引擎的文章摘要 -->
+  
+  
+  
+  <title>
+    
+      UE4.27.2 不透明物体延迟渲染 Draw Call 的调试分析 
+      
+      
+      |
+    
+     CheapMeow
+  </title>
+
+  
+    <link rel="apple-touch-icon" href="/images/avatar.png">
+    <link rel="icon" href="/images/avatar.png">
+  
+
+  <!-- Raleway-Font -->
+  <link href="https://fonts.googleapis.com/css?family=Raleway&display=swap" rel="stylesheet">
+
+  <!-- hexo site css -->
+  <link rel="stylesheet" href="/css/main.css" />
+  <link rel="stylesheet" href="//at.alicdn.com/t/font_1886449_67xjft27j1l.css" />
+  <!-- 代码块风格 -->
+  
+    
+<link rel="stylesheet" href="/css/figcaption/mac-block.css">
+
+  
+
+  <!-- jquery3.3.1 -->
+  
+    <script defer type="text/javascript" src="/plugins/jquery.min.js"></script>
+  
+
+  <!-- fancybox -->
+  
+    <link href="/plugins/jquery.fancybox.min.css" rel="stylesheet">
+    <script defer type="text/javascript" src="/plugins/jquery.fancybox.min.js"></script>
+  
+  
+<script src="/js/fancybox.js"></script>
+
+
+  
+
+  
+
+  <script>
+    var html = document.documentElement
+    const colorMode = localStorage.getItem('color-mode')
+    if (colorMode) {
+      document.documentElement.setAttribute('color-mode', colorMode)
+    }
+  </script>
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+
+  <body>
+    <div id="app">
+      <div class="header">
+  <div class="avatar">
+    <a href="/">
+      <!-- 头像取消懒加载，添加no-lazy -->
+      
+        <img src="/images/avatar.png" alt="">
+      
+    </a>
+    <div class="nickname"><a href="/">CheapMeow</a></div>
+  </div>
+  <div class="navbar">
+    <ul>
+      
+        <li class="nav-item" data-path="/">
+          <a href="/">Home</a>
+        </li>
+      
+        <li class="nav-item" data-path="/archives/">
+          <a href="/archives/">Archives</a>
+        </li>
+      
+        <li class="nav-item" data-path="/tags/">
+          <a href="/tags/">Tags</a>
+        </li>
+      
+        <li class="nav-item" data-path="/friends/">
+          <a href="/friends/">Friends</a>
+        </li>
+      
+        <li class="nav-item" data-path="/about/">
+          <a href="/about/">About</a>
+        </li>
+      
+    </ul>
+  </div>
+</div>
+
+
+<script src="/js/activeNav.js"></script>
+
+
+
+      <div class="flex-container">
+        <!-- 文章详情页，展示文章具体内容，url形式：https://yoursite/文章标题/ -->
+<!-- 同时为「标签tag」，「朋友friend」，「分类categories」，「关于about」页面的承载页面，具体展示取决于page.type -->
+
+
+  <!-- LaTex Display -->
+
+  
+    <script async type="text/javascript" src="/plugins/mathjax/tex-chtml.js"></script>
+  
+  <script>
+    MathJax = {
+      tex: {
+        inlineMath: [['$', '$'], ['\\(', '\\)']]
+      }
+    }
+  </script>
+
+
+
+
+
+  <!-- clipboard -->
+
+  
+    <script async type="text/javascript" src="/plugins/clipboard.min.js"></script>
+  
+  
+<script src="/js/codeCopy.js"></script>
+
+
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  <!-- 文章内容页 url形式：https://yoursite/文章标题/ -->
+  <div class="container post-details" id="post-details">
+    <div class="post-content">
+      <div class="post-title">UE4.27.2 不透明物体延迟渲染 Draw Call 的调试分析</div>
+      <div class="post-attach">
+        <span class="post-pubtime">
+          <i class="iconfont icon-updatetime mr-10" title="Update time"></i>
+          2025-06-01 10:52:45
+        </span>
+        
+              <span class="post-tags">
+                <i class="iconfont icon-tags mr-10" title="Tags"></i>
+                
+                <span class="span--tag mr-8">
+                  <a href="/tags/Cpp/" title="Cpp">
+                    #Cpp
+                  </a>
+                </span>
+                
+                <span class="span--tag mr-8">
+                  <a href="/tags/Unreal-Engine-4/" title="Unreal Engine 4">
+                    #Unreal Engine 4
+                  </a>
+                </span>
+                
+                <span class="span--tag mr-8">
+                  <a href="/tags/Render/" title="Render">
+                    #Render
+                  </a>
+                </span>
+                
+              </span>
+          
+      </div>
+      <div class="markdown-body">
+        <h2 id="ENQUEUE-RENDER-COMMAND">ENQUEUE_RENDER_COMMAND</h2>
+<p>一个最常见的东西</p>
+<p><code>ENQUEUE_RENDER_COMMAND</code> 传进来，就是接受一个 lambda，然后内层</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">template</span>&lt;<span class="keyword">typename</span> TSTR, <span class="keyword">typename</span> LAMBDA&gt;</span></span><br><span class="line"><span class="function">FORCEINLINE_DEBUGGABLE <span class="type">void</span> <span class="title">EnqueueUniqueRenderCommand</span><span class="params">(LAMBDA&amp;&amp; Lambda)</span></span></span><br></pre></td></tr></table></figure>
+<p>根据当前是渲染线程还是 game 线程来决定如何执行这个 lambda</p>
+<h2 id="谁调用了-BasePass">谁调用了 BasePass</h2>
+<p>因为截帧的时候看到 BasePass 里面是处理 mesh 的材质</p>
+<p>于是打算从这里开始看</p>
+<h3 id="Rendering-Thread">Rendering Thread</h3>
+<p>在</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="type">void</span> <span class="title">FDeferredShadingSceneRenderer::RenderBasePassInternal</span><span class="params">(</span></span></span><br><span class="line"><span class="params"><span class="function">	FRDGBuilder&amp; GraphBuilder,</span></span></span><br><span class="line"><span class="params"><span class="function">	<span class="type">const</span> FRenderTargetBindingSlots&amp; BasePassRenderTargets,</span></span></span><br><span class="line"><span class="params"><span class="function">	FExclusiveDepthStencil::Type BasePassDepthStencilAccess,</span></span></span><br><span class="line"><span class="params"><span class="function">	FRDGTextureRef ForwardScreenSpaceShadowMask,</span></span></span><br><span class="line"><span class="params"><span class="function">	<span class="type">bool</span> bParallelBasePass,</span></span></span><br><span class="line"><span class="params"><span class="function">	<span class="type">bool</span> bRenderLightmapDensity)</span></span></span><br></pre></td></tr></table></figure>
+<p>打断点，是在 <code>FRunnableThreadWin</code> 触发</p>
+<p>于是可以看到，UE 是把 Game 线程和 Render 线程分开的</p>
+<p>从堆栈底层往上，看到 <code>void RenderingThreadMain( FEvent* TaskGraphBoundSyncEvent )</code></p>
+<p>这里面除了性能分析插桩、事件，主要部分是，把 TaskGraph 的当前线程设置为 render 线程，然后 TaskGraph 进入任务处理循环，直到 return</p>
+<p>于是看到 <code>ENQUEUE_RENDER_COMMAND</code> 的 lambda 最终是加到了 task 里面，处理 task 就是处理 render command</p>
+<p>那么 base pass 这个相关的 render command 是 <code>FRendererModule::BeginRenderingViewFamily</code> 里面发起的</p>
+<h3 id="FRendererModule-BeginRenderingViewFamily">FRendererModule::BeginRenderingViewFamily</h3>
+<p>之前的分析已经可以看到，render thread 的工作就是不停地执行 TaskGraph 内的任务</p>
+<p>所以渲染框架的逻辑还是在 game thread</p>
+<p>之前看到一个 base pass 相关的 render command 是在 <code>FRendererModule::BeginRenderingViewFamily</code> 里面发起的</p>
+<p>于是现在在 <code>FRendererModule::BeginRenderingViewFamily</code> 打断点，看看 game thread 这边的逻辑</p>
+<p>从底层上来是 <code>UGameEngine::Tick</code>，这里也就是各个功能的 tick，不出所料，gameobject, slate 等</p>
+<p>然后是 <code>FViewport::Draw</code>，这里更多是准备 canvas</p>
+<p><code>UGameViewportClient::Draw</code> 再对 canvas 做一些操作，然后就到了 <code>FRendererModule::BeginRenderingViewFamily</code> 了</p>
+<p>那其实 <code>FSceneViewFamily* ViewFamily</code> 这个东西已经包含了渲染世界所需要的信息了</p>
+<p>查看这个变量，确实</p>
+<p><img src="/images/ue4_deferred_render_mesh_opaque_draw_call/FRendererModule_BeginRenderingViewFamily.png" alt="alt text"></p>
+<p>既有 World 又有 Primitives、Lights，已经够了</p>
+<p><code>FRendererModule::BeginRenderingViewFamily</code> 内，有一个 <code>World-&gt;SendAllEndOfFrameUpdates();</code> 更新 component 的状态，然后就是发送 render command</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">ENQUEUE_RENDER_COMMAND</span>(FDrawSceneCommand)(</span><br><span class="line">    [SceneRenderer, DrawSceneEnqueue](FRHICommandListImmediate&amp; RHICmdList)</span><br><span class="line">    &#123;</span><br><span class="line">        ...</span><br><span class="line"></span><br><span class="line">        <span class="built_in">RenderViewFamily_RenderThread</span>(RHICmdList, SceneRenderer);</span><br><span class="line">        <span class="built_in">FlushPendingDeleteRHIResources_RenderThread</span>();</span><br><span class="line">    &#125;);</span><br></pre></td></tr></table></figure>
+<h3 id="从-game-thread-进到-render-thread：RenderViewFamily-RenderThread">从 game thread 进到 render thread：RenderViewFamily_RenderThread</h3>
+<p>于是查看 <code>RenderViewFamily_RenderThread</code></p>
+<p>前面是等待所有未完成的渲染任务、更新延迟资源，处理鼠标点击拾取物体的功能，然后是渲染场景</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">SceneRenderer-&gt;<span class="built_in">Render</span>(RHICmdList);</span><br></pre></td></tr></table></figure>
+<p>奇怪的是这后面还写了头发的渲染</p>
+<p>感觉这个调用层级有点不协调，算了，在看框架的时候这不是重点</p>
+<p>然后这个 render 就到了 <code>FDeferredShadingSceneRenderer::Render</code></p>
+<h3 id="FDeferredShadingSceneRenderer-Render">FDeferredShadingSceneRenderer::Render</h3>
+<p>一开始，<code>Scene-&gt;UpdateAllPrimitiveSceneInfos</code> 应该是更新 mesh 相关的渲染信息？</p>
+<p>然后是视口矩形、天空大气、多 GPU、等待 RT 可写、VT 分配、深度缓冲，暂时略过不看</p>
+<p>然后是找到所有的可见物体</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// Find the visible primitives.</span></span><br><span class="line">RHICmdList.<span class="built_in">ImmediateFlush</span>(EImmediateFlushType::DispatchToRHIThread);</span><br><span class="line"></span><br><span class="line"><span class="type">bool</span> bDoInitViewAftersPrepass = <span class="literal">false</span>;</span><br><span class="line">&#123;</span><br><span class="line">    <span class="built_in">SCOPED_GPU_STAT</span>(RHICmdList, VisibilityCommands);</span><br><span class="line">    bDoInitViewAftersPrepass = <span class="built_in">InitViews</span>(RHICmdList, BasePassDepthStencilAccess, ILCTaskData);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>然后是有一个 GPU 场景更新 <code>UpdateGPUScene(RHICmdList, *Scene);</code> 不细看的话，暂时不知道是指什么场景</p>
+<p>然后是 Pre Z Pass、延迟渲染的 GBuffer 相关的计算、Early occlusion queries、Early Shadow depth rendering、体积云初始化、大气 LUT、用于间接光照的 Light Propagation Volumes、体积雾计算、体积云计算、头发计算、forward 阴影渲染等</p>
+<p>然后是 BasePass</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">RenderBasePass</span>(GraphBuilder, BasePassDepthStencilAccess, SceneColorTexture.Target, SceneDepthTexture.Target, DepthLoadAction, ForwardScreenSpaceShadowMaskTexture);</span><br></pre></td></tr></table></figure>
+<p>然后是速度矢量渲染（TAA 相关）、毛发渲染 BasePass、天光 RayTracing、Pre-lighting composition lighting stage（用于 SSAO 和延迟贴花等）、用于延迟渲染的毛发渲染 BasePass、自定义纹理的重建（用于 velocity, custom depth, and SSAO）、然后又是一些反射和天空光照渲染、体积云等</p>
+<p>然后是渲染半透明物体，这里可以看到半透明物体也是可以渲染速度向量的</p>
+<p>然后是后处理 pass，之后应该没有啥了</p>
+<h3 id="FDeferredShadingSceneRenderer-RenderBasePass">FDeferredShadingSceneRenderer::RenderBasePass</h3>
+<p><code>FDeferredShadingSceneRenderer::Render</code> 发起了很多渲染对象的渲染，不透明，半透明，体积云，体积雾，头发，阴影</p>
+<p>最简单的还是看不透明物体是怎么渲染的</p>
+<p>于是进入 <code>FDeferredShadingSceneRenderer::RenderBasePass</code></p>
+<p>可以看到，它也只是一层包装。前面是关于如何 clear 纹理，然后进入 impl</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">RenderBasePassInternal</span>(GraphBuilder, BasePassRenderTargets, BasePassDepthStencilAccess, ForwardShadowMaskTexture, bDoParallelBasePass, bRenderLightmapDensity);</span><br></pre></td></tr></table></figure>
+<p>进来，显而易见是两个 <code>View.ParallelMeshDrawCommandPasses[EMeshPass::BasePass].DispatchDraw</code> 可能在画不透明物体，因为其他的绘制命令都是 <code>EditorPrimitives</code> 和 <code>SkyPass</code>，一看就不相关</p>
+<p>我调试的时候是进入了</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">GraphBuilder.<span class="built_in">AddPass</span>(</span><br><span class="line">    <span class="built_in">RDG_EVENT_NAME</span>(<span class="string">&quot;BasePassParallel&quot;</span>),</span><br><span class="line">    PassParameters,</span><br><span class="line">    ERDGPassFlags::Raster | ERDGPassFlags::SkipRenderPass,</span><br><span class="line">    [<span class="keyword">this</span>, &amp;View, PassParameters](FRHICommandListImmediate&amp; RHICmdList)</span><br><span class="line">&#123;</span><br><span class="line">    Scene-&gt;UniformBuffers.<span class="built_in">UpdateViewUniformBuffer</span>(View);</span><br><span class="line">    FRDGParallelCommandListSet <span class="built_in">ParallelCommandListSet</span>(RHICmdList, <span class="built_in">GET_STATID</span>(STAT_CLP_BasePass), *<span class="keyword">this</span>, View, <span class="built_in">FParallelCommandListBindings</span>(PassParameters));</span><br><span class="line">    View.ParallelMeshDrawCommandPasses[EMeshPass::BasePass].<span class="built_in">DispatchDraw</span>(&amp;ParallelCommandListSet, RHICmdList);</span><br><span class="line">&#125;);</span><br></pre></td></tr></table></figure>
+<h2 id="BasePass-内的逻辑">BasePass 内的逻辑</h2>
+<h3 id="分发绘制-command">分发绘制 command</h3>
+<p>于是进到 <code>void FParallelMeshDrawCommandPass::DispatchDraw(FParallelCommandListSet* ParallelCommandListSet, FRHICommandList&amp; RHICmdList) const</code> 看</p>
+<p>这个函数是负责拆分渲染任务，均分到多个线程并行工作</p>
+<p>前面是准备上传顶点缓冲到 GPU Scene 然后是均分 task</p>
+<p>分配循环内的循环体内的这两句，分配 task，应该会进到下一层，负责实际绘制逻辑把</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">FGraphEventRef AnyThreadCompletionEvent = TGraphTask&lt;FDrawVisibleMeshCommandsAnyThreadTask&gt;::<span class="built_in">CreateTask</span>(&amp;Prereqs, RenderThread)</span><br><span class="line">    .<span class="built_in">ConstructAndDispatchWhenReady</span>(*CmdList, TaskContext.MeshDrawCommands, TaskContext.MinimalPipelineStatePassSet, PrimitiveIdsBuffer, BasePrimitiveIdsOffset, TaskContext.bDynamicInstancing, TaskContext.InstanceFactor, TaskIndex, NumTasks);</span><br><span class="line">ParallelCommandListSet-&gt;<span class="built_in">AddParallelCommandList</span>(CmdList, AnyThreadCompletionEvent, NumDraws);</span><br></pre></td></tr></table></figure>
+<p>它分配完了 task 之后就退出来了</p>
+<p>这个 task 实际执行还是在 render thread <code>ProcessTasksUntilQuit</code> 里</p>
+<p>最终调用到 <code>FDrawVisibleMeshCommandsAnyThreadTask</code> 的 <code>DoTask</code>，它也只是</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">SubmitMeshDrawCommandsRange</span>(VisibleMeshDrawCommands, GraphicsMinimalPipelineStateSet, PrimitiveIdsBuffer, BasePrimitiveIdsOffset, bDynamicInstancing, StartIndex, NumDraws, InstanceFactor, RHICmdList);</span><br></pre></td></tr></table></figure>
+<p>的包装</p>
+<p>但是我突然意识到，这里的 <code>VisibleMeshDrawCommands</code> 已经是涉及到了要画什么 mesh 了</p>
+<p>可能是我的 mesh 比较少吧，我这一个 <code>FDrawVisibleMeshCommandsAnyThreadTask</code> 的 <code>VisibleMeshDrawCommands</code> 就已经包含所有要画的 mesh，因为我通过 renderdoc 看到的就是这个数量</p>
+<p><code>SubmitMeshDrawCommandsRange</code> 里面就是遍历这个传入的 <code>VisibleMeshDrawCommands</code>，对每一个 command 提交</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">FMeshDrawCommand::<span class="built_in">SubmitDraw</span>(*VisibleMeshDrawCommand.MeshDrawCommand, GraphicsMinimalPipelineStateSet, PrimitiveIdsBuffer, PrimitiveIdBufferOffset, InstanceFactor, RHICmdList, StateCache);</span><br></pre></td></tr></table></figure>
+<h3 id="发起-draw-call">发起 draw call</h3>
+<p>前面看的是怎么分配</p>
+<p>现在这个 <code>FMeshDrawCommand::SubmitDraw</code> 就是怎么绘制网格了</p>
+<p>前面是获取并设置图形管线状态、设置模板测试参考值、设置顶点流、设置着色器绑定（绑定常量缓冲、纹理、采样器等资源）</p>
+<p>然后就是 draw call</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> (MeshDrawCommand.IndexBuffer)</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">if</span> (MeshDrawCommand.NumPrimitives &gt; <span class="number">0</span>)</span><br><span class="line">    &#123;</span><br><span class="line">        RHICmdList.<span class="built_in">DrawIndexedPrimitive</span>(</span><br><span class="line">            MeshDrawCommand.IndexBuffer,</span><br><span class="line">            MeshDrawCommand.VertexParams.BaseVertexIndex,</span><br><span class="line">            <span class="number">0</span>,</span><br><span class="line">            MeshDrawCommand.VertexParams.NumVertices,</span><br><span class="line">            MeshDrawCommand.FirstIndex,</span><br><span class="line">            MeshDrawCommand.NumPrimitives,</span><br><span class="line">            MeshDrawCommand.NumInstances * InstanceFactor</span><br><span class="line">        );</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">else</span></span><br><span class="line">    &#123;</span><br><span class="line">        RHICmdList.<span class="built_in">DrawIndexedPrimitiveIndirect</span>(</span><br><span class="line">            MeshDrawCommand.IndexBuffer, </span><br><span class="line">            MeshDrawCommand.IndirectArgs.Buffer, </span><br><span class="line">            MeshDrawCommand.IndirectArgs.Offset</span><br><span class="line">            );</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"><span class="keyword">else</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">if</span> (MeshDrawCommand.NumPrimitives &gt; <span class="number">0</span>)</span><br><span class="line">    &#123;</span><br><span class="line">    RHICmdList.<span class="built_in">DrawPrimitive</span>(</span><br><span class="line">        MeshDrawCommand.VertexParams.BaseVertexIndex + MeshDrawCommand.FirstIndex,</span><br><span class="line">        MeshDrawCommand.NumPrimitives,</span><br><span class="line">            MeshDrawCommand.NumInstances * InstanceFactor);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">else</span></span><br><span class="line">    &#123;</span><br><span class="line">        RHICmdList.<span class="built_in">DrawPrimitiveIndirect</span>(</span><br><span class="line">            MeshDrawCommand.IndirectArgs.Buffer,</span><br><span class="line">            MeshDrawCommand.IndirectArgs.Offset</span><br><span class="line">    );</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>这熟悉的结构</p>
+<p>可能别的我都不熟，但是这个有 index buffer 就 draw indexed 否则直接 draw 的 draw call 形式，在我自己写的渲染器都是这样的，感动了</p>
+<h3 id="DrawCall-Debug">DrawCall Debug</h3>
+<p>可以看到他 <code>FMeshDrawCommand::SubmitDraw</code> 这里还有 debug 示例</p>
+<p>看 <code>MeshDrawCommand.DebugData.MaterialName</code> 和 <code>MeshDrawCommand.DebugData.ResourceName</code> 就可以看到 mesh 来源，还有材质名称，方便定位问题</p>
+<h2 id="BasePass-DrawCall-是如何绑定渲染着色器资源的">BasePass DrawCall 是如何绑定渲染着色器资源的</h2>
+<p>现在我有一些自己的着色器资源，有纹理，有 uniform 等等，它们是怎么传进来的？</p>
+<h3 id="从-draw-call-找着色器绑定，没找到">从 draw call 找着色器绑定，没找到</h3>
+<p>于是看到 <code>FMeshDrawCommand::SubmitDraw</code> 的绑定着色器相关</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">MeshDrawCommand.ShaderBindings.<span class="built_in">SetOnCommandList</span>(RHICmdList, MeshPipelineState.BoundShaderState.<span class="built_in">AsBoundShaderState</span>(), StateCache.ShaderBindings);</span><br></pre></td></tr></table></figure>
+<p>进到 <code>FMeshDrawShaderBindings::SetOnCommandList</code>，可以看到他只是根据一个 frequency 变量确认 shader 类型</p>
+<p>最终不同的 shader 类型都是要调用 <code>SetShaderBindings</code>，但是参数不同</p>
+<p>于是看到 <code>FMeshDrawShaderBindings::SetShaderBindings</code></p>
+<p>一开始看到 Uniform Buffers 绑定</p>
+<ol>
+<li>
+<p>从 SingleShaderBindings 中获取所有 Uniform Buffer 指针和对应的参数信息。</p>
+</li>
+<li>
+<p>遍历所有 Uniform Buffer，检查当前绑定状态是否与缓存不同，避免重复绑定。</p>
+</li>
+<li>
+<p>绑定 Uniform Buffer。</p>
+</li>
+<li>
+<p>更新缓存状态</p>
+</li>
+</ol>
+<p>这个利用缓存的逻辑之后也是一样的</p>
+<p>所以就可以看一下各自的命令了</p>
+<p>Uniform Buffers 绑定</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">RHICmdList.<span class="built_in">SetShaderUniformBuffer</span>(Shader, Parameter.BaseIndex, UniformBuffer);</span><br></pre></td></tr></table></figure>
+<p>Sampler 绑定</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">RHICmdList.<span class="built_in">SetShaderSampler</span>(Shader, Parameter.BaseIndex, Sampler);</span><br></pre></td></tr></table></figure>
+<p>SRV（Shader Resource View）绑定</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">RHICmdList.<span class="built_in">SetShaderResourceViewParameter</span>(Shader, Parameter.BaseIndex, SRV);</span><br></pre></td></tr></table></figure>
+<p>Texture 绑定</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">RHICmdList.<span class="built_in">SetShaderTexture</span>(Shader, Parameter.BaseIndex, Texture);</span><br></pre></td></tr></table></figure>
+<p>还有一个 LooseParameter，不知道干啥的，先跳过吧</p>
+<p>但是当我对这些绑定的代码打断点的时候，发现代码从来没击中断点</p>
+<p>一开始我还以为是，这些绑定只在物体新添加到场景的时候绑定一次，之后就利用缓存了</p>
+<p>于是重新启动游戏，发现我的断点从来没有击中过</p>
+<p>那就非常神奇了，不知道是谁绑定了纹理？</p>
+<h3 id="从-PSSetShaderResources-找纹理绑定，没找到">从 PSSetShaderResources 找纹理绑定，没找到</h3>
+<p>因为我在 RenderDoc 可以看到它绑定纹理的 API 是 PSSetShaderResources</p>
+<p>于是去 UE 源码查他这个绑定的 API</p>
+<p>发现他在源码里面的使用都是在 UE 的 UI 库 slate 中才有使用</p>
+<p>要不然就是一个 <code>ClearShaderResource</code> 有在使用</p>
+<p>这，完全找不到是怎么绑定的……</p>
+<h3 id="从着色器资源类找">从着色器资源类找</h3>
+<p>看别人的博客，发现这方面也有讲述</p>
+<p><code>FShaderParameter</code> 是着色器的寄存器绑定参数, 它的类型可以是float1/2/3/4，数组, UAV等.</p>
+<p><code>FShaderResourceParameter</code> 是着色器资源绑定(纹理或采样器)</p>
+<p><code>FRWShaderParameter</code> 与 UAV or SRV 相关</p>
+<p><code>TShaderUniformBufferParameter</code> 与 uniform 相关</p>
+<p>但是我在 <code>FShaderResourceParameter::Bind</code> 和 <code>FRWShaderParameter::SetTexture</code> 打断点，都没有命中</p>
+<p>后来我开 Editor 发现可以命中，但是命中的都是 uniform shader parameter，堆栈里面显示的是 editor primitives 的绘制</p>
+<p>感觉这并不是 Editor 或者 Game 的构建配置的问题，纯粹是 Editor 有一些特殊调用而已</p>
+<p>这种异常看上去是编译器优化了什么东西</p>
+<p>于是使用 <code>PRAGMA_DISABLE_OPTIMIZATION</code> <code>PRAGMA_ENABLE_OPTIMIZATION</code> 但是还是没有效果</p>
+<h3 id="从-SetShaderParameters-找">从 SetShaderParameters 找</h3>
+<p>看别人博客 <a target="_blank" rel="noopener" href="https://logins.github.io/graphics/2021/03/31/UE4ShadersIntroduction.html">https://logins.github.io/graphics/2021/03/31/UE4ShadersIntroduction.html</a>，他说</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">template</span>&lt;<span class="keyword">typename</span> TRHICmdList, <span class="keyword">typename</span> TShaderClass, <span class="keyword">typename</span> TShaderRHI&gt;</span></span><br><span class="line"><span class="function"><span class="keyword">inline</span> <span class="type">void</span> <span class="title">SetShaderParameters</span><span class="params">(TRHICmdList&amp; RHICmdList, <span class="type">const</span> TShaderRef&lt;TShaderClass&gt;&amp; Shader, TShaderRHI* ShadeRHI, <span class="type">const</span> <span class="keyword">typename</span> TShaderClass::FParameters&amp; Parameters)</span></span></span><br></pre></td></tr></table></figure>
+<p>是最常用的绑定函数</p>
+<p>看了一下，确实有很多绑定</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">for</span> (<span class="type">const</span> FShaderParameterBindings::FResourceParameter&amp; ParameterBinding : Bindings.ResourceParameters)</span><br><span class="line">&#123;</span><br><span class="line">    EUniformBufferBaseType BaseType = (EUniformBufferBaseType)ParameterBinding.BaseType;</span><br><span class="line">    <span class="keyword">switch</span> (BaseType)</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="keyword">case</span> UBMT_TEXTURE:</span><br><span class="line">        &#123;</span><br><span class="line">            <span class="keyword">auto</span> ShaderParameterRef = *(FRHITexture**)(Base + ParameterBinding.ByteOffset);</span><br><span class="line">            RTBindingsWriter.<span class="built_in">SetTexture</span>(ParameterBinding.BaseIndex, ShaderParameterRef);</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">break</span>;</span><br><span class="line">        <span class="keyword">case</span> UBMT_SRV:</span><br><span class="line">        &#123;</span><br><span class="line">            FRHIShaderResourceView* ShaderParameterRef = *(FRHIShaderResourceView**)(Base + ParameterBinding.ByteOffset);</span><br><span class="line">            RTBindingsWriter.<span class="built_in">SetSRV</span>(ParameterBinding.BaseIndex, ShaderParameterRef);</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">break</span>;</span><br><span class="line">        <span class="keyword">case</span> UBMT_UAV:</span><br><span class="line">        &#123;</span><br><span class="line">            FRHIUnorderedAccessView* ShaderParameterRef = *(FRHIUnorderedAccessView**)(Base + ParameterBinding.ByteOffset);</span><br><span class="line">            RTBindingsWriter.<span class="built_in">SetUAV</span>(ParameterBinding.BaseIndex, ShaderParameterRef);</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">break</span>;</span><br><span class="line">        <span class="keyword">case</span> UBMT_SAMPLER:</span><br><span class="line">        &#123;</span><br><span class="line">            FRHISamplerState* ShaderParameterRef = *(FRHISamplerState**)(Base + ParameterBinding.ByteOffset);</span><br><span class="line">            RTBindingsWriter.<span class="built_in">SetSampler</span>(ParameterBinding.BaseIndex, ShaderParameterRef);</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">break</span>;</span><br><span class="line">        <span class="keyword">case</span> UBMT_RDG_TEXTURE:</span><br><span class="line">        &#123;</span><br><span class="line">            <span class="keyword">auto</span> GraphTexture = *<span class="built_in">reinterpret_cast</span>&lt;FRDGTexture* <span class="type">const</span>*&gt;(Base + ParameterBinding.ByteOffset);</span><br><span class="line">            <span class="built_in">checkSlow</span>(GraphTexture);</span><br><span class="line">            GraphTexture-&gt;<span class="built_in">MarkResourceAsUsed</span>();</span><br><span class="line">            RTBindingsWriter.<span class="built_in">SetTexture</span>(ParameterBinding.BaseIndex, GraphTexture-&gt;<span class="built_in">GetRHI</span>());</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">break</span>;</span><br><span class="line">        <span class="keyword">case</span> UBMT_RDG_TEXTURE_SRV:</span><br><span class="line">        <span class="keyword">case</span> UBMT_RDG_BUFFER_SRV:</span><br><span class="line">        &#123;</span><br><span class="line">            <span class="keyword">auto</span> GraphSRV = *<span class="built_in">reinterpret_cast</span>&lt;FRDGShaderResourceView* <span class="type">const</span>*&gt;(Base + ParameterBinding.ByteOffset);</span><br><span class="line"></span><br><span class="line">            <span class="built_in">checkSlow</span>(GraphSRV);</span><br><span class="line">            GraphSRV-&gt;<span class="built_in">MarkResourceAsUsed</span>();</span><br><span class="line">            RTBindingsWriter.<span class="built_in">SetSRV</span>(ParameterBinding.BaseIndex, GraphSRV-&gt;<span class="built_in">GetRHI</span>());</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">break</span>;</span><br><span class="line">        <span class="keyword">case</span> UBMT_RDG_TEXTURE_UAV:</span><br><span class="line">        <span class="keyword">case</span> UBMT_RDG_BUFFER_UAV:</span><br><span class="line">        &#123;</span><br><span class="line">            <span class="keyword">auto</span> UAV = *<span class="built_in">reinterpret_cast</span>&lt;FRDGUnorderedAccessView* <span class="type">const</span>*&gt;(Base + ParameterBinding.ByteOffset);</span><br><span class="line"></span><br><span class="line">            <span class="built_in">checkSlow</span>(UAV);</span><br><span class="line">            UAV-&gt;<span class="built_in">MarkResourceAsUsed</span>();</span><br><span class="line">            RTBindingsWriter.<span class="built_in">SetUAV</span>(ParameterBinding.BaseIndex, UAV-&gt;<span class="built_in">GetRHI</span>());</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">break</span>;</span><br><span class="line">        <span class="keyword">default</span>:</span><br><span class="line">            <span class="built_in">checkf</span>(<span class="literal">false</span>, <span class="built_in">TEXT</span>(<span class="string">&quot;Unhandled resource type?&quot;</span>));</span><br><span class="line">            <span class="keyword">break</span>;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>但是我查找了一下它的引用，怎么都是 RayTracing 在用？没有别人在用了。</p>
+<p>打断点，发现还是有一个 <code>UpdateGPUScene(RHICmdList, *Scene);</code> 在用，最终到 <code>FComputeShaderUtils::Dispatch</code>。但是似乎和 Base Pass 怎么绑定 mesh 的没有关系</p>
+<h3 id="在-FShaderResourceParameter-加-Log">在 FShaderResourceParameter 加 Log</h3>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="type">void</span> <span class="title">FShaderResourceParameter::Bind</span><span class="params">(<span class="type">const</span> FShaderParameterMap&amp; ParameterMap,<span class="type">const</span> TCHAR* ParameterName,EShaderParameterFlags Flags)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">	<span class="built_in">UE_LOG</span>(LogTemp, Warning, <span class="built_in">TEXT</span>(<span class="string">&quot;FShaderResourceParameter::Bind here!!!!!&quot;</span>));</span><br></pre></td></tr></table></figure>
+<p>也没有输出</p>
+<h3 id="重新看一下渲染流程">重新看一下渲染流程</h3>
+<p>看了</p>
+<p><a target="_blank" rel="noopener" href="https://github.com/donaldwuid/unreal_source_explained/blob/master/main/rendering.md">https://github.com/donaldwuid/unreal_source_explained/blob/master/main/rendering.md</a></p>
+<p>也没有解决我的问题，就是纹理是从哪里加载过来的</p>
+<h3 id="从-UTexture2D-出发">从 UTexture2D 出发</h3>
+<p>那些地方都打不到断点，于是从 <code>UTexture2D</code> 出发打断点</p>
+<p>研究了一下，觉得 <code>UTexture::SetResource</code> 很像是跟渲染资源相关的地方</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="type">void</span> <span class="title">UTexture::SetResource</span><span class="params">(FTextureResource* InResource)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">	<span class="built_in">check</span> (!<span class="built_in">IsInActualRenderingThread</span>() &amp;&amp; !<span class="built_in">IsInRHIThread</span>());</span><br><span class="line"></span><br><span class="line">	<span class="comment">// Each PrivateResource value must be updated in it&#x27;s own thread because any</span></span><br><span class="line">	<span class="comment">// rendering code trying to access the Resource from this UTexture will</span></span><br><span class="line">	<span class="comment">// crash if it suddenly sees nullptr or a new resource that has not had it&#x27;s InitRHI called.</span></span><br><span class="line"></span><br><span class="line">	PrivateResource = InResource;</span><br><span class="line">	<span class="built_in">ENQUEUE_RENDER_COMMAND</span>(SetResourceRenderThread)([<span class="keyword">this</span>, InResource](FRHICommandListImmediate&amp; RHICmdList)</span><br><span class="line">	&#123;</span><br><span class="line">		PrivateResourceRenderThread = InResource;</span><br><span class="line">	&#125;);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>这里还说了需要 init 资源</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">UTexture::SetResource(FTextureResource *) Texture.cpp:147</span><br><span class="line">UTexture::UpdateResource() Texture.cpp:190</span><br><span class="line">UTexture2D::UpdateResource() Texture2D.cpp:440</span><br><span class="line">UTexture::PostLoad() Texture.cpp:481</span><br><span class="line">UTexture2D::PostLoad() Texture2D.cpp:377</span><br><span class="line">UObject::ConditionalPostLoad() Obj.cpp:1092</span><br><span class="line">FAsyncPackage::PostLoadObjects() AsyncLoading.cpp:6424</span><br><span class="line">FAsyncPackage::TickAsyncPackage(bool, bool, float &amp;, FFlushTree *) AsyncLoading.cpp:5590</span><br><span class="line">FAsyncLoadingThread::ProcessAsyncLoading(int &amp;, bool, bool, float, FFlushTree *) AsyncLoading.cpp:4098</span><br><span class="line">FAsyncLoadingThread::TickAsyncThread(bool, bool, float, bool &amp;, FFlushTree *) AsyncLoading.cpp:4856</span><br><span class="line">FAsyncLoadingThread::TickAsyncLoading(bool, bool, float, FFlushTree *) AsyncLoading.cpp:4556</span><br><span class="line">FAsyncLoadingThread::FlushLoading(int) AsyncLoading.cpp:7022</span><br><span class="line">FlushAsyncLoading(int) AsyncPackageLoader.cpp:643</span><br><span class="line">LoadPackageInternal(UPackage *, const wchar_t *, unsigned int, FLinkerLoad *, FArchive *, const FLinkerInstancingContext *) UObjectGlobals.cpp:1144</span><br><span class="line">LoadPackage(UPackage *, const wchar_t *, unsigned int, FArchive *, const FLinkerInstancingContext *) UObjectGlobals.cpp:1469</span><br></pre></td></tr></table></figure>
+<p>这个调用堆栈也很清晰</p>
+<p>感觉上一层的 update 应该是核心逻辑</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="type">void</span> <span class="title">UTexture::UpdateResource</span><span class="params">()</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">	<span class="comment">// Release the existing texture resource.</span></span><br><span class="line">	<span class="built_in">ReleaseResource</span>();</span><br><span class="line"></span><br><span class="line">	<span class="comment">//Dedicated servers have no texture internals</span></span><br><span class="line">	<span class="keyword">if</span>( FApp::<span class="built_in">CanEverRender</span>() &amp;&amp; !<span class="built_in">HasAnyFlags</span>(RF_ClassDefaultObject) )</span><br><span class="line">	&#123;</span><br><span class="line">		<span class="comment">// Create a new texture resource.</span></span><br><span class="line">		FTextureResource* NewResource = <span class="built_in">CreateResource</span>();</span><br><span class="line">		<span class="built_in">SetResource</span>(NewResource);</span><br><span class="line"></span><br><span class="line">		<span class="keyword">if</span> (NewResource)</span><br><span class="line">		&#123;</span><br><span class="line">			...</span><br><span class="line"></span><br><span class="line">			<span class="comment">// Init the texture reference, which needs to be set from a render command, since TextureReference.TextureReferenceRHI is gamethread coherent.</span></span><br><span class="line">			<span class="built_in">ENQUEUE_RENDER_COMMAND</span>(SetTextureReference)([<span class="keyword">this</span>, NewResource](FRHICommandListImmediate&amp; RHICmdList)</span><br><span class="line">			&#123;</span><br><span class="line">				NewResource-&gt;<span class="built_in">SetTextureReference</span>(TextureReference.TextureReferenceRHI);</span><br><span class="line">			&#125;);</span><br><span class="line">			<span class="built_in">BeginInitResource</span>(NewResource);</span><br><span class="line"></span><br><span class="line">            ...</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>这里的 <code>SetResource</code> 和 <code>SetTextureReference</code> 就是简单的 set，没有做别的事情，很舒服</p>
+<p>但是在看的时候，发现他这个注释</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/** </span></span><br><span class="line"><span class="comment"> * The rendering resource which represents a texture.</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">FTextureResource</span> : <span class="keyword">public</span> FTexture</span><br></pre></td></tr></table></figure>
+<p>他的成员</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// A FRHITextureReference to update whenever the FTexture::TextureRHI changes.</span></span><br><span class="line"><span class="comment">// It allows to prevent dereferencing the UAsset pointers when updating a texture resource.</span></span><br><span class="line">FTextureReferenceRHIRef TextureReferenceRHI;</span><br></pre></td></tr></table></figure>
+<p>似乎有点关系</p>
+<p>也看到 <code>class UTexture : public UStreamableRenderAsset, public IInterface_AssetUserData</code></p>
+<p>的成员</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/** The texture&#x27;s resource, can be NULL */</span></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">FTextureResource</span>* PrivateResource;</span><br><span class="line"><span class="comment">/** Value updated and returned by the render-thread to allow</span></span><br><span class="line"><span class="comment">    * fenceless update from the game-thread without causing</span></span><br><span class="line"><span class="comment">    * potential crash in the render thread.</span></span><br><span class="line"><span class="comment">    */</span></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">FTextureResource</span>* PrivateResourceRenderThread;</span><br></pre></td></tr></table></figure>
+<p>说明它是考虑了运行时重新加载纹理的</p>
+<p>然后在 <code>FRenderResource::InitResource</code> 打断点，蹲到纹理资源的 init</p>
+<p>调用到 <code>FStreamableTextureResource::InitRHI</code></p>
+<p>这其中重要的应该是</p>
+<p><code>FTexture2DResource::CreateTexture</code> 还有一个 <code>RHIUpdateTextureReference(TextureReferenceRHI, TextureRHI);</code></p>
+<p>create 就是调用平台特定的 API 去创建 GPU 资源句柄</p>
+<p>reference 这里还是不知道干什么的</p>
+<p>reload package 之后，再会调用一次 texture 的 <code>UTexture2D::PostLoad</code>，跟之前一样</p>
+<p>回来看 <code>UTexture</code>，我想知道 Material 是怎么使用到这个材质的，或者是别的什么，总之，渲染器是怎么获取并绑定这个纹理的</p>
+<p>于是看到这个 getter</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/** Get the texture&#x27;s resource, can be NULL */</span></span><br><span class="line"><span class="function">ENGINE_API FTextureResource* <span class="title">GetResource</span><span class="params">()</span></span>;</span><br><span class="line"></span><br><span class="line"><span class="comment">/** Get the const texture&#x27;s resource, can be NULL */</span></span><br><span class="line"><span class="function">ENGINE_API <span class="type">const</span> FTextureResource* <span class="title">GetResource</span><span class="params">()</span> <span class="type">const</span></span>;</span><br></pre></td></tr></table></figure>
+<p>这个 getter 是绑定了 <code>UTexture</code> 的 <code>TFieldPtrAccessor&lt;FTextureResource&gt; Resource;</code> 成员</p>
+<p>不断蹲，蹲到</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">UTexture::GetResource() Texture.cpp:132</span><br><span class="line">UE4Function_Private::TFunctionRefCaller::Call(void *) Function.h:539</span><br><span class="line">UE4Function_Private::TFunctionRefBase::operator()() Function.h:676</span><br><span class="line">FUniformExpressionSet::FillUniformBuffer(const FMaterialRenderContext &amp;, const FUniformExpressionCache &amp;, unsigned char *, int) MaterialUniformExpressions.cpp:1433</span><br><span class="line">FMaterialRenderProxy::EvaluateUniformExpressions(FUniformExpressionCache &amp;, const FMaterialRenderContext &amp;, FRHICommandList *) MaterialShared.cpp:2956</span><br><span class="line">&lt;lambda_4b8eb6ac...&gt;::operator()(Type) MaterialShared.cpp:3213</span><br><span class="line">UMaterialInterface::IterateOverActiveFeatureLevels&lt;…&gt;(&lt;lambda_4b8eb6ac...&gt;) MaterialInterface.h:861</span><br><span class="line">FMaterialRenderProxy::UpdateDeferredCachedUniformExpressions() MaterialShared.cpp:3205</span><br><span class="line">TEnqueueUniqueRenderCommandType&lt;`FRendererModule::BeginRenderingViewFamily&#x27;::`2&#x27;::UpdateDeferredCachedUniformExpressionsName,&lt;lambda_af3a665d491aaad33361bc0d189d73fc&gt; &gt;::DoTask(Type,const TRefCountPtr&lt;FGraphEvent&gt; &amp;) RenderingThread.h:183</span><br><span class="line">TGraphTask&lt;TEnqueueUniqueRenderCommandType&lt;`FRendererModule::BeginRenderingViewFamily&#x27;::`2&#x27;::UpdateDeferredCachedUniformExpressionsName,&lt;lambda_af3a665d491aaad33361bc0d189d73fc&gt; &gt; &gt;::ExecuteTask(TArray&lt;FBaseGraphTask *,TSizedDefaultAllocator&lt;32&gt; &gt; &amp;,Type) TaskGraphInterfaces.h:886</span><br><span class="line">FNamedTaskThread::ProcessTasksNamedThread(int, bool) TaskGraph.cpp:710</span><br><span class="line">FNamedTaskThread::ProcessTasksUntilQuit(int) TaskGraph.cpp:601</span><br><span class="line">FTaskGraphImplementation::ProcessThreadUntilRequestReturn(Type) TaskGraph.cpp:1480</span><br><span class="line">RenderingThreadMain(FEvent *) RenderingThread.cpp:372</span><br></pre></td></tr></table></figure>
+<p>这个</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="type">void</span> <span class="title">FUniformExpressionSet::FillUniformBuffer</span><span class="params">(<span class="type">const</span> FMaterialRenderContext&amp; MaterialRenderContext, <span class="type">const</span> FUniformExpressionCache&amp; UniformExpressionCache, uint8* TempBuffer, <span class="type">int</span> TempBufferSize)</span> <span class="type">const</span></span></span><br></pre></td></tr></table></figure>
+<p>看上去像是建立起材质和纹理之间的关系的部分</p>
+<p>这里包含多个纹理类型的绑定，取其中 Texture2D 的来看</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">for</span>(int32 ExpressionIndex = <span class="number">0</span>; ExpressionIndex &lt; <span class="built_in">GetNumTextures</span>(EMaterialTextureParameterType::Standard2D); ExpressionIndex++)</span><br><span class="line">&#123;</span><br><span class="line">    <span class="type">const</span> FMaterialTextureParameterInfo&amp; Parameter = <span class="built_in">GetTextureParameter</span>(EMaterialTextureParameterType::Standard2D, ExpressionIndex);</span><br><span class="line"></span><br><span class="line">    <span class="type">const</span> UTexture* Value = <span class="literal">nullptr</span>;</span><br><span class="line">    <span class="built_in">GetTextureValue</span>(EMaterialTextureParameterType::Standard2D, ExpressionIndex, MaterialRenderContext, MaterialRenderContext.Material, Value);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 资源有效性检查和日志警告</span></span><br><span class="line">    ...</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 计算纹理和采样器指针在缓冲区中的位置</span></span><br><span class="line">    <span class="type">void</span>** ResourceTableTexturePtr = (<span class="type">void</span>**)((uint8*)BufferCursor + <span class="number">0</span> * SHADER_PARAMETER_POINTER_ALIGNMENT);</span><br><span class="line">    <span class="type">void</span>** ResourceTableSamplerPtr = (<span class="type">void</span>**)((uint8*)BufferCursor + <span class="number">1</span> * SHADER_PARAMETER_POINTER_ALIGNMENT);</span><br><span class="line">    BufferCursor = ((uint8*)BufferCursor) + (SHADER_PARAMETER_POINTER_ALIGNMENT * <span class="number">2</span>);</span><br><span class="line">    <span class="built_in">check</span>(BufferCursor &lt;= TempBuffer + TempBufferSize);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 允许的纹理类型掩码</span></span><br><span class="line">    <span class="type">const</span> uint32 ValidTextureTypes = MCT_Texture2D | MCT_TextureVirtual | MCT_TextureExternal;</span><br><span class="line"></span><br><span class="line">    <span class="type">bool</span> bValueValid = <span class="literal">false</span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 资源有效性判断</span></span><br><span class="line">    <span class="keyword">if</span> (Value &amp;&amp; Value-&gt;Resource &amp;&amp; Value-&gt;TextureReference.TextureReferenceRHI &amp;&amp; (Value-&gt;<span class="built_in">GetMaterialType</span>() &amp; ValidTextureTypes) != <span class="number">0u</span>)</span><br><span class="line">    &#123;</span><br><span class="line">        FSamplerStateRHIRef* SamplerSource = &amp;Value-&gt;Resource-&gt;SamplerStateRHI;</span><br><span class="line"></span><br><span class="line">        <span class="comment">// 根据采样器来源模式选择采样器</span></span><br><span class="line">        <span class="type">const</span> ESamplerSourceMode SourceMode = Parameter.SamplerSource;</span><br><span class="line">        <span class="keyword">if</span> (SourceMode == SSM_Wrap_WorldGroupSettings)</span><br><span class="line">        &#123;</span><br><span class="line">            SamplerSource = &amp;Wrap_WorldGroupSettings-&gt;SamplerStateRHI;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">else</span> <span class="keyword">if</span> (SourceMode == SSM_Clamp_WorldGroupSettings)</span><br><span class="line">        &#123;</span><br><span class="line">            SamplerSource = &amp;Clamp_WorldGroupSettings-&gt;SamplerStateRHI;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> (*SamplerSource)</span><br><span class="line">        &#123;</span><br><span class="line">            *ResourceTableTexturePtr = Value-&gt;TextureReference.TextureReferenceRHI;</span><br><span class="line">            *ResourceTableSamplerPtr = *SamplerSource;</span><br><span class="line">            bValueValid = <span class="literal">true</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">else</span></span><br><span class="line">        &#123;</span><br><span class="line">            <span class="built_in">ensureMsgf</span>(<span class="literal">false</span>, <span class="built_in">TEXT</span>(<span class="string">&quot;Texture %s had invalid sampler source.&quot;</span>), *Value-&gt;<span class="built_in">GetName</span>());</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 如果资源无效，绑定默认白色纹理和采样器</span></span><br><span class="line">    <span class="keyword">if</span> (!bValueValid)</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="built_in">check</span>(GWhiteTexture-&gt;TextureRHI);</span><br><span class="line">        *ResourceTableTexturePtr = GWhiteTexture-&gt;TextureRHI;</span><br><span class="line">        <span class="built_in">check</span>(GWhiteTexture-&gt;SamplerStateRHI);</span><br><span class="line">        *ResourceTableSamplerPtr = GWhiteTexture-&gt;SamplerStateRHI;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>可见，Material 一开始就存储了 <code>UTexture*</code>，纹理和材质的关系是已经建立好了</p>
+<p>现在是要建立 Uniform buffer 和 texture 之间的关系</p>
+<p>简单来说就是，计算缓冲区写入位置，写入纹理和采样器指针</p>
+<p>如果，我是说如果，这个材质的渲染对我这个 2D 纹理的获取完全是依赖于 UniformExpression 的，那么就可以确定，材质仅仅通过这个路径被 GPU 获取</p>
+<h2 id="研究-FMaterialRenderProxy">研究 FMaterialRenderProxy</h2>
+<h3 id="第一次更新-UniformExpression">第一次更新 UniformExpression</h3>
+<p>第一次调用应该是在 <code>FRendererModule::BeginRenderingViewFamily</code></p>
+<p>在这里有</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">ENQUEUE_RENDER_COMMAND</span>(UpdateDeferredCachedUniformExpressions)(</span><br><span class="line">    [](FRHICommandList&amp; RHICmdList)</span><br><span class="line">    &#123;</span><br><span class="line">        FMaterialRenderProxy::<span class="built_in">UpdateDeferredCachedUniformExpressions</span>();</span><br><span class="line">    &#125;);</span><br></pre></td></tr></table></figure>
+<p>调用到 <code>FMaterialRenderProxy::UpdateDeferredCachedUniformExpressions</code></p>
+<h3 id="更新-UniformExpression-时如何遍历-FMaterialRenderProxy">更新 UniformExpression 时如何遍历 FMaterialRenderProxy</h3>
+<p><code>FMaterialRenderProxy::UpdateDeferredCachedUniformExpressions</code> 这里可以看到是如何遍历 <code>FMaterialRenderProxy</code> 的</p>
+<p>精简之后是：</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="type">void</span> <span class="title">FMaterialRenderProxy::UpdateDeferredCachedUniformExpressions</span><span class="params">()</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">	...</span><br><span class="line"></span><br><span class="line">	<span class="keyword">for</span> (TSet&lt;FMaterialRenderProxy*&gt;::TConstIterator <span class="built_in">It</span>(DeferredUniformExpressionCacheRequests); It; ++It)</span><br><span class="line">	&#123;</span><br><span class="line">		FMaterialRenderProxy* MaterialProxy = *It;</span><br><span class="line">		UMaterialInterface::<span class="built_in">IterateOverActiveFeatureLevels</span>([&amp;](ERHIFeatureLevel::Type InFeatureLevel)</span><br><span class="line">		&#123;</span><br><span class="line">			<span class="comment">// Don&#x27;t bother caching if we&#x27;ll be falling back to a different FMaterialRenderProxy for rendering anyway</span></span><br><span class="line">			<span class="type">const</span> FMaterial* Material = MaterialProxy-&gt;<span class="built_in">GetMaterialNoFallback</span>(InFeatureLevel);</span><br><span class="line">			<span class="keyword">if</span> (Material &amp;&amp; Material-&gt;<span class="built_in">GetRenderingThreadShaderMap</span>())</span><br><span class="line">			&#123;</span><br><span class="line">				FMaterialRenderContext <span class="built_in">MaterialRenderContext</span>(MaterialProxy, *Material, <span class="literal">nullptr</span>);</span><br><span class="line">				MaterialProxy-&gt;<span class="built_in">EvaluateUniformExpressions</span>(MaterialProxy-&gt;UniformExpressionCache[(int32)InFeatureLevel], MaterialRenderContext);</span><br><span class="line">			&#125;</span><br><span class="line">		&#125;);</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	DeferredUniformExpressionCacheRequests.<span class="built_in">Reset</span>();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>他这里是遍历一个 <code>DeferredUniformExpressionCacheRequests</code>，跳转可见，这是一个类的全局变量</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">TSet&lt;FMaterialRenderProxy*&gt; FMaterialRenderProxy::MaterialRenderProxyMap;</span><br><span class="line">TSet&lt;FMaterialRenderProxy*&gt; FMaterialRenderProxy::DeferredUniformExpressionCacheRequests;</span><br></pre></td></tr></table></figure>
+<h3 id="FMaterialRenderProxy-全局列表">FMaterialRenderProxy 全局列表</h3>
+<p>找 <code>DeferredUniformExpressionCacheRequests</code> 的增删。Add 的逻辑在 <code>FMaterialRenderProxy::CacheUniformExpressions</code></p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="type">void</span> <span class="title">FMaterialRenderProxy::CacheUniformExpressions</span><span class="params">(<span class="type">bool</span> bRecreateUniformBuffer)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">	<span class="comment">// Register the render proxy&#x27;s as a render resource so it can receive notifications to free the uniform buffer.</span></span><br><span class="line">	<span class="built_in">InitResource</span>();</span><br><span class="line"></span><br><span class="line">	...</span><br><span class="line"></span><br><span class="line">	DeferredUniformExpressionCacheRequests.<span class="built_in">Add</span>(<span class="keyword">this</span>);</span><br><span class="line"></span><br><span class="line">	<span class="built_in">InvalidateUniformExpressionCache</span>(bRecreateUniformBuffer);</span><br><span class="line"></span><br><span class="line">	<span class="keyword">if</span> (!GDeferUniformExpressionCaching)</span><br><span class="line">	&#123;</span><br><span class="line">		FMaterialRenderProxy::<span class="built_in">UpdateDeferredCachedUniformExpressions</span>();</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>先把自己加到全局变量的列表</p>
+<p>如果重建，那么有一个专门的 invalidate 的函数 <code>InvalidateUniformExpressionCache</code></p>
+<p>然后如果设置了 cache，那么之后 update UniformExpression</p>
+<p>如果没有设置 cache，那么立即 update UniformExpression</p>
+<p>看下他这个 invalidate 的函数</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="type">void</span> <span class="title">FMaterialRenderProxy::InvalidateUniformExpressionCache</span><span class="params">(<span class="type">bool</span> bRecreateUniformBuffer)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">	...</span><br><span class="line"></span><br><span class="line">	++UniformExpressionCacheSerialNumber;</span><br><span class="line">	<span class="keyword">for</span> (int32 i = <span class="number">0</span>; i &lt; ERHIFeatureLevel::Num; ++i)</span><br><span class="line">	&#123;</span><br><span class="line">		UniformExpressionCache[i].bUpToDate = <span class="literal">false</span>;</span><br><span class="line">		UniformExpressionCache[i].CachedUniformExpressionShaderMap = <span class="literal">nullptr</span>;</span><br><span class="line">		</span><br><span class="line">        ...</span><br><span class="line"></span><br><span class="line">		<span class="keyword">if</span> (bRecreateUniformBuffer)</span><br><span class="line">		&#123;</span><br><span class="line">			<span class="comment">// This is required if the FMaterial is being recompiled (the uniform buffer layout will change).</span></span><br><span class="line">			<span class="comment">// This should only be done if the calling code is using FMaterialUpdateContext to recreate the rendering state of primitives using this material, </span></span><br><span class="line">			<span class="comment">// Since cached mesh commands also cache uniform buffer pointers.</span></span><br><span class="line">			UniformExpressionCache[i].UniformBuffer = <span class="literal">nullptr</span>;</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>这个注释似乎指的是，材质重新编译的时候，需要重建 uniform buffer，因为 uniform buffer 的 layout 会发生改变</p>
+<p>and 不得不说的是，UE 里面的 uniform buffer 和 glsl 中的 uniform 变量，是不一样的概念。好令人错乱。</p>
+<p>然后这个重建函数应该被 <code>FMaterialUpdateContext</code> 调用，因为 mesh command 的缓存里面，缓存了 uniform buffer 的指针，所以重建还需要把 mesh command 的缓存里面的 uniform buffer 的指针缓存给清了</p>
+<p>那么他的意思应该是，<code>FMaterialUpdateContext</code> 可以这样清缓存</p>
+<h3 id="添加-FMaterialRenderProxy-到全局列表的源头">添加 FMaterialRenderProxy 到全局列表的源头</h3>
+<p>找谁调用了 <code>FMaterialRenderProxy::CacheUniformExpressions</code></p>
+<p>除了 Material 类自己的方法，还看到一个 <code>FExternalTextureRegistry::RegisterExternalTexture</code> 很酷</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="type">void</span> <span class="title">FExternalTextureRegistry::RegisterExternalTexture</span><span class="params">(<span class="type">const</span> FGuid&amp; InGuid, FTextureRHIRef&amp; InTextureRHI, FSamplerStateRHIRef&amp; InSamplerStateRHI, <span class="type">const</span> FLinearColor&amp; InCoordinateScaleRotation, <span class="type">const</span> FLinearColor&amp; InCoordinateOffset)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    ...</span><br><span class="line"></span><br><span class="line">	TextureEntries.<span class="built_in">Add</span>(InGuid, <span class="built_in">FExternalTextureEntry</span>(InTextureRHI, InSamplerStateRHI, InCoordinateScaleRotation, InCoordinateOffset));</span><br><span class="line"></span><br><span class="line">	<span class="keyword">for</span> (<span class="type">const</span> FMaterialRenderProxy* MaterialRenderProxy : ReferencingMaterialRenderProxies)</span><br><span class="line">	&#123;</span><br><span class="line">		<span class="built_in">const_cast</span>&lt;FMaterialRenderProxy*&gt;(MaterialRenderProxy)-&gt;<span class="built_in">CacheUniformExpressions</span>(<span class="literal">false</span>);</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>它是可以直接遍历所有相关联的 <code>MaterialRenderProxy</code> 然后直接遍历 cache</p>
+<p>搜了一下他这个成员 <code>TSet&lt;const FMaterialRenderProxy*&gt; ReferencingMaterialRenderProxies;</code> 的类型 <code>TSet&lt;const FMaterialRenderProxy*&gt;</code>，结果发现只有它有</p>
+<p>我还希望 Texture 相关的类型也有这个相关性呢，如果有，那就很好了</p>
+<p>回到 Material 相关的搜索结果</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment">* Updates a parameter on the material instance from the game thread.</span></span><br><span class="line"><span class="comment">*/</span></span><br><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">typename</span> ParameterType&gt;</span><br><span class="line"><span class="function"><span class="type">void</span> <span class="title">GameThread_UpdateMIParameter</span><span class="params">(<span class="type">const</span> UMaterialInstance* Instance, <span class="type">const</span> ParameterType&amp; Parameter)</span></span></span><br><span class="line"><span class="function"></span></span><br><span class="line"><span class="function"><span class="type">void</span> <span class="title">FMaterialRenderProxy::CacheUniformExpressions_GameThread</span><span class="params">(<span class="type">bool</span> bRecreateUniformBuffer)</span></span></span><br><span class="line"><span class="function"></span></span><br><span class="line"><span class="function"><span class="type">void</span> <span class="title">SetShaderMapsOnMaterialResources_RenderThread</span><span class="params">(FRHICommandListImmediate&amp; RHICmdList, FMaterialsToUpdateMap&amp; MaterialsToUpdate)</span></span></span><br></pre></td></tr></table></figure>
+<p>都感觉很像</p>
+<p>随便选了一个 <code>FMaterialRenderProxy::CacheUniformExpressions_GameThread</code> 开始不断找 usage，最终找到 <code>UMaterial::PostLoad</code></p>
+<p>删掉编辑器相关的、兼容性相关的、统计相关的，精简为</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="type">void</span> <span class="title">UMaterial::PostLoad</span><span class="params">()</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">	<span class="comment">// needed for UMaterial as it doesn&#x27;t have the InitResources() override where this is called</span></span><br><span class="line">	<span class="built_in">PropagateDataToMaterialProxy</span>();</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Before caching shader resources we have to make sure all referenced textures have been post loaded</span></span><br><span class="line">    <span class="comment">// as we depend on their resources being valid.</span></span><br><span class="line">    <span class="keyword">for</span> (UObject* Texture : CachedExpressionData.ReferencedTextures)</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="keyword">if</span> (Texture)</span><br><span class="line">        &#123;</span><br><span class="line">            Texture-&gt;<span class="built_in">ConditionalPostLoad</span>();</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="built_in">CacheResourceShadersForRendering</span>(<span class="literal">false</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>先传播 data，然后保证纹理加载正常，然后缓存 shader 资源用于渲染</p>
+<p>其中 <code>UMaterial::CacheResourceShadersForRendering</code> 是和 uniform buffer 相关</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="type">void</span> <span class="title">UMaterial::CacheResourceShadersForRendering</span><span class="params">(<span class="type">bool</span> bRegenerateId, EMaterialShaderPrecompileMode PrecompileMode)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">	<span class="keyword">if</span> (bRegenerateId)</span><br><span class="line">	&#123;</span><br><span class="line">		<span class="comment">// Regenerate this material&#x27;s Id if requested</span></span><br><span class="line">		<span class="built_in">FlushResourceShaderMaps</span>();</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="comment">// Resources cannot be deleted before uniform expressions are recached because</span></span><br><span class="line">	<span class="comment">// UB layouts will be accessed and they are owned by material resources</span></span><br><span class="line">	FMaterialResourceDeferredDeletionArray ResourcesToFree;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">if</span> (FApp::<span class="built_in">CanEverRender</span>())</span><br><span class="line">	&#123;</span><br><span class="line">		<span class="type">const</span> EMaterialQualityLevel::Type ActiveQualityLevel = <span class="built_in">GetCachedScalabilityCVars</span>().MaterialQualityLevel;</span><br><span class="line">		uint32 FeatureLevelsToCompile = <span class="built_in">GetFeatureLevelsToCompileForRendering</span>();</span><br><span class="line"></span><br><span class="line">		TArray&lt;FMaterialResource*&gt; ResourcesToCache;</span><br><span class="line">		<span class="keyword">while</span> (FeatureLevelsToCompile != <span class="number">0</span>)</span><br><span class="line">		&#123;</span><br><span class="line">			<span class="type">const</span> ERHIFeatureLevel::Type FeatureLevel = (ERHIFeatureLevel::Type)FBitSet::<span class="built_in">GetAndClearNextBit</span>(FeatureLevelsToCompile);</span><br><span class="line">			<span class="type">const</span> EShaderPlatform ShaderPlatform = GShaderPlatformForFeatureLevel[FeatureLevel];</span><br><span class="line"></span><br><span class="line">			<span class="comment">// Only cache shaders for the quality level that will actually be used to render</span></span><br><span class="line">			<span class="comment">// In cooked build, there is no shader compilation but this is still needed</span></span><br><span class="line">			<span class="comment">// to register the loaded shadermap</span></span><br><span class="line">			FMaterialResource* CurrentResource = <span class="built_in">FindOrCreateMaterialResource</span>(MaterialResources, <span class="keyword">this</span>, <span class="literal">nullptr</span>, FeatureLevel, ActiveQualityLevel);</span><br><span class="line">			<span class="built_in">check</span>(CurrentResource);</span><br><span class="line"></span><br><span class="line">			ResourcesToCache.<span class="built_in">Reset</span>();</span><br><span class="line">			ResourcesToCache.<span class="built_in">Add</span>(CurrentResource);</span><br><span class="line">			<span class="built_in">CacheShadersForResources</span>(ShaderPlatform, ResourcesToCache, PrecompileMode);</span><br><span class="line">		&#125;</span><br><span class="line"></span><br><span class="line">		...</span><br><span class="line"></span><br><span class="line">		<span class="built_in">RecacheUniformExpressions</span>(<span class="literal">true</span>);</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">if</span> (ResourcesToFree.<span class="built_in">Num</span>())</span><br><span class="line">	&#123;</span><br><span class="line">		<span class="built_in">ENQUEUE_RENDER_COMMAND</span>(CmdFreeUnusedMaterialResources)(</span><br><span class="line">			[ResourcesToFreeRT = <span class="built_in">MoveTemp</span>(ResourcesToFree)](FRHICommandList&amp;)</span><br><span class="line">		&#123;</span><br><span class="line">			<span class="keyword">for</span> (int32 Idx = <span class="number">0</span>; Idx &lt; ResourcesToFreeRT.<span class="built_in">Num</span>(); ++Idx)</span><br><span class="line">			&#123;</span><br><span class="line">				<span class="keyword">delete</span> ResourcesToFreeRT[Idx];</span><br><span class="line">			&#125;</span><br><span class="line">		&#125;);</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>可以看出，这里是先缓存 <code>FMaterialResource</code> 类型的对象，然后缓存 <code>UniformExpression</code></p>
+<p><code>UMaterial::RecacheUniformExpressions</code> 内部对默认的 Material 实例调用我之前想找的 <code>CacheUniformExpressions_GameThread</code></p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="type">void</span> <span class="title">UMaterial::RecacheUniformExpressions</span><span class="params">(<span class="type">bool</span> bRecreateUniformBuffer)</span> <span class="type">const</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">	<span class="type">bool</span> bUsingNewLoader = EVENT_DRIVEN_ASYNC_LOAD_ACTIVE_AT_RUNTIME &amp;&amp; GEventDrivenLoaderEnabled;</span><br><span class="line"></span><br><span class="line">	<span class="comment">// Ensure that default material is available before caching expressions.</span></span><br><span class="line">	<span class="keyword">if</span> (!bUsingNewLoader)</span><br><span class="line">	&#123;</span><br><span class="line">		UMaterial::<span class="built_in">GetDefaultMaterial</span>(MD_Surface);</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">if</span> (DefaultMaterialInstance)</span><br><span class="line">	&#123;</span><br><span class="line">		DefaultMaterialInstance-&gt;<span class="built_in">CacheUniformExpressions_GameThread</span>(bRecreateUniformBuffer);</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>看上去，一个材质是一个抽象的概念，实际逻辑一定有一个实例来完成，是这个意思？</p>
+<script src="https://utteranc.es/client.js"
+        repo="CheapMeow/cheapmeow.github.io"
+        issue-term="pathname"
+        theme="github-light"
+        crossorigin="anonymous"
+        async>
+</script>
+      </div>
+      
+        <div class="prev-or-next">
+          <div class="post-foot-next">
+            
+              <a href="/2025/05/14/2025-05-14-ue4_debug_standalone_game/" target="_self">
+                <i class="iconfont icon-chevronleft"></i>
+                <span>Prev</span>
+              </a>
+            
+          </div>
+          <div class="post-attach">
+            <span class="post-pubtime">
+              <i class="iconfont icon-updatetime mr-10" title="Update time"></i>
+              2025-06-01 10:52:45
+            </span>
+            
+                  <span class="post-tags">
+                    <i class="iconfont icon-tags mr-10" title="Tags"></i>
+                    
+                    <span class="span--tag mr-8">
+                      <a href="/tags/Cpp/" title="Cpp">
+                        #Cpp
+                      </a>
+                    </span>
+                    
+                    <span class="span--tag mr-8">
+                      <a href="/tags/Unreal-Engine-4/" title="Unreal Engine 4">
+                        #Unreal Engine 4
+                      </a>
+                    </span>
+                    
+                    <span class="span--tag mr-8">
+                      <a href="/tags/Render/" title="Render">
+                        #Render
+                      </a>
+                    </span>
+                    
+                  </span>
+              
+          </div>
+          <div class="post-foot-prev">
+            
+              <a href="/2025/05/21/2025-05-21_ue4_texture_reimport_with_new_file/" target="_self">
+                <span>Next</span>
+                <i class="iconfont icon-chevronright"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+    </div>
+    
+  <div id="btn-catalog" class="btn-catalog">
+    <i class="iconfont icon-catalog"></i>
+  </div>
+  <div class="post-catalog hidden" id="catalog">
+    <div class="title">Contents</div>
+    <div class="catalog-content">
+      
+        <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#ENQUEUE-RENDER-COMMAND"><span class="toc-text">ENQUEUE_RENDER_COMMAND</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E8%B0%81%E8%B0%83%E7%94%A8%E4%BA%86-BasePass"><span class="toc-text">谁调用了 BasePass</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Rendering-Thread"><span class="toc-text">Rendering Thread</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#FRendererModule-BeginRenderingViewFamily"><span class="toc-text">FRendererModule::BeginRenderingViewFamily</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%BB%8E-game-thread-%E8%BF%9B%E5%88%B0-render-thread%EF%BC%9ARenderViewFamily-RenderThread"><span class="toc-text">从 game thread 进到 render thread：RenderViewFamily_RenderThread</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#FDeferredShadingSceneRenderer-Render"><span class="toc-text">FDeferredShadingSceneRenderer::Render</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#FDeferredShadingSceneRenderer-RenderBasePass"><span class="toc-text">FDeferredShadingSceneRenderer::RenderBasePass</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#BasePass-%E5%86%85%E7%9A%84%E9%80%BB%E8%BE%91"><span class="toc-text">BasePass 内的逻辑</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%88%86%E5%8F%91%E7%BB%98%E5%88%B6-command"><span class="toc-text">分发绘制 command</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%8F%91%E8%B5%B7-draw-call"><span class="toc-text">发起 draw call</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#DrawCall-Debug"><span class="toc-text">DrawCall Debug</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#BasePass-DrawCall-%E6%98%AF%E5%A6%82%E4%BD%95%E7%BB%91%E5%AE%9A%E6%B8%B2%E6%9F%93%E7%9D%80%E8%89%B2%E5%99%A8%E8%B5%84%E6%BA%90%E7%9A%84"><span class="toc-text">BasePass DrawCall 是如何绑定渲染着色器资源的</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%BB%8E-draw-call-%E6%89%BE%E7%9D%80%E8%89%B2%E5%99%A8%E7%BB%91%E5%AE%9A%EF%BC%8C%E6%B2%A1%E6%89%BE%E5%88%B0"><span class="toc-text">从 draw call 找着色器绑定，没找到</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%BB%8E-PSSetShaderResources-%E6%89%BE%E7%BA%B9%E7%90%86%E7%BB%91%E5%AE%9A%EF%BC%8C%E6%B2%A1%E6%89%BE%E5%88%B0"><span class="toc-text">从 PSSetShaderResources 找纹理绑定，没找到</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%BB%8E%E7%9D%80%E8%89%B2%E5%99%A8%E8%B5%84%E6%BA%90%E7%B1%BB%E6%89%BE"><span class="toc-text">从着色器资源类找</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%BB%8E-SetShaderParameters-%E6%89%BE"><span class="toc-text">从 SetShaderParameters 找</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%9C%A8-FShaderResourceParameter-%E5%8A%A0-Log"><span class="toc-text">在 FShaderResourceParameter 加 Log</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E9%87%8D%E6%96%B0%E7%9C%8B%E4%B8%80%E4%B8%8B%E6%B8%B2%E6%9F%93%E6%B5%81%E7%A8%8B"><span class="toc-text">重新看一下渲染流程</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%BB%8E-UTexture2D-%E5%87%BA%E5%8F%91"><span class="toc-text">从 UTexture2D 出发</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%A0%94%E7%A9%B6-FMaterialRenderProxy"><span class="toc-text">研究 FMaterialRenderProxy</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E7%AC%AC%E4%B8%80%E6%AC%A1%E6%9B%B4%E6%96%B0-UniformExpression"><span class="toc-text">第一次更新 UniformExpression</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%9B%B4%E6%96%B0-UniformExpression-%E6%97%B6%E5%A6%82%E4%BD%95%E9%81%8D%E5%8E%86-FMaterialRenderProxy"><span class="toc-text">更新 UniformExpression 时如何遍历 FMaterialRenderProxy</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#FMaterialRenderProxy-%E5%85%A8%E5%B1%80%E5%88%97%E8%A1%A8"><span class="toc-text">FMaterialRenderProxy 全局列表</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%B7%BB%E5%8A%A0-FMaterialRenderProxy-%E5%88%B0%E5%85%A8%E5%B1%80%E5%88%97%E8%A1%A8%E7%9A%84%E6%BA%90%E5%A4%B4"><span class="toc-text">添加 FMaterialRenderProxy 到全局列表的源头</span></a></li></ol></li></ol>
+      
+    </div>
+  </div>
+
+  
+<script src="/js/catalog.js"></script>
+
+
+
+
+    
+      <div class="comments-container">
+        
+
+
+
+
+
+
+
+      </div>
+    
+  </div>
+
+
+        
+<div class="footer">
+  <div class="social">
+    <ul>
+      
+        <li>
+          
+              <a title="github" target="_blank" rel="noopener" href="https://github.com/zchengsite/hexo-theme-oranges">
+                <i class="iconfont icon-github"></i>
+              </a>
+              
+        </li>
+        
+    </ul>
+  </div>
+  
+    
+    <div class="footer-more">
+      
+        <a target="_blank" rel="noopener" href="https://github.com/zchengsite/hexo-theme-oranges">Copyright © 2025 Oranges</a>
+        
+    </div>
+  
+    
+    <div class="footer-more">
+      
+        <a target="_blank" rel="noopener" href="https://github.com/zchengsite/hexo-theme-oranges">Theme by Oranges | Powered by Hexo</a>
+        
+    </div>
+  
+  
+</div>
+
+      </div>
+
+      <div class="tools-bar">
+        <div class="back-to-top tools-bar-item hidden">
+  <a href="javascript: void(0)">
+    <i class="iconfont icon-chevronup"></i>
+  </a>
+</div>
+
+
+<script src="/js/backtotop.js"></script>
+
+
+
+        
+  <div class="search-icon tools-bar-item" id="search-icon">
+    <a href="javascript: void(0)">
+      <i class="iconfont icon-search"></i>
+    </a>
+  </div>
+
+  <div class="search-overlay hidden">
+    <div class="search-content" tabindex="0">
+      <div class="search-title">
+        <span class="search-icon-input">
+          <a href="javascript: void(0)">
+            <i class="iconfont icon-search"></i>
+          </a>
+        </span>
+        
+          <input type="text" class="search-input" id="search-input" placeholder="搜索...">
+        
+        <span class="search-close-icon" id="search-close-icon">
+          <a href="javascript: void(0)">
+            <i class="iconfont icon-close"></i>
+          </a>
+        </span>
+      </div>
+      <div class="search-result" id="search-result"></div>
+    </div>
+  </div>
+
+  <script type="text/javascript">
+    var inputArea = document.querySelector("#search-input")
+    var searchOverlayArea = document.querySelector(".search-overlay")
+
+    inputArea.onclick = function() {
+      getSearchFile()
+      this.onclick = null
+    }
+
+    inputArea.onkeydown = function() {
+      if(event.keyCode == 13)
+        return false
+    }
+
+    function openOrHideSearchContent() {
+      let isHidden = searchOverlayArea.classList.contains('hidden')
+      if (isHidden) {
+        searchOverlayArea.classList.remove('hidden')
+        document.body.classList.add('hidden')
+        // inputArea.focus()
+      } else {
+        searchOverlayArea.classList.add('hidden')
+        document.body.classList.remove('hidden')
+      }
+    }
+
+    function blurSearchContent(e) {
+      if (e.target === searchOverlayArea) {
+        openOrHideSearchContent()
+      }
+    }
+
+    document.querySelector("#search-icon").addEventListener("click", openOrHideSearchContent, false)
+    document.querySelector("#search-close-icon").addEventListener("click", openOrHideSearchContent, false)
+    searchOverlayArea.addEventListener("click", blurSearchContent, false)
+
+    var searchFunc = function (path, search_id, content_id) {
+      'use strict';
+      var $input = document.getElementById(search_id);
+      var $resultContent = document.getElementById(content_id);
+      $resultContent.innerHTML = "<ul><span class='local-search-empty'>First search, index file loading, please wait...<span></ul>";
+      $.ajax({
+        // 0x01. load xml file
+        url: path,
+        dataType: "xml",
+        success: function (xmlResponse) {
+          // 0x02. parse xml file
+          var datas = $("entry", xmlResponse).map(function () {
+            return {
+              title: $("title", this).text(),
+              content: $("content", this).text(),
+              url: $("url", this).text()
+            };
+          }).get();
+          $resultContent.innerHTML = "";
+
+          $input.addEventListener('input', function () {
+            // 0x03. parse query to keywords list
+            var str = '<ul class=\"search-result-list\">';
+            var keywords = this.value.trim().toLowerCase().split(/[\s\-]+/);
+            $resultContent.innerHTML = "";
+            if (this.value.trim().length <= 0) {
+              return;
+            }
+            // 0x04. perform local searching
+            datas.forEach(function (data) {
+              var isMatch = true;
+              var content_index = [];
+              if (!data.title || data.title.trim() === '') {
+                data.title = "Untitled";
+              }
+              var orig_data_title = data.title.trim();
+              var data_title = orig_data_title.toLowerCase();
+              var orig_data_content = data.content.trim().replace(/<[^>]+>/g, "");
+              var data_content = orig_data_content.toLowerCase();
+              var data_url = data.url;
+              var index_title = -1;
+              var index_content = -1;
+              var first_occur = -1;
+              // only match artiles with not empty contents
+              if (data_content !== '') {
+                keywords.forEach(function (keyword, i) {
+                  index_title = data_title.indexOf(keyword);
+                  index_content = data_content.indexOf(keyword);
+
+                  if (index_title < 0 && index_content < 0) {
+                    isMatch = false;
+                  } else {
+                    if (index_content < 0) {
+                      index_content = 0;
+                    }
+                    if (i == 0) {
+                      first_occur = index_content;
+                    }
+                    // content_index.push({index_content:index_content, keyword_len:keyword_len});
+                  }
+                });
+              } else {
+                isMatch = false;
+              }
+              // 0x05. show search results
+              if (isMatch) {
+                str += "<li><a href='" + data_url + "' class='search-result-title'>" + orig_data_title + "</a>";
+                var content = orig_data_content;
+                if (first_occur >= 0) {
+                  // cut out 100 characters
+                  var start = first_occur - 20;
+                  var end = first_occur + 80;
+
+                  if (start < 0) {
+                    start = 0;
+                  }
+
+                  if (start == 0) {
+                    end = 100;
+                  }
+
+                  if (end > content.length) {
+                    end = content.length;
+                  }
+
+                  var match_content = content.substr(start, end);
+
+                  // highlight all keywords
+                  keywords.forEach(function (keyword) {
+                    var regS = new RegExp(keyword, "gi");
+                    match_content = match_content.replace(regS, "<span class=\"search-keyword\">" + keyword + "</span>");
+                  });
+
+                  str += "<p class=\"search-result-abstract\">" + match_content + "...</p>"
+                }
+                str += "</li>";
+              }
+            });
+            str += "</ul>";
+            if (str.indexOf('<li>') === -1) {
+              return $resultContent.innerHTML = "<ul><span class='local-search-empty'>No result<span></ul>";
+            }
+            $resultContent.innerHTML = str;
+          });
+        },
+        error: function(xhr, status, error) {
+          $resultContent.innerHTML = ""
+          if (xhr.status === 404) {
+            $resultContent.innerHTML = "<ul><span class='local-search-empty'>The search.xml file was not found, please refer to：<a href='https://github.com/zchengsite/hexo-theme-oranges#configuration' target='_black'>configuration</a><span></ul>";
+          } else {
+            $resultContent.innerHTML = "<ul><span class='local-search-empty'>The request failed, Try to refresh the page or try again later.<span></ul>";
+          }
+        }
+      });
+      $(document).on('click', '#search-close-icon', function() {
+        $('#search-input').val('');
+        $('#search-result').html('');
+      });
+    }
+
+    var getSearchFile = function() {
+        var path = "/search.xml";
+        searchFunc(path, 'search-input', 'search-result');
+    }
+  </script>
+
+
+
+
+        
+  <div class="tools-bar-item theme-icon" id="switch-color-scheme">
+    <a href="javascript: void(0)">
+      <i id="theme-icon" class="iconfont icon-moon"></i>
+    </a>
+  </div>
+
+  
+<script src="/js/colorscheme.js"></script>
+
+
+
+
+
+        
+  
+    <div class="share-icon tools-bar-item">
+      <a href="javascript: void(0)" id="share-icon">
+        <i class="iconfont iconshare"></i>
+      </a>
+      <div class="share-content hidden">
+        
+          <a class="share-item" href="https://twitter.com/intent/tweet?text=' + UE4.27.2%20%E4%B8%8D%E9%80%8F%E6%98%8E%E7%89%A9%E4%BD%93%E5%BB%B6%E8%BF%9F%E6%B8%B2%E6%9F%93%20Draw%20Call%20%E7%9A%84%E8%B0%83%E8%AF%95%E5%88%86%E6%9E%90 + '&url=' + https%3A%2F%2Fcheapmeow.github.io%2F2025%2F05%2F20%2F2025-05-20_ue4_deferred_render_mesh_opaque_draw_call%2F + '" target="_blank" title="Twitter">
+            <i class="iconfont icon-twitter"></i>
+          </a>
+        
+        
+          <a class="share-item" href="https://www.facebook.com/sharer.php?u=https://cheapmeow.github.io/2025/05/20/2025-05-20_ue4_deferred_render_mesh_opaque_draw_call/" target="_blank" title="Facebook">
+            <i class="iconfont icon-facebooksquare"></i>
+          </a>
+        
+      </div>
+    </div>
+  
+  
+<script src="/js/shares.js"></script>
+
+
+
+      </div>
+    </div>
+  </body>
+</html>

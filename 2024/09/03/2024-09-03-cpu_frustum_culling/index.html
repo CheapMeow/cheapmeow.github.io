@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="en" color-mode="light">
+
+  <head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="author" content="John Doe" />
+  <!-- Open Graph Description 简短摘要-->
+  
+  <!-- 用于搜索引擎的文章摘要 -->
+  
+  
+  
+  <title>
+    
+      CPU 视锥体剔除 
+      
+      
+      |
+    
+     CheapMeow
+  </title>
+
+  
+    <link rel="apple-touch-icon" href="/images/avatar.png">
+    <link rel="icon" href="/images/avatar.png">
+  
+
+  <!-- Raleway-Font -->
+  <link href="https://fonts.googleapis.com/css?family=Raleway&display=swap" rel="stylesheet">
+
+  <!-- hexo site css -->
+  <link rel="stylesheet" href="/css/main.css" />
+  <link rel="stylesheet" href="//at.alicdn.com/t/font_1886449_67xjft27j1l.css" />
+  <!-- 代码块风格 -->
+  
+    
+<link rel="stylesheet" href="/css/figcaption/mac-block.css">
+
+  
+
+  <!-- jquery3.3.1 -->
+  
+    <script defer type="text/javascript" src="/plugins/jquery.min.js"></script>
+  
+
+  <!-- fancybox -->
+  
+    <link href="/plugins/jquery.fancybox.min.css" rel="stylesheet">
+    <script defer type="text/javascript" src="/plugins/jquery.fancybox.min.js"></script>
+  
+  
+<script src="/js/fancybox.js"></script>
+
+
+  
+
+  
+
+  <script>
+    var html = document.documentElement
+    const colorMode = localStorage.getItem('color-mode')
+    if (colorMode) {
+      document.documentElement.setAttribute('color-mode', colorMode)
+    }
+  </script>
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+
+  <body>
+    <div id="app">
+      <div class="header">
+  <div class="avatar">
+    <a href="/">
+      <!-- 头像取消懒加载，添加no-lazy -->
+      
+        <img src="/images/avatar.png" alt="">
+      
+    </a>
+    <div class="nickname"><a href="/">CheapMeow</a></div>
+  </div>
+  <div class="navbar">
+    <ul>
+      
+        <li class="nav-item" data-path="/">
+          <a href="/">Home</a>
+        </li>
+      
+        <li class="nav-item" data-path="/archives/">
+          <a href="/archives/">Archives</a>
+        </li>
+      
+        <li class="nav-item" data-path="/tags/">
+          <a href="/tags/">Tags</a>
+        </li>
+      
+        <li class="nav-item" data-path="/friends/">
+          <a href="/friends/">Friends</a>
+        </li>
+      
+        <li class="nav-item" data-path="/about/">
+          <a href="/about/">About</a>
+        </li>
+      
+    </ul>
+  </div>
+</div>
+
+
+<script src="/js/activeNav.js"></script>
+
+
+
+      <div class="flex-container">
+        <!-- 文章详情页，展示文章具体内容，url形式：https://yoursite/文章标题/ -->
+<!-- 同时为「标签tag」，「朋友friend」，「分类categories」，「关于about」页面的承载页面，具体展示取决于page.type -->
+
+
+  <!-- LaTex Display -->
+
+  
+    <script async type="text/javascript" src="/plugins/mathjax/tex-chtml.js"></script>
+  
+  <script>
+    MathJax = {
+      tex: {
+        inlineMath: [['$', '$'], ['\\(', '\\)']]
+      }
+    }
+  </script>
+
+
+
+
+
+  <!-- clipboard -->
+
+  
+    <script async type="text/javascript" src="/plugins/clipboard.min.js"></script>
+  
+  
+<script src="/js/codeCopy.js"></script>
+
+
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  <!-- 文章内容页 url形式：https://yoursite/文章标题/ -->
+  <div class="container post-details" id="post-details">
+    <div class="post-content">
+      <div class="post-title">CPU 视锥体剔除</div>
+      <div class="post-attach">
+        <span class="post-pubtime">
+          <i class="iconfont icon-updatetime mr-10" title="Update time"></i>
+          2025-06-01 10:52:45
+        </span>
+        
+              <span class="post-tags">
+                <i class="iconfont icon-tags mr-10" title="Tags"></i>
+                
+                <span class="span--tag mr-8">
+                  <a href="/tags/Grphics/" title="Grphics">
+                    #Grphics
+                  </a>
+                </span>
+                
+                <span class="span--tag mr-8">
+                  <a href="/tags/Vulkan/" title="Vulkan">
+                    #Vulkan
+                  </a>
+                </span>
+                
+                <span class="span--tag mr-8">
+                  <a href="/tags/Culling/" title="Culling">
+                    #Culling
+                  </a>
+                </span>
+                
+              </span>
+          
+      </div>
+      <div class="markdown-body">
+        <p>抄 <a target="_blank" rel="noopener" href="https://github.com/Angelo1211/SoftwareRenderer">https://github.com/Angelo1211/SoftwareRenderer</a> 的视锥体剔除时遇到的一些问题</p>
+<h2 id="代码实现">代码实现</h2>
+<p>这是我转成 glm 的版本</p>
+<p>plane.h</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">struct</span> <span class="title class_">Plane</span></span><br><span class="line">&#123;</span><br><span class="line">    glm::vec3 normal;</span><br><span class="line">    <span class="type">float</span>     D;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="type">float</span> <span class="title">distance</span><span class="params">(<span class="type">const</span> glm::vec3&amp; points)</span></span>;</span><br><span class="line">    <span class="function"><span class="type">void</span>  <span class="title">setNormalAndPoint</span><span class="params">(<span class="type">const</span> glm::vec3&amp; normal, <span class="type">const</span> glm::vec3&amp; point)</span></span>;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+<p>plane.cpp</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="type">float</span> <span class="title">Plane::distance</span><span class="params">(<span class="type">const</span> glm::vec3&amp; points)</span> </span>&#123; <span class="keyword">return</span> glm::<span class="built_in">dot</span>(normal, points) + D; &#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="type">void</span> <span class="title">Plane::setNormalAndPoint</span><span class="params">(<span class="type">const</span> glm::vec3&amp; n, <span class="type">const</span> glm::vec3&amp; p0)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    normal = n;</span><br><span class="line">    D      = -glm::<span class="built_in">dot</span>(n, p0);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>frustum.h</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title class_">Frustum</span></span><br><span class="line">&#123;</span><br><span class="line"><span class="keyword">private</span>:</span><br><span class="line">    <span class="keyword">enum</span></span><br><span class="line">    &#123;</span><br><span class="line">        TOP = <span class="number">0</span>,</span><br><span class="line">        BOTTOM,</span><br><span class="line">        LEFT,</span><br><span class="line">        RIGHT,</span><br><span class="line">        NEARP,</span><br><span class="line">        FARP</span><br><span class="line">    &#125;;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">    <span class="function"><span class="type">void</span></span></span><br><span class="line"><span class="function">    <span class="title">updatePlanes</span><span class="params">(<span class="type">const</span> glm::vec3 cameraPos, <span class="type">const</span> glm::quat rotation, <span class="type">float</span> fovy, <span class="type">float</span> AR, <span class="type">float</span> near, <span class="type">float</span> far)</span></span>;</span><br><span class="line">    <span class="function"><span class="type">bool</span> <span class="title">checkIfInside</span><span class="params">(BoundingBox* bounds)</span></span>;</span><br><span class="line"></span><br><span class="line"><span class="keyword">private</span>:</span><br><span class="line">    Plane pl[<span class="number">6</span>];</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+<p>frustum.cpp</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// Calculates frustum planes in world space</span></span><br><span class="line"><span class="function"><span class="type">void</span> <span class="title">Frustum::updatePlanes</span><span class="params">(<span class="type">const</span> glm::vec3 cameraPos,</span></span></span><br><span class="line"><span class="params"><span class="function">                            <span class="type">const</span> glm::quat rotation,</span></span></span><br><span class="line"><span class="params"><span class="function">                            <span class="type">float</span>           fovy,</span></span></span><br><span class="line"><span class="params"><span class="function">                            <span class="type">float</span>           AR,</span></span></span><br><span class="line"><span class="params"><span class="function">                            <span class="type">float</span>           near,</span></span></span><br><span class="line"><span class="params"><span class="function">                            <span class="type">float</span>           far)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="type">float</span> tanHalfFOVy = <span class="built_in">tan</span>(fovy / <span class="number">2.0f</span>);</span><br><span class="line">    <span class="type">float</span> near_height = near * tanHalfFOVy; <span class="comment">// Half of the frustum near plane height</span></span><br><span class="line">    <span class="type">float</span> near_width  = near_height * AR;</span><br><span class="line"></span><br><span class="line">    glm::vec3 right   = rotation * glm::<span class="built_in">vec3</span>(<span class="number">1.0f</span>, <span class="number">0.0f</span>, <span class="number">0.0f</span>);</span><br><span class="line">    glm::vec3 forward = rotation * glm::<span class="built_in">vec3</span>(<span class="number">0.0f</span>, <span class="number">0.0f</span>, <span class="number">1.0f</span>);</span><br><span class="line">    glm::vec3 up      = glm::<span class="built_in">vec3</span>(<span class="number">0.0f</span>, <span class="number">1.0f</span>, <span class="number">0.0f</span>);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Gets worlds space position of the center points of the near and far planes</span></span><br><span class="line">    <span class="comment">// The forward vector Z points towards the viewer so you need to negate it and scale it</span></span><br><span class="line">    <span class="comment">// by the distance (near or far) to the plane to get the center positions</span></span><br><span class="line">    glm::vec3 nearCenter = cameraPos + forward * near;</span><br><span class="line">    glm::vec3 farCenter  = cameraPos + forward * far;</span><br><span class="line"></span><br><span class="line">    glm::vec3 point;</span><br><span class="line">    glm::vec3 normal;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// We build the planes using a normal and a point (in this case the center)</span></span><br><span class="line">    <span class="comment">// Z is negative here because we want the normal vectors we choose to point towards</span></span><br><span class="line">    <span class="comment">// the inside of the view frustum that way we can cehck in or out with a simple</span></span><br><span class="line">    <span class="comment">// Dot product</span></span><br><span class="line">    pl[NEARP].<span class="built_in">setNormalAndPoint</span>(forward, nearCenter);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Far plane</span></span><br><span class="line">    pl[FARP].<span class="built_in">setNormalAndPoint</span>(-forward, farCenter);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Again, want to get the plane from a normal and point</span></span><br><span class="line">    <span class="comment">// You scale the up vector by the near plane height and added to the nearcenter to</span></span><br><span class="line">    <span class="comment">// optain a point on the edge of both near and top plane.</span></span><br><span class="line">    <span class="comment">// Subtracting the cameraposition from this point generates a vector that goes along the</span></span><br><span class="line">    <span class="comment">// surface of the plane, if you take the cross product with the direction vector equal</span></span><br><span class="line">    <span class="comment">// to the shared edge of the planes you get the normal</span></span><br><span class="line">    point  = nearCenter + up * near_height;</span><br><span class="line">    normal = glm::<span class="built_in">normalize</span>(point - cameraPos);</span><br><span class="line">    normal = glm::<span class="built_in">cross</span>(right, normal);</span><br><span class="line">    pl[TOP].<span class="built_in">setNormalAndPoint</span>(normal, point);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Bottom plane</span></span><br><span class="line">    point  = nearCenter - up * near_height;</span><br><span class="line">    normal = glm::<span class="built_in">normalize</span>(point - cameraPos);</span><br><span class="line">    normal = glm::<span class="built_in">cross</span>(normal, right);</span><br><span class="line">    pl[BOTTOM].<span class="built_in">setNormalAndPoint</span>(normal, point);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Left plane</span></span><br><span class="line">    point  = nearCenter - right * near_width;</span><br><span class="line">    normal = glm::<span class="built_in">normalize</span>(point - cameraPos);</span><br><span class="line">    normal = glm::<span class="built_in">cross</span>(up, normal);</span><br><span class="line">    pl[LEFT].<span class="built_in">setNormalAndPoint</span>(normal, point);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Right plane</span></span><br><span class="line">    point  = nearCenter + right * near_width;</span><br><span class="line">    normal = glm::<span class="built_in">normalize</span>(point - cameraPos);</span><br><span class="line">    normal = glm::<span class="built_in">cross</span>(normal, up);</span><br><span class="line">    pl[RIGHT].<span class="built_in">setNormalAndPoint</span>(normal, point);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// False is fully outside, true if inside or intersects</span></span><br><span class="line"><span class="comment">// based on iquilez method</span></span><br><span class="line"><span class="function"><span class="type">bool</span> <span class="title">Frustum::checkIfInside</span><span class="params">(BoundingBox* box)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="comment">// Check box outside or inside of frustum</span></span><br><span class="line">    <span class="keyword">for</span> (<span class="type">int</span> i = <span class="number">0</span>; i &lt; <span class="number">6</span>; ++i)</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="type">int</span> out = <span class="number">0</span>;</span><br><span class="line">        out += ((pl[i].<span class="built_in">distance</span>(glm::<span class="built_in">vec3</span>(box-&gt;min.x, box-&gt;min.y, box-&gt;min.z)) &lt; <span class="number">0.0</span>) ? <span class="number">1</span> : <span class="number">0</span>);</span><br><span class="line">        out += ((pl[i].<span class="built_in">distance</span>(glm::<span class="built_in">vec3</span>(box-&gt;max.x, box-&gt;min.y, box-&gt;min.z)) &lt; <span class="number">0.0</span>) ? <span class="number">1</span> : <span class="number">0</span>);</span><br><span class="line">        out += ((pl[i].<span class="built_in">distance</span>(glm::<span class="built_in">vec3</span>(box-&gt;min.x, box-&gt;max.y, box-&gt;min.z)) &lt; <span class="number">0.0</span>) ? <span class="number">1</span> : <span class="number">0</span>);</span><br><span class="line">        out += ((pl[i].<span class="built_in">distance</span>(glm::<span class="built_in">vec3</span>(box-&gt;max.x, box-&gt;max.y, box-&gt;min.z)) &lt; <span class="number">0.0</span>) ? <span class="number">1</span> : <span class="number">0</span>);</span><br><span class="line">        out += ((pl[i].<span class="built_in">distance</span>(glm::<span class="built_in">vec3</span>(box-&gt;min.x, box-&gt;min.y, box-&gt;max.z)) &lt; <span class="number">0.0</span>) ? <span class="number">1</span> : <span class="number">0</span>);</span><br><span class="line">        out += ((pl[i].<span class="built_in">distance</span>(glm::<span class="built_in">vec3</span>(box-&gt;max.x, box-&gt;min.y, box-&gt;max.z)) &lt; <span class="number">0.0</span>) ? <span class="number">1</span> : <span class="number">0</span>);</span><br><span class="line">        out += ((pl[i].<span class="built_in">distance</span>(glm::<span class="built_in">vec3</span>(box-&gt;min.x, box-&gt;max.y, box-&gt;max.z)) &lt; <span class="number">0.0</span>) ? <span class="number">1</span> : <span class="number">0</span>);</span><br><span class="line">        out += ((pl[i].<span class="built_in">distance</span>(glm::<span class="built_in">vec3</span>(box-&gt;max.x, box-&gt;max.y, box-&gt;max.z)) &lt; <span class="number">0.0</span>) ? <span class="number">1</span> : <span class="number">0</span>);</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> (out == <span class="number">8</span>)</span><br><span class="line">            <span class="keyword">return</span> <span class="literal">false</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> <span class="literal">true</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>他这个非常好理解</p>
+<p>如果某个包围盒的八个顶点都在某个平面的外侧，那么就确定这个包围盒要被剔除</p>
+<p>如果都不在视锥体 6 个平面的外侧，那么这个不剔除</p>
+<p>我感觉巧妙的是你不用强求获得斜面的中点。而是根据近平面的中点直接沿着 up 或者 right 平移就能得到斜面上的点</p>
+<p>我看到 plane 这个类的时候，我就想到一定要拿到中点，可能是我数学直觉没转过来</p>
+<h2 id="坑">坑</h2>
+<p>第一个坑就是传入的 <code>fovy</code> 需要注意是角度还是弧度</p>
+<p>这个是可以不用 debug 直接看出来怎么错了，因为如果你仅仅是在正对着物体的时候才不剔除，稍微偏一点头，物体都没有走出视口时就被剔除了</p>
+<p>并且剔除的时机很稳定，不会一闪一闪，也就是说不会是公式错了，单纯是你的视锥体比你的视口小</p>
+<p>那么就是某些地方算小了</p>
+<p>第二个坑是获得 up right front 的方式</p>
+<p>之前的分析里面也可以看到了，传入 <code>glm::lookAt</code> 的 front 方向会和 view 中拆出来的 front 方向相反的</p>
+<p>所以如果认为 front 是 +z 的方向……还是自己手动算吧</p>
+<p>第三个坑是算斜面的 normal 的时候，可能会因为手性的问题，导致 normal 算反</p>
+<p>normal 算反在渲染时的表现就是，转动摄像机时，视口内的物体会不断交替剔除，就像在闪烁一样</p>
+<p>正常来说，一个物体在视口内，那么他就是已经在视锥体里面了，所以他不应该闪的</p>
+<script src="https://utteranc.es/client.js"
+        repo="CheapMeow/cheapmeow.github.io"
+        issue-term="pathname"
+        theme="github-light"
+        crossorigin="anonymous"
+        async>
+</script>
+
+      </div>
+      
+        <div class="prev-or-next">
+          <div class="post-foot-next">
+            
+              <a href="/2024/09/02/2024-09-02-perspective_matrix_for_opengl_and_vulkan/" target="_self">
+                <i class="iconfont icon-chevronleft"></i>
+                <span>Prev</span>
+              </a>
+            
+          </div>
+          <div class="post-attach">
+            <span class="post-pubtime">
+              <i class="iconfont icon-updatetime mr-10" title="Update time"></i>
+              2025-06-01 10:52:45
+            </span>
+            
+                  <span class="post-tags">
+                    <i class="iconfont icon-tags mr-10" title="Tags"></i>
+                    
+                    <span class="span--tag mr-8">
+                      <a href="/tags/Grphics/" title="Grphics">
+                        #Grphics
+                      </a>
+                    </span>
+                    
+                    <span class="span--tag mr-8">
+                      <a href="/tags/Vulkan/" title="Vulkan">
+                        #Vulkan
+                      </a>
+                    </span>
+                    
+                    <span class="span--tag mr-8">
+                      <a href="/tags/Culling/" title="Culling">
+                        #Culling
+                      </a>
+                    </span>
+                    
+                  </span>
+              
+          </div>
+          <div class="post-foot-prev">
+            
+              <a href="/2024/09/04/2024-09-04-cpp_static_reflection_usage/" target="_self">
+                <span>Next</span>
+                <i class="iconfont icon-chevronright"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+    </div>
+    
+  <div id="btn-catalog" class="btn-catalog">
+    <i class="iconfont icon-catalog"></i>
+  </div>
+  <div class="post-catalog hidden" id="catalog">
+    <div class="title">Contents</div>
+    <div class="catalog-content">
+      
+        <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BB%A3%E7%A0%81%E5%AE%9E%E7%8E%B0"><span class="toc-text">代码实现</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%9D%91"><span class="toc-text">坑</span></a></li></ol>
+      
+    </div>
+  </div>
+
+  
+<script src="/js/catalog.js"></script>
+
+
+
+
+    
+      <div class="comments-container">
+        
+
+
+
+
+
+
+
+      </div>
+    
+  </div>
+
+
+        
+<div class="footer">
+  <div class="social">
+    <ul>
+      
+        <li>
+          
+              <a title="github" target="_blank" rel="noopener" href="https://github.com/zchengsite/hexo-theme-oranges">
+                <i class="iconfont icon-github"></i>
+              </a>
+              
+        </li>
+        
+    </ul>
+  </div>
+  
+    
+    <div class="footer-more">
+      
+        <a target="_blank" rel="noopener" href="https://github.com/zchengsite/hexo-theme-oranges">Copyright © 2025 Oranges</a>
+        
+    </div>
+  
+    
+    <div class="footer-more">
+      
+        <a target="_blank" rel="noopener" href="https://github.com/zchengsite/hexo-theme-oranges">Theme by Oranges | Powered by Hexo</a>
+        
+    </div>
+  
+  
+</div>
+
+      </div>
+
+      <div class="tools-bar">
+        <div class="back-to-top tools-bar-item hidden">
+  <a href="javascript: void(0)">
+    <i class="iconfont icon-chevronup"></i>
+  </a>
+</div>
+
+
+<script src="/js/backtotop.js"></script>
+
+
+
+        
+  <div class="search-icon tools-bar-item" id="search-icon">
+    <a href="javascript: void(0)">
+      <i class="iconfont icon-search"></i>
+    </a>
+  </div>
+
+  <div class="search-overlay hidden">
+    <div class="search-content" tabindex="0">
+      <div class="search-title">
+        <span class="search-icon-input">
+          <a href="javascript: void(0)">
+            <i class="iconfont icon-search"></i>
+          </a>
+        </span>
+        
+          <input type="text" class="search-input" id="search-input" placeholder="搜索...">
+        
+        <span class="search-close-icon" id="search-close-icon">
+          <a href="javascript: void(0)">
+            <i class="iconfont icon-close"></i>
+          </a>
+        </span>
+      </div>
+      <div class="search-result" id="search-result"></div>
+    </div>
+  </div>
+
+  <script type="text/javascript">
+    var inputArea = document.querySelector("#search-input")
+    var searchOverlayArea = document.querySelector(".search-overlay")
+
+    inputArea.onclick = function() {
+      getSearchFile()
+      this.onclick = null
+    }
+
+    inputArea.onkeydown = function() {
+      if(event.keyCode == 13)
+        return false
+    }
+
+    function openOrHideSearchContent() {
+      let isHidden = searchOverlayArea.classList.contains('hidden')
+      if (isHidden) {
+        searchOverlayArea.classList.remove('hidden')
+        document.body.classList.add('hidden')
+        // inputArea.focus()
+      } else {
+        searchOverlayArea.classList.add('hidden')
+        document.body.classList.remove('hidden')
+      }
+    }
+
+    function blurSearchContent(e) {
+      if (e.target === searchOverlayArea) {
+        openOrHideSearchContent()
+      }
+    }
+
+    document.querySelector("#search-icon").addEventListener("click", openOrHideSearchContent, false)
+    document.querySelector("#search-close-icon").addEventListener("click", openOrHideSearchContent, false)
+    searchOverlayArea.addEventListener("click", blurSearchContent, false)
+
+    var searchFunc = function (path, search_id, content_id) {
+      'use strict';
+      var $input = document.getElementById(search_id);
+      var $resultContent = document.getElementById(content_id);
+      $resultContent.innerHTML = "<ul><span class='local-search-empty'>First search, index file loading, please wait...<span></ul>";
+      $.ajax({
+        // 0x01. load xml file
+        url: path,
+        dataType: "xml",
+        success: function (xmlResponse) {
+          // 0x02. parse xml file
+          var datas = $("entry", xmlResponse).map(function () {
+            return {
+              title: $("title", this).text(),
+              content: $("content", this).text(),
+              url: $("url", this).text()
+            };
+          }).get();
+          $resultContent.innerHTML = "";
+
+          $input.addEventListener('input', function () {
+            // 0x03. parse query to keywords list
+            var str = '<ul class=\"search-result-list\">';
+            var keywords = this.value.trim().toLowerCase().split(/[\s\-]+/);
+            $resultContent.innerHTML = "";
+            if (this.value.trim().length <= 0) {
+              return;
+            }
+            // 0x04. perform local searching
+            datas.forEach(function (data) {
+              var isMatch = true;
+              var content_index = [];
+              if (!data.title || data.title.trim() === '') {
+                data.title = "Untitled";
+              }
+              var orig_data_title = data.title.trim();
+              var data_title = orig_data_title.toLowerCase();
+              var orig_data_content = data.content.trim().replace(/<[^>]+>/g, "");
+              var data_content = orig_data_content.toLowerCase();
+              var data_url = data.url;
+              var index_title = -1;
+              var index_content = -1;
+              var first_occur = -1;
+              // only match artiles with not empty contents
+              if (data_content !== '') {
+                keywords.forEach(function (keyword, i) {
+                  index_title = data_title.indexOf(keyword);
+                  index_content = data_content.indexOf(keyword);
+
+                  if (index_title < 0 && index_content < 0) {
+                    isMatch = false;
+                  } else {
+                    if (index_content < 0) {
+                      index_content = 0;
+                    }
+                    if (i == 0) {
+                      first_occur = index_content;
+                    }
+                    // content_index.push({index_content:index_content, keyword_len:keyword_len});
+                  }
+                });
+              } else {
+                isMatch = false;
+              }
+              // 0x05. show search results
+              if (isMatch) {
+                str += "<li><a href='" + data_url + "' class='search-result-title'>" + orig_data_title + "</a>";
+                var content = orig_data_content;
+                if (first_occur >= 0) {
+                  // cut out 100 characters
+                  var start = first_occur - 20;
+                  var end = first_occur + 80;
+
+                  if (start < 0) {
+                    start = 0;
+                  }
+
+                  if (start == 0) {
+                    end = 100;
+                  }
+
+                  if (end > content.length) {
+                    end = content.length;
+                  }
+
+                  var match_content = content.substr(start, end);
+
+                  // highlight all keywords
+                  keywords.forEach(function (keyword) {
+                    var regS = new RegExp(keyword, "gi");
+                    match_content = match_content.replace(regS, "<span class=\"search-keyword\">" + keyword + "</span>");
+                  });
+
+                  str += "<p class=\"search-result-abstract\">" + match_content + "...</p>"
+                }
+                str += "</li>";
+              }
+            });
+            str += "</ul>";
+            if (str.indexOf('<li>') === -1) {
+              return $resultContent.innerHTML = "<ul><span class='local-search-empty'>No result<span></ul>";
+            }
+            $resultContent.innerHTML = str;
+          });
+        },
+        error: function(xhr, status, error) {
+          $resultContent.innerHTML = ""
+          if (xhr.status === 404) {
+            $resultContent.innerHTML = "<ul><span class='local-search-empty'>The search.xml file was not found, please refer to：<a href='https://github.com/zchengsite/hexo-theme-oranges#configuration' target='_black'>configuration</a><span></ul>";
+          } else {
+            $resultContent.innerHTML = "<ul><span class='local-search-empty'>The request failed, Try to refresh the page or try again later.<span></ul>";
+          }
+        }
+      });
+      $(document).on('click', '#search-close-icon', function() {
+        $('#search-input').val('');
+        $('#search-result').html('');
+      });
+    }
+
+    var getSearchFile = function() {
+        var path = "/search.xml";
+        searchFunc(path, 'search-input', 'search-result');
+    }
+  </script>
+
+
+
+
+        
+  <div class="tools-bar-item theme-icon" id="switch-color-scheme">
+    <a href="javascript: void(0)">
+      <i id="theme-icon" class="iconfont icon-moon"></i>
+    </a>
+  </div>
+
+  
+<script src="/js/colorscheme.js"></script>
+
+
+
+
+
+        
+  
+    <div class="share-icon tools-bar-item">
+      <a href="javascript: void(0)" id="share-icon">
+        <i class="iconfont iconshare"></i>
+      </a>
+      <div class="share-content hidden">
+        
+          <a class="share-item" href="https://twitter.com/intent/tweet?text=' + CPU%20%E8%A7%86%E9%94%A5%E4%BD%93%E5%89%94%E9%99%A4 + '&url=' + https%3A%2F%2Fcheapmeow.github.io%2F2024%2F09%2F03%2F2024-09-03-cpu_frustum_culling%2F + '" target="_blank" title="Twitter">
+            <i class="iconfont icon-twitter"></i>
+          </a>
+        
+        
+          <a class="share-item" href="https://www.facebook.com/sharer.php?u=https://cheapmeow.github.io/2024/09/03/2024-09-03-cpu_frustum_culling/" target="_blank" title="Facebook">
+            <i class="iconfont icon-facebooksquare"></i>
+          </a>
+        
+      </div>
+    </div>
+  
+  
+<script src="/js/shares.js"></script>
+
+
+
+      </div>
+    </div>
+  </body>
+</html>

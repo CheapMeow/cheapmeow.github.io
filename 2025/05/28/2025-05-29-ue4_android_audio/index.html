@@ -1,0 +1,761 @@
+<!DOCTYPE html>
+<html lang="en" color-mode="light">
+
+  <head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="author" content="John Doe" />
+  <!-- Open Graph Description 简短摘要-->
+  
+  <!-- 用于搜索引擎的文章摘要 -->
+  
+  
+  
+  <title>
+    
+      UE4.27.2 安卓音频库集成的调试分析 
+      
+      
+      |
+    
+     CheapMeow
+  </title>
+
+  
+    <link rel="apple-touch-icon" href="/images/avatar.png">
+    <link rel="icon" href="/images/avatar.png">
+  
+
+  <!-- Raleway-Font -->
+  <link href="https://fonts.googleapis.com/css?family=Raleway&display=swap" rel="stylesheet">
+
+  <!-- hexo site css -->
+  <link rel="stylesheet" href="/css/main.css" />
+  <link rel="stylesheet" href="//at.alicdn.com/t/font_1886449_67xjft27j1l.css" />
+  <!-- 代码块风格 -->
+  
+    
+<link rel="stylesheet" href="/css/figcaption/mac-block.css">
+
+  
+
+  <!-- jquery3.3.1 -->
+  
+    <script defer type="text/javascript" src="/plugins/jquery.min.js"></script>
+  
+
+  <!-- fancybox -->
+  
+    <link href="/plugins/jquery.fancybox.min.css" rel="stylesheet">
+    <script defer type="text/javascript" src="/plugins/jquery.fancybox.min.js"></script>
+  
+  
+<script src="/js/fancybox.js"></script>
+
+
+  
+
+  
+
+  <script>
+    var html = document.documentElement
+    const colorMode = localStorage.getItem('color-mode')
+    if (colorMode) {
+      document.documentElement.setAttribute('color-mode', colorMode)
+    }
+  </script>
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+
+  <body>
+    <div id="app">
+      <div class="header">
+  <div class="avatar">
+    <a href="/">
+      <!-- 头像取消懒加载，添加no-lazy -->
+      
+        <img src="/images/avatar.png" alt="">
+      
+    </a>
+    <div class="nickname"><a href="/">CheapMeow</a></div>
+  </div>
+  <div class="navbar">
+    <ul>
+      
+        <li class="nav-item" data-path="/">
+          <a href="/">Home</a>
+        </li>
+      
+        <li class="nav-item" data-path="/archives/">
+          <a href="/archives/">Archives</a>
+        </li>
+      
+        <li class="nav-item" data-path="/tags/">
+          <a href="/tags/">Tags</a>
+        </li>
+      
+        <li class="nav-item" data-path="/friends/">
+          <a href="/friends/">Friends</a>
+        </li>
+      
+        <li class="nav-item" data-path="/about/">
+          <a href="/about/">About</a>
+        </li>
+      
+    </ul>
+  </div>
+</div>
+
+
+<script src="/js/activeNav.js"></script>
+
+
+
+      <div class="flex-container">
+        <!-- 文章详情页，展示文章具体内容，url形式：https://yoursite/文章标题/ -->
+<!-- 同时为「标签tag」，「朋友friend」，「分类categories」，「关于about」页面的承载页面，具体展示取决于page.type -->
+
+
+  <!-- LaTex Display -->
+
+  
+    <script async type="text/javascript" src="/plugins/mathjax/tex-chtml.js"></script>
+  
+  <script>
+    MathJax = {
+      tex: {
+        inlineMath: [['$', '$'], ['\\(', '\\)']]
+      }
+    }
+  </script>
+
+
+
+
+
+  <!-- clipboard -->
+
+  
+    <script async type="text/javascript" src="/plugins/clipboard.min.js"></script>
+  
+  
+<script src="/js/codeCopy.js"></script>
+
+
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  <!-- 文章内容页 url形式：https://yoursite/文章标题/ -->
+  <div class="container post-details" id="post-details">
+    <div class="post-content">
+      <div class="post-title">UE4.27.2 安卓音频库集成的调试分析</div>
+      <div class="post-attach">
+        <span class="post-pubtime">
+          <i class="iconfont icon-updatetime mr-10" title="Update time"></i>
+          2025-06-01 10:52:45
+        </span>
+        
+              <span class="post-tags">
+                <i class="iconfont icon-tags mr-10" title="Tags"></i>
+                
+                <span class="span--tag mr-8">
+                  <a href="/tags/Cpp/" title="Cpp">
+                    #Cpp
+                  </a>
+                </span>
+                
+                <span class="span--tag mr-8">
+                  <a href="/tags/Unreal-Engine-4/" title="Unreal Engine 4">
+                    #Unreal Engine 4
+                  </a>
+                </span>
+                
+                <span class="span--tag mr-8">
+                  <a href="/tags/OpenSL-ES/" title="OpenSL ES">
+                    #OpenSL ES
+                  </a>
+                </span>
+                
+              </span>
+          
+      </div>
+      <div class="markdown-body">
+        <h2 id="AudioTrack-初始化">AudioTrack 初始化</h2>
+<h3 id="创建音频后端-Device">创建音频后端 Device</h3>
+<p><code>FAudioDeviceManager::LoadDefaultAudioDeviceModule</code> 实现了读取配置文件，创建音频后端 Device</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">* frame #0: 0x0000007bd4ae1ba0 libUE4.so`FAudioDeviceManager::LoadDefaultAudioDeviceModule(this=0x0000007c7983e5c0) at AudioDeviceManager.cpp:575:40</span><br><span class="line">  frame #1: 0x0000007bd4ae1a9c libUE4.so`FAudioDeviceManager::InitializeManager(this=0x0000007c7983e5c0) at AudioDeviceManager.cpp:512:6</span><br><span class="line">  frame #2: 0x0000007bd4ae451c libUE4.so`FAudioDeviceManager::Initialize() at AudioDeviceManager.cpp:824:19</span><br><span class="line">  frame #3: 0x0000007bd5889fb0 libUE4.so`UEngine::InitializeAudioDeviceManager(this=0x0000007c780040c0) at UnrealEngine.cpp:3107:2</span><br><span class="line">  frame #4: 0x0000007bd5877f30 libUE4.so`UEngine::Init(this=&lt;unavailable&gt;, InEngineLoop=&lt;unavailable&gt;) at UnrealEngine.cpp:1643:2</span><br><span class="line">  frame #5: 0x0000007bd4e62e34 libUE4.so`UGameEngine::Init(this=0x0000007c780040c0, InEngineLoop=&lt;unavailable&gt;) at GameEngine.cpp:1072:11</span><br><span class="line">  frame #6: 0x0000007bd01c3158 libUE4.so`FEngineLoop::Init(this=&lt;unavailable&gt;) at LaunchEngineLoop.cpp:4017:12</span><br><span class="line">  frame #7: 0x0000007bd01c2458 libUE4.so`AndroidMain(state=&lt;unavailable&gt;) at LaunchAndroid.cpp:501:14</span><br><span class="line">  frame #8: 0x0000007bd01d20fc libUE4.so`android_main(state=0x0000007c9d910d00) at LaunchAndroid.cpp:777:2</span><br><span class="line">  frame #9: 0x0000007bd02015b8 libUE4.so`android_app_entry(param=0x0000007c9d910d00) at android_native_app_glue.c:233:5</span><br><span class="line">  frame #10: 0x0000007d25d1e2a8 libc.so`__pthread_start(void*) + 200</span><br><span class="line">  frame #11: 0x0000007d25d0f624 libc.so`__start_thread + 68</span><br></pre></td></tr></table></figure>
+<p>默认的逻辑是先根据 <code>AudioMixerModuleName</code> 加载，如果加载失败，再根据 <code>AudioDeviceModuleName</code> 加载</p>
+<p>在 &lt;工程根目录&gt;\Saved\Temp\Android\Engine\Config\Android\AndroidEngine.ini 可以看到</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">[Audio]</span><br><span class="line">AudioDeviceModuleName=AndroidAudio</span><br><span class="line">AudioMixerModuleName=AudioMixerAndroid</span><br></pre></td></tr></table></figure>
+<p>于是这里它先读取 AudioMixerAndroid 模块，成功了之后就不再读取 AndroidAudio 模块了</p>
+<h3 id="注册-BufferQueue-回调">注册 BufferQueue 回调</h3>
+<p>BufferQueue 的回调为 <code>FMixerPlatformAndroid::OpenSLBufferQueueCallback</code></p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="type">void</span> <span class="title">FMixerPlatformAndroid::OpenSLBufferQueueCallback</span><span class="params">(SLAndroidSimpleBufferQueueItf InQueueInterface, <span class="type">void</span>* pContext)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    FMixerPlatformAndroid* MixerPlatformAndroid = (FMixerPlatformAndroid*)pContext;</span><br><span class="line">    <span class="keyword">if</span> (MixerPlatformAndroid != <span class="literal">nullptr</span>)</span><br><span class="line">    &#123;</span><br><span class="line">        MixerPlatformAndroid-&gt;<span class="built_in">ReadNextBuffer</span>();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>他是在这里注册的</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">* frame #0: 0x0000007bd5e94d08 libUE4.so`Audio::FMixerPlatformAndroid::OpenAudioStream(this=0x0000007b08ed1c80, Params=&lt;unavailable&gt;) at AudioMixerPlatformAndroid.cpp:291:14</span><br><span class="line">  frame #1: 0x0000007bd3ed27a4 libUE4.so`Audio::FMixerDevice::InitializeHardware(this=0x0000007b086b20e0) at AudioMixerDevice.cpp:403:28</span><br><span class="line">  frame #2: 0x0000007bd446695c libUE4.so`FAudioDevice::Init(this=0x0000007b086b20e0, InDeviceID=&lt;unavailable&gt;, InMaxSources=&lt;unavailable&gt;) at AudioDevice.cpp:513:7</span><br><span class="line">  frame #3: 0x0000007bd44bb224 libUE4.so`FAudioDeviceManager::FAudioDeviceContainer::FAudioDeviceContainer(this=0x0000007be27f32d0, InParams=&lt;unavailable&gt;, InDeviceID=1, DeviceManager=&lt;unavailable&gt;) at AudioDeviceManager.cpp:1672:14</span><br><span class="line">  frame #4: 0x0000007bd44b307c libUE4.so`FAudioDeviceManager::CreateNewDevice(this=0x0000007b0a3cbf40, InParams=0x0000007be27f3418) at AudioDeviceManager.cpp:651:28</span><br><span class="line">  frame #5: 0x0000007bd44b2f40 libUE4.so`FAudioDeviceManager::RequestAudioDevice(this=0x0000007b0a3cbf40, InParams=0x0000007be27f3418) at AudioDeviceManager.cpp:465:10</span><br><span class="line">  frame #6: 0x0000007bd44b5068 libUE4.so`FAudioDeviceManager::CreateMainAudioDevice(this=0x0000007b0a3cbf40) at AudioDeviceManager.cpp:552:27</span><br><span class="line">  frame #7: 0x0000007bd525bfc0 libUE4.so`UEngine::InitializeAudioDeviceManager(this=0x0000007b086b40c0) at UnrealEngine.cpp:3111:23</span><br><span class="line">  frame #8: 0x0000007bd5249f30 libUE4.so`UEngine::Init(this=&lt;unavailable&gt;, InEngineLoop=&lt;unavailable&gt;) at UnrealEngine.cpp:1643:2</span><br><span class="line">  frame #9: 0x0000007bd4834e34 libUE4.so`UGameEngine::Init(this=0x0000007b086b40c0, InEngineLoop=&lt;unavailable&gt;) at GameEngine.cpp:1072:11</span><br><span class="line">  frame #10: 0x0000007bcfb95158 libUE4.so`FEngineLoop::Init(this=&lt;unavailable&gt;) at LaunchEngineLoop.cpp:4017:12</span><br><span class="line">  frame #11: 0x0000007bcfb94458 libUE4.so`AndroidMain(state=&lt;unavailable&gt;) at LaunchAndroid.cpp:501:14</span><br><span class="line">  frame #12: 0x0000007bcfba40fc libUE4.so`android_main(state=0x0000007bdf2881c0) at LaunchAndroid.cpp:777:2</span><br><span class="line">  frame #13: 0x0000007bcfbd35b8 libUE4.so`android_app_entry(param=0x0000007bdf2881c0) at android_native_app_glue.c:233:5</span><br><span class="line">  frame #14: 0x0000007d25d1e2a8 libc.so`__pthread_start(void*) + 200</span><br><span class="line">  frame #15: 0x0000007d25d0f624 libc.so`__start_thread + 68</span><br></pre></td></tr></table></figure>
+<p>搜索 <code>)-&gt;RegisterCallback(</code>，只有七条结果，可以看到，整个 UE 引擎中对 BufferQueue Callback 的注册都是很简单的</p>
+<h3 id="首次播放音频">首次播放音频</h3>
+<p><code>FMixerDevice::InitializeHardware</code> 初始化的时候会播放一次</p>
+<h3 id="首次提交数据">首次提交数据</h3>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">* frame #0: 0x0000007bd64c49bc libUE4.so`Audio::FMixerPlatformAndroid::SubmitBuffer(this=0x0000007c78041280, Buffer=&quot;&quot;) at AudioMixerPlatformAndroid.cpp:410:3</span><br><span class="line">  frame #1: 0x0000007bd44e3a20 libUE4.so`Audio::IAudioMixerPlatformInterface::RunInternal(this=0x0000007c78041280) at AudioMixer.cpp:662:3</span><br><span class="line">  frame #2: 0x0000007bd44e3bdc libUE4.so`Audio::IAudioMixerPlatformInterface::Run(this=0x0000007c78041280) at AudioMixer.cpp:0</span><br><span class="line">  frame #3: 0x0000007bd152b698 libUE4.so`FRunnableThreadPThread::Run(this=0x0000007c780b6c40) at PThreadRunnableThread.cpp:25:24</span><br><span class="line">  frame #4: 0x0000007bd1408078 libUE4.so`FRunnableThreadPThread::_ThreadProc(pThis=0x0000007c780b6c40) at PThreadRunnableThread.h:185:15</span><br><span class="line">  frame #5: 0x0000007d25d1e2a8 libc.so`__pthread_start(void*) + 200</span><br><span class="line">  frame #6: 0x0000007d25d0f624 libc.so`__start_thread + 68</span><br></pre></td></tr></table></figure>
+<p><code>IAudioMixerPlatformInterface::RunInternal</code> 表示，音频线程首次运行的时候提交一次 buffer</p>
+<p><code>IAudioMixerPlatformInterface</code> 派生自 <code>FRunnable</code>，是一个可以运行的线程</p>
+<h2 id="初始化混音数据">初始化混音数据</h2>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">frame #0: 0x0000007a9f10b1b8 libUE4.so`Audio::FMixerDevice::LoadMasterSoundSubmix(this=0x00000079d3e630d0, InType=Master, InDefaultName=string=u&quot;MasterSubmixDefault&quot;, bInDefaultMuteWhenBackgrounded=&lt;unavailable&gt;, InObjectPath=0x00000079d4fd1630) at AudioMixerDevice.cpp:803</span><br><span class="line">frame #1: 0x0000007a9f10da38 libUE4.so`Audio::FMixerDevice::InitSoundSubmixes(this=0x00000079d3e630d0) at AudioMixerDevice.cpp:957:4</span><br><span class="line">frame #2: 0x0000007a9f103930 libUE4.so`Audio::FMixerDevice::InitializeHardware(this=0x00000079d3e630d0) at AudioMixerDevice.cpp:450:5</span><br><span class="line">frame #3: 0x0000007a9f69795c libUE4.so`FAudioDevice::Init(this=0x00000079d3e630d0, InDeviceID=&lt;unavailable&gt;, InMaxSources=&lt;unavailable&gt;) at AudioDevice.cpp:513:7</span><br><span class="line">frame #4: 0x0000007a9f6ec224 libUE4.so`FAudioDeviceManager::FAudioDeviceContainer::FAudioDeviceContainer(this=0x0000007b009f32d0, InParams=&lt;unavailable&gt;, InDeviceID=1, DeviceManager=&lt;unavailable&gt;) at AudioDeviceManager.cpp:1672:14</span><br><span class="line">frame #5: 0x0000007a9f6e407c libUE4.so`FAudioDeviceManager::CreateNewDevice(this=0x00000079d4fdba00, InParams=0x0000007b009f3418) at AudioDeviceManager.cpp:651:28</span><br><span class="line">frame #6: 0x0000007a9f6e3f40 libUE4.so`FAudioDeviceManager::RequestAudioDevice(this=0x00000079d4fdba00, InParams=0x0000007b009f3418) at AudioDeviceManager.cpp:465:10</span><br><span class="line">frame #7: 0x0000007a9f6e6068 libUE4.so`FAudioDeviceManager::CreateMainAudioDevice(this=0x00000079d4fdba00) at AudioDeviceManager.cpp:552:27</span><br><span class="line">frame #8: 0x0000007aa048cfc0 libUE4.so`UEngine::InitializeAudioDeviceManager(this=0x00000079d3e650b0) at UnrealEngine.cpp:3111:23</span><br><span class="line">frame #9: 0x0000007aa047af30 libUE4.so`UEngine::Init(this=&lt;unavailable&gt;, InEngineLoop=&lt;unavailable&gt;) at UnrealEngine.cpp:1643:2</span><br><span class="line">frame #10: 0x0000007a9fa65e34 libUE4.so`UGameEngine::Init(this=0x00000079d3e650b0, InEngineLoop=&lt;unavailable&gt;) at GameEngine.cpp:1072:11</span><br><span class="line">frame #11: 0x0000007a9adc6158 libUE4.so`FEngineLoop::Init(this=&lt;unavailable&gt;) at LaunchEngineLoop.cpp:4017:12</span><br><span class="line">frame #12: 0x0000007a9adc5458 libUE4.so`AndroidMain(state=&lt;unavailable&gt;) at LaunchAndroid.cpp:501:14</span><br><span class="line">frame #13: 0x0000007a9add50fc libUE4.so`android_main(state=0x0000007ab0383300) at LaunchAndroid.cpp:777:2</span><br><span class="line">frame #14: 0x0000007a9ae045b8 libUE4.so`android_app_entry(param=0x0000007ab0383300) at android_native_app_glue.c:233:5</span><br><span class="line">frame #15: 0x0000007c068ab2a8 libc.so`__pthread_start(void*) + 200</span><br><span class="line">frame #16: 0x0000007c0689c624 libc.so`__start_thread + 68</span><br></pre></td></tr></table></figure>
+<h2 id="BufferQueue-回调在-Tick-中被调用">BufferQueue 回调在 Tick 中被调用</h2>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="type">void</span> <span class="title">FMixerPlatformAndroid::SubmitBuffer</span><span class="params">(<span class="type">const</span> uint8* Buffer)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="built_in">check</span>(DeviceBuffer.<span class="built_in">Num</span>() == NumSamplesPerDeviceCallback);</span><br><span class="line"></span><br><span class="line">    int32 PushResult = CircularOutputBuffer.<span class="built_in">Push</span>((<span class="type">const</span> int16*)Buffer, NumSamplesPerRenderCallback);</span><br><span class="line">    <span class="built_in">check</span>(PushResult == NumSamplesPerRenderCallback)</span><br><span class="line"></span><br><span class="line">    <span class="keyword">while</span> (CircularOutputBuffer.<span class="built_in">Num</span>() &gt;= NumSamplesPerDeviceCallback)</span><br><span class="line">    &#123;</span><br><span class="line">        int32 PopResult = CircularOutputBuffer.<span class="built_in">Pop</span>(DeviceBuffer.<span class="built_in">GetData</span>(), NumSamplesPerDeviceCallback);</span><br><span class="line">        <span class="built_in">check</span>(PopResult == NumSamplesPerDeviceCallback);</span><br><span class="line"></span><br><span class="line">        <span class="type">const</span> <span class="keyword">auto</span> BufferSize = NumSamplesPerDeviceCallback * <span class="built_in">sizeof</span>(int16);</span><br><span class="line">        SLresult Result = (*SL_PlayerBufferQueue)-&gt;<span class="built_in">Enqueue</span>(SL_PlayerBufferQueue, Buffer, BufferSize);</span><br><span class="line">        <span class="built_in">OPENSLES_LOG_ON_FAIL</span>(Result);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>回调堆栈如下</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">* frame #0: 0x0000007bcf8c49bc libUE4.so`Audio::FMixerPlatformAndroid::SubmitBuffer(this=0x0000007b03b25b00, Buffer=&quot;&quot;) at AudioMixerPlatformAndroid.cpp:410:3</span><br><span class="line">  frame #1: 0x0000007bcd8e328c libUE4.so`Audio::IAudioMixerPlatformInterface::ReadNextBuffer(this=0x0000007b03b25b00) at AudioMixer.cpp:542:3</span><br><span class="line">  frame #2: 0x0000007d43b68aa0 libwilhelm.so`android::AudioTrackCallback::onMoreData(android::AudioTrack::Buffer const&amp;) - 18446743535702603103</span><br><span class="line">  frame #3: 0x0000007d25997398 libaudioclient.so`android::AudioTrack::processAudioBuffer() + 3304</span><br><span class="line">  frame #4: 0x0000007d25996354 libaudioclient.so`android::AudioTrack::AudioTrackThread::threadLoop() + 340</span><br><span class="line">  frame #5: 0x0000007d49c5f5cc libutils.so`android::Thread::_threadLoop(void*) + 252</span><br><span class="line">  frame #6: 0x0000007d33313490 libandroid_runtime.so`android::AndroidRuntime::javaThreadShell(void*) + 144</span><br><span class="line">  frame #7: 0x0000007d25d1e2a8 libc.so`__pthread_start(void*) + 200</span><br><span class="line">  frame #8: 0x0000007d25d0f624 libc.so`__start_thread + 68</span><br></pre></td></tr></table></figure>
+<p>也就是</p>
+<p><code>FMixerPlatformAndroid::OpenSLBufferQueueCallback</code> -&gt; <code>IAudioMixerPlatformInterface::ReadNextBuffer</code> -&gt; <code>FMixerPlatformAndroid::SubmitBuffer</code></p>
+<p>BufferQueue 回调是在 Tick 中被调用的</p>
+<p>如果当前没有音频播放，那么 Buffer 指向的内存是全 0</p>
+<p>如果当前有音频播放，那么 Buffer 指向的内存是非 0 值，应该就是音频数据</p>
+<h2 id="FAudioDevice-控制播放与暂停">FAudioDevice 控制播放与暂停</h2>
+<p>我是在蓝图里面调用 <code>UAudioComponent::Play</code> 来播放音频的</p>
+<p>它最终调用 <code>UAudioComponent::PlayInternal</code></p>
+<p><code>UAudioComponent::PlayInternal</code> 中核心的部分还是 <code>AudioDevice-&gt;AddNewActiveSound(NewActiveSound);</code></p>
+<p>调用到 <code>FAudioDevice::AddNewActiveSoundInternal</code></p>
+<p>首先，把函数自己转到音频线程</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> (!<span class="built_in">IsInAudioThread</span>())</span><br><span class="line">&#123;</span><br><span class="line">    <span class="built_in">DECLARE_CYCLE_STAT</span>(<span class="built_in">TEXT</span>(<span class="string">&quot;FAudioThreadTask.AddNewActiveSound&quot;</span>), STAT_AudioAddNewActiveSound, STATGROUP_AudioThreadCommands);</span><br><span class="line"></span><br><span class="line">    FAudioDevice* AudioDevice = <span class="keyword">this</span>;</span><br><span class="line">    FAudioThread::<span class="built_in">RunCommandOnAudioThread</span>([AudioDevice, NewActiveSound, VirtualLoopToRetrigger]()</span><br><span class="line">    &#123;</span><br><span class="line">        AudioDevice-&gt;<span class="built_in">AddNewActiveSoundInternal</span>(NewActiveSound, VirtualLoopToRetrigger);</span><br><span class="line">    &#125;, <span class="built_in">GET_STATID</span>(STAT_AudioAddNewActiveSound));</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>然后程序化生成、虚拟 loop 等就不说了</p>
+<p>最终添加播放音频</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">ActiveSounds.<span class="built_in">Add</span>(ActiveSound);</span><br><span class="line"><span class="keyword">if</span> (ActiveSound-&gt;<span class="built_in">GetAudioComponentID</span>() &gt; <span class="number">0</span>)</span><br><span class="line">&#123;</span><br><span class="line">    AudioComponentIDToActiveSoundMap.<span class="built_in">Add</span>(ActiveSound-&gt;<span class="built_in">GetAudioComponentID</span>(), ActiveSound);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>可以看到 <code>FAudioDevice</code> 中并没有名称很直接的 Play 方法</p>
+<p><code>Exec</code>, <code>Update</code> 这两个方法看上去像一点</p>
+<p>不过看了 <code>Exec</code>，它是处理命令行的</p>
+<p>于是看 <code>FAudioDevice::Update</code></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">* frame #0: 0x0000007bd707402c libUE4.so`FAudioDevice::Update(this=0x0000007b06cb20e0, bGameTicking=&lt;unavailable&gt;) at AudioDevice.cpp:4201:6</span><br><span class="line">  frame #1: 0x0000007bd70aa538 libUE4.so`FAudioDeviceManager::IterateOverAllDevices(TUniqueFunction&lt;void (unsigned int, FAudioDevice*)&gt;) [inlined] UE4Function_Private::TFunctionRefBase&lt;UE4Function_Private::TFunctionStorage&lt;true&gt;, void (unsigned int, FAudioDevice*)&gt;::operator()(this=0x0000007be3ee3c20, Params=1, Params=0x0000007b06cb20e0) const at Function.h:676:11</span><br><span class="line">  frame #2: 0x0000007bd70aa50c libUE4.so`FAudioDeviceManager::IterateOverAllDevices(this=0x0000007b081ebbc0, ForEachDevice=TUniqueFunction&lt;void (unsigned int, FAudioDevice *)&gt; @ 0x0000007be3ee3c20) at AudioDeviceManager.cpp:924</span><br><span class="line">  frame #3: 0x0000007bd70a9a24 libUE4.so`FAudioDeviceManager::UpdateActiveAudioDevices(this=0x0000007b081ebbc0, bGameTicking=&lt;unavailable&gt;) at AudioDeviceManager.cpp:906:2</span><br><span class="line">  frame #4: 0x0000007bd742dc50 libUE4.so`UGameEngine::Tick(this=&lt;unavailable&gt;, DeltaSeconds=&lt;unavailable&gt;, bIdleMode=false) at GameEngine.cpp:1951:27</span><br><span class="line">  frame #5: 0x0000007bd278ffdc libUE4.so`FEngineLoop::Tick(this=&lt;unavailable&gt;) at LaunchEngineLoop.cpp:4915:12</span><br><span class="line">  frame #6: 0x0000007bd2787634 libUE4.so`AndroidMain(state=&lt;unavailable&gt;) at LaunchAndroid.cpp:534:16</span><br><span class="line">  frame #7: 0x0000007bd27970fc libUE4.so`android_main(state=0x0000007c9d910f80) at LaunchAndroid.cpp:777:2</span><br><span class="line">  frame #8: 0x0000007bd27c65b8 libUE4.so`android_app_entry(param=0x0000007c9d910f80) at android_native_app_glue.c:233:5</span><br><span class="line">  frame #9: 0x0000007d25d1e2a8 libc.so`__pthread_start(void*) + 200</span><br><span class="line">  frame #10: 0x0000007d25d0f624 libc.so`__start_thread + 68</span><br></pre></td></tr></table></figure>
+<p>这个调用堆栈也很清晰，可以看到，可能存在有多个 Device</p>
+<p>对于 Update 的内容</p>
+<p>这里面有一个 <code>FAudioDevice::HandlePause</code>，但是他不是用来设置单个 Sound 的暂停的，它是根据游戏全局暂停状态来设置所有的声音的暂停或者恢复的</p>
+<p>然后这里面看到一个 <code>FAudioDevice::ProcessingPendingActiveSoundStops</code> 应该是比较像的</p>
+<p>于是我在蓝图用 AudioComp 暂停音频的时候，断点打到</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> (bDeleteActiveSound)</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">if</span> (ActiveSound-&gt;bIsPreviewSound &amp;&amp; bModulationInterfaceEnabled &amp;&amp; ModulationInterface.<span class="built_in">IsValid</span>())</span><br><span class="line">    &#123;</span><br><span class="line">        ModulationInterface-&gt;<span class="built_in">OnAuditionEnd</span>();</span><br><span class="line">    &#125;</span><br><span class="line">    ActiveSound-&gt;bAsyncOcclusionPending = <span class="literal">false</span>;</span><br><span class="line">    PendingSoundsToDelete.<span class="built_in">RemoveAtSwap</span>(i, <span class="number">1</span>, <span class="literal">false</span>);</span><br><span class="line">    <span class="keyword">delete</span> ActiveSound;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>确实是删除了 Active Sound</p>
+<p>这也说明 FAudioDevice 是 Active Sound 的持有者。毕竟只有持有它的人才有权力销毁他。</p>
+<p>其实回来看 AudioComp，跟播放同理，<code>UAudioComponent::Stop</code> -&gt; <code>FAudioDevice::StopActiveSound</code> -&gt; <code>FAudioDevice::AddSoundToStop</code>。最终 <code>FAudioDevice::AddSoundToStop</code> 中把某个要暂停的 Active Sound 放入 pending 队列 <code>PendingSoundsToStop</code></p>
+<h2 id="双缓冲实现无锁化">双缓冲实现无锁化</h2>
+<p>前面还没有看完 <code>FAudioDevice::Update</code></p>
+<p><code>FAudioDevice::Update</code> 最后一段</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> (Sources.<span class="built_in">Num</span>())</span><br><span class="line">&#123;</span><br><span class="line">    <span class="comment">// Kill any sources that have finished</span></span><br><span class="line">    <span class="keyword">for</span> (int32 SourceIndex = <span class="number">0</span>; SourceIndex &lt; Sources.<span class="built_in">Num</span>(); SourceIndex++)</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="comment">// Source has finished playing (it&#x27;s one shot)</span></span><br><span class="line">        <span class="keyword">if</span> (Sources[ SourceIndex ]-&gt;<span class="built_in">IsFinished</span>())</span><br><span class="line">        &#123;</span><br><span class="line">            Sources[ SourceIndex ]-&gt;<span class="built_in">Stop</span>();</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Poll audio components for active wave instances (== paths in node tree that end in a USoundWave)</span></span><br><span class="line">    ActiveWaveInstances.<span class="built_in">Reset</span>();</span><br><span class="line">    FirstActiveIndex = <span class="built_in">GetSortedActiveWaveInstances</span>(ActiveWaveInstances, (bGameTicking ? ESortedActiveWaveGetType::FullUpdate : ESortedActiveWaveGetType::PausedUpdate));</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Stop sources that need to be stopped, and touch the ones that need to be kept alive</span></span><br><span class="line">    <span class="built_in">StopSources</span>(ActiveWaveInstances, FirstActiveIndex);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Start and/or update any sources that have a high enough priority to play</span></span><br><span class="line">    <span class="built_in">StartSources</span>(ActiveWaveInstances, FirstActiveIndex, bGameTicking);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Check which sounds are active from these wave instances and update passive SoundMixes</span></span><br><span class="line">    <span class="built_in">UpdatePassiveSoundMixModifiers</span>(ActiveWaveInstances, FirstActiveIndex);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// If not paused, update the playback time of the active sounds after we&#x27;ve processed passive mix modifiers</span></span><br><span class="line">    <span class="comment">// Note that for sounds which play while paused, this will result in longer active sound playback times, which will be ok. If we update the</span></span><br><span class="line">    <span class="comment">// active sound is updated while paused (for a long time), most sounds will be stopped when unpaused.</span></span><br><span class="line">    <span class="built_in">UpdateActiveSoundPlaybackTime</span>(bGameTicking);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>应该是为了控制高优先级的音频先播放</p>
+<p>然后是一个虚函数 <code>UpdateHardware</code>，这里就可以跳转到 <code>FMixerDevice::UpdateHardware</code></p>
+<p>感觉其中重要的还是这两句</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">SourceManager-&gt;<span class="built_in">Update</span>();</span><br><span class="line"></span><br><span class="line">AudioMixerPlatform-&gt;<span class="built_in">OnHardwareUpdate</span>();</span><br></pre></td></tr></table></figure>
+<p>于是看 <code>FMixerSourceManager::Update</code> 有段双缓冲实现无锁化的代码，很酷，我还是第一次接触无锁化</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// If the command was triggered, then we want to do a swap of command buffers</span></span><br><span class="line"><span class="keyword">if</span> (CommandsProcessedEvent-&gt;<span class="built_in">Wait</span>(<span class="number">0</span>))</span><br><span class="line">&#123;</span><br><span class="line">    int32 CurrentGameIndex = !RenderThreadCommandBufferIndex.<span class="built_in">GetValue</span>();</span><br><span class="line"></span><br><span class="line">    <span class="comment">// This flags the audio render thread to be able to pump the next batch of commands</span></span><br><span class="line">    <span class="comment">// And will allow the audio thread to write to a new command slot</span></span><br><span class="line">    <span class="type">const</span> int32 NextIndex = (CurrentGameIndex + <span class="number">1</span>) &amp; <span class="number">1</span>;</span><br><span class="line"></span><br><span class="line">    FCommands&amp; NextCommandBuffer = CommandBuffers[NextIndex];</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Make sure we&#x27;ve actually emptied the command queue from the render thread before writing to it</span></span><br><span class="line">    <span class="keyword">if</span> (FlushCommandBufferOnTimeoutCvar &amp;&amp; NextCommandBuffer.SourceCommandQueue.<span class="built_in">Num</span>() != <span class="number">0</span>)</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="built_in">UE_LOG</span>(LogAudioMixer, Warning, <span class="built_in">TEXT</span>(<span class="string">&quot;Audio render callback stopped. Flushing %d commands.&quot;</span>), NextCommandBuffer.SourceCommandQueue.<span class="built_in">Num</span>());</span><br><span class="line"></span><br><span class="line">        <span class="comment">// Pop and execute all the commands that came since last update tick</span></span><br><span class="line">        <span class="keyword">for</span> (int32 Id = <span class="number">0</span>; Id &lt; NextCommandBuffer.SourceCommandQueue.<span class="built_in">Num</span>(); ++Id)</span><br><span class="line">        &#123;</span><br><span class="line">            TFunction&lt;<span class="built_in">void</span>()&gt;&amp; CommandFunction = NextCommandBuffer.SourceCommandQueue[Id];</span><br><span class="line">            <span class="built_in">CommandFunction</span>();</span><br><span class="line">            NumCommands.<span class="built_in">Decrement</span>();</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        NextCommandBuffer.SourceCommandQueue.<span class="built_in">Reset</span>();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Here we ensure that we block for any pending calls to AudioMixerThreadCommand.</span></span><br><span class="line">    <span class="function">FScopeLock <span class="title">ScopeLock</span><span class="params">(&amp;CommandBufferIndexCriticalSection)</span></span>;</span><br><span class="line">    RenderThreadCommandBufferIndex.<span class="built_in">Set</span>(CurrentGameIndex);</span><br><span class="line"></span><br><span class="line">    CommandsProcessedEvent-&gt;<span class="built_in">Reset</span>();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h3 id="数据结构设计">数据结构设计</h3>
+<p>命令缓冲区结构</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">struct</span> <span class="title class_">FCommands</span></span><br><span class="line">&#123;</span><br><span class="line">    TArray&lt;TFunction&lt;<span class="built_in">void</span>()&gt;&gt; SourceCommandQueue; <span class="comment">// 存储命令函数的动态数组</span></span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line">FCommands CommandBuffers[<span class="number">2</span>]; <span class="comment">// 双缓冲结构</span></span><br></pre></td></tr></table></figure>
+<p>同步控制变量</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">FThreadSafeCounter RenderThreadCommandBufferIndex; <span class="comment">// 原子计数器，表示当前渲染线程使用的缓冲区索引</span></span><br><span class="line">FEvent* CommandsProcessedEvent; <span class="comment">// 事件对象，用于线程同步</span></span><br><span class="line">FCriticalSection CommandBufferIndexCriticalSection; <span class="comment">// 临界区，保护索引交换</span></span><br></pre></td></tr></table></figure>
+<h3 id="双缓冲工作机制">双缓冲工作机制</h3>
+<h4 id="缓冲区索引管理">缓冲区索引管理</h4>
+<p>使用 <code>RenderThreadCommandBufferIndex</code> 原子变量(取值0或1)标识当前渲染线程正在处理的缓冲区</p>
+<p>游戏线程总是向另一个缓冲区(<code>!RenderThreadCommandBufferIndex</code>)写入命令</p>
+<h4 id="工作流程">工作流程</h4>
+<ol>
+<li>
+<p>游戏线程写入阶段：</p>
+<p>游戏线程向非活动缓冲区(与渲染线程当前使用的不同)添加命令</p>
+<p>命令以lambda函数形式存储在SourceCommandQueue数组中</p>
+</li>
+<li>
+<p>缓冲区交换阶段：</p>
+<p>当需要提交命令时(如每帧更新)，游戏线程检查CommandsProcessedEvent</p>
+<p>确认渲染线程已完成前一帧命令处理后，交换缓冲区索引</p>
+</li>
+<li>
+<p>渲染线程处理阶段：</p>
+<p>渲染线程持续检查RenderThreadCommandBufferIndex获取当前命令缓冲区</p>
+<p>按顺序执行缓冲区中的所有命令函数</p>
+<p>处理完成后触发CommandsProcessedEvent</p>
+</li>
+</ol>
+<h4 id="关键同步逻辑">关键同步逻辑</h4>
+<p>缓冲区交换代码</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">// 获取当前渲染线程使用的缓冲区索引</span><br><span class="line">int32 CurrentGameIndex = !RenderThreadCommandBufferIndex.GetValue(); </span><br><span class="line"></span><br><span class="line">// 准备下一个缓冲区索引</span><br><span class="line">const int32 NextIndex = (CurrentGameIndex + 1) &amp; 1; // 0↔1切换</span><br><span class="line"></span><br><span class="line">// 保护索引交换操作</span><br><span class="line">FScopeLock ScopeLock(&amp;CommandBufferIndexCriticalSection);</span><br><span class="line">RenderThreadCommandBufferIndex.Set(CurrentGameIndex);</span><br><span class="line">CommandsProcessedEvent-&gt;Reset();</span><br></pre></td></tr></table></figure>
+<p>超时处理机制</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> (FlushCommandBufferOnTimeoutCvar &amp;&amp; </span><br><span class="line">    NextCommandBuffer.SourceCommandQueue.<span class="built_in">Num</span>() != <span class="number">0</span>)</span><br><span class="line">&#123;</span><br><span class="line">    <span class="comment">// 强制处理积压的命令</span></span><br><span class="line">    <span class="keyword">for</span> (int32 Id = <span class="number">0</span>; Id &lt; NextCommandBuffer.SourceCommandQueue.<span class="built_in">Num</span>(); ++Id)</span><br><span class="line">    &#123;</span><br><span class="line">        NextCommandBuffer.SourceCommandQueue[Id](); <span class="comment">// 执行命令</span></span><br><span class="line">        NumCommands.<span class="built_in">Decrement</span>();</span><br><span class="line">    &#125;</span><br><span class="line">    NextCommandBuffer.SourceCommandQueue.<span class="built_in">Reset</span>();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h2 id="FAudioDevice-的-Update-控制-FMixerPlatformAndroid-环形缓冲">FAudioDevice 的 Update 控制 FMixerPlatformAndroid 环形缓冲</h2>
+<p>还是没有找到是谁控制了 <code>FMixerPlatformAndroid</code> 环形缓冲</p>
+<p>于是再回来看 <code>FMixerPlatformAndroid::SubmitBuffer</code></p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="type">void</span> <span class="title">FMixerPlatformAndroid::SubmitBuffer</span><span class="params">(<span class="type">const</span> uint8* Buffer)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="built_in">check</span>(DeviceBuffer.<span class="built_in">Num</span>() == NumSamplesPerDeviceCallback);</span><br><span class="line"></span><br><span class="line">    int32 PushResult = CircularOutputBuffer.<span class="built_in">Push</span>((<span class="type">const</span> int16*)Buffer, NumSamplesPerRenderCallback);</span><br><span class="line">    <span class="built_in">check</span>(PushResult == NumSamplesPerRenderCallback)</span><br><span class="line"></span><br><span class="line">    <span class="keyword">while</span> (CircularOutputBuffer.<span class="built_in">Num</span>() &gt;= NumSamplesPerDeviceCallback)</span><br><span class="line">    &#123;</span><br><span class="line">        int32 PopResult = CircularOutputBuffer.<span class="built_in">Pop</span>(DeviceBuffer.<span class="built_in">GetData</span>(), NumSamplesPerDeviceCallback);</span><br><span class="line">        <span class="built_in">check</span>(PopResult == NumSamplesPerDeviceCallback);</span><br><span class="line"></span><br><span class="line">        <span class="type">const</span> <span class="keyword">auto</span> BufferSize = NumSamplesPerDeviceCallback * <span class="built_in">sizeof</span>(int16);</span><br><span class="line">        SLresult Result = (*SL_PlayerBufferQueue)-&gt;<span class="built_in">Enqueue</span>(SL_PlayerBufferQueue, Buffer, BufferSize);</span><br><span class="line">        <span class="built_in">OPENSLES_LOG_ON_FAIL</span>(Result);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>我现在才看懂他的意思。先向环形缓冲拷贝数据，拷贝数据的大小为 <code>NumSamplesPerRenderCallback</code>。然后从环形缓冲拷出数据，拷到 <code>DeviceBuffer.GetData()</code>，拷贝数据的大小为 <code>NumSamplesPerDeviceCallback</code>。内部都是 <code>memcpy</code>。</p>
+<p>奇怪的是，它 EnQueue 还是传输的传入的参数 <code>Buffer</code> 而不是 <code>DeviceBuffer.GetData()</code>？</p>
+<p>看看他 Tick 中回调中调用 <code>FMixerPlatformAndroid::SubmitBuffer</code> 的 <code>IAudioMixerPlatformInterface::ReadNextBuffer</code> 中是怎么传入 <code>SubmitBuffer</code> 的参数的</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">int32 NumSamplesPopped = <span class="number">0</span>;</span><br><span class="line">TArrayView&lt;<span class="type">const</span> uint8&gt; PoppedAudio = OutputBuffer.<span class="built_in">PopBufferData</span>(NumSamplesPopped);</span><br><span class="line"><span class="built_in">SubmitBuffer</span>(PoppedAudio.<span class="built_in">GetData</span>());</span><br></pre></td></tr></table></figure>
+<p>ok，这是一个存储要 EnQueue 实际数据的缓冲</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/** List of generated output buffers. */</span></span><br><span class="line">Audio::FOutputBuffer OutputBuffer;</span><br></pre></td></tr></table></figure>
+<p>看看他的使用，应该是在 <code>FOutputBuffer::MixNextBuffer</code></p>
+<p>但是有两个地方都在 while 中调用了它，打个断点看看到底是哪个循环</p>
+<p><code>IAudioMixerPlatformInterface::RunInternal</code> 在 while 循环外调用了一次，这是首次加载时的工作</p>
+<p>然后就一直在 <code>IAudioMixerPlatformInterface::RunInternal</code> 的 while 中被调用</p>
+<p>于是看 <code>FOutputBuffer::MixNextBuffer</code> 做了什么</p>
+<p>他就是调用 Mixer 填充 <code>RenderBuffer</code>，然后把数据从一个 <code>RenderBuffer</code> 拷贝到 <code>CircularBuffer</code> 中</p>
+<p><code>IAudioMixerPlatformInterface</code> 有一个 <code>FOutputBuffer</code> 成员，<code>FOutputBuffer</code> 有一个 <code>CircularBuffer</code> 成员</p>
+<p><code>class FMixerPlatformAndroid : public IAudioMixerPlatformInterface</code> 是派生自 <code>IAudioMixerPlatformInterface</code></p>
+<p>而 <code>FMixerPlatformAndroid</code> 还有一个 <code>CircularOutputBuffer</code> 成员，无敌了，为什么要这么设计</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">// This buffer is pushed to and popped from in the SubmitBuffer callback. </span><br><span class="line">// This is required for devices that require frame counts per callback that are not powers of two.</span><br><span class="line">Audio::TCircularAudioBuffer&lt;int16&gt; CircularOutputBuffer;</span><br></pre></td></tr></table></figure>
+<p><code>FMixerDevice</code> 是持有 <code>AudioMixerPlatform</code> 的</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">/** Ptr to the platform interface, which handles streaming audio to the hardware device. */</span><br><span class="line">IAudioMixerPlatformInterface* AudioMixerPlatform;</span><br></pre></td></tr></table></figure>
+<p>这是实现了多态的行为</p>
+<p>最终发现这个 <code>IAudioMixerPlatformInterface</code> 是运行在一个独立的线程，这个线程专门负责生成音频数据</p>
+<p>那么，这个线程是在哪里被发起的呢？谁调用了他的 <code>Run()</code>？暂时没找到。</p>
+<h2 id="Submit-路径">Submit 路径</h2>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">* frame #0: 0x0000007aa0ebdb0c libUE4.so`Audio::FMixerPlatformAndroid::SubmitBuffer(this=0x00000079d2e86780, Buffer=&quot;&quot;) at AudioMixerPlatformAndroid.cpp:418:4</span><br><span class="line">  frame #1: 0x0000007a9eedc28c libUE4.so`Audio::IAudioMixerPlatformInterface::ReadNextBuffer(this=0x00000079d2e86780) at AudioMixer.cpp:542:3</span><br><span class="line">  frame #2: 0x0000007bf7ceaaa0 libwilhelm.so`android::AudioTrackCallback::onMoreData(android::AudioTrack::Buffer const&amp;) - 18446743541271057759</span><br><span class="line">  frame #3: 0x0000007c01f1c398 libaudioclient.so`android::AudioTrack::processAudioBuffer() + 3304</span><br><span class="line">  frame #4: 0x0000007c01f1b354 libaudioclient.so`android::AudioTrack::AudioTrackThread::threadLoop() + 340</span><br><span class="line">  frame #5: 0x0000007be492b5cc libutils.so`android::Thread::_threadLoop(void*) + 252</span><br><span class="line">  frame #6: 0x0000007bf99a2490 libandroid_runtime.so`android::AndroidRuntime::javaThreadShell(void*) + 144</span><br><span class="line">  frame #7: 0x0000007c068ab2a8 libc.so`__pthread_start(void*) + 200</span><br></pre></td></tr></table></figure>
+<h2 id="AudioMixerAndroid-总结">AudioMixerAndroid 总结</h2>
+<h3 id="概述">概述</h3>
+<p>音频数据封装成 ActiveSound 类，由 AudioDevice 类维护一个 ActiveSound 的列表。</p>
+<p>有一个专门的音频混合线程，输出混合后的数据</p>
+<p>如果当前设备没有 ActiveSound，那么就填充全 0，有则填充有效数据</p>
+<p>不论有无 ActiveSound，都会向 OutputBuffer 填充数据。</p>
+<p>OpenSL 处理完 BufferQueue 之后，触发混合器注册的回调。该回调从 OutputBuffer 中拷贝数据到环形缓冲，然后把环形缓冲的数据通过 OpenSL 的 EnQueue 方法提交给 OpenSL。这样，OpenSL 又可以开始处理 BufferQueue 了。</p>
+<h3 id="路径">路径</h3>
+<p>注册 BufferQueue 回调到 OpenSL 的路径：</p>
+<p><code>FAudioDevice::Init</code> -&gt; <code>FMixerDevice::InitializeHardware</code> -&gt; <code>FMixerPlatformAndroid::OpenAudioStream</code></p>
+<p>OpenSL 调用的 BufferQueue 回调的工作内容：</p>
+<p><code>FMixerPlatformAndroid::OpenSLBufferQueueCallback</code> -&gt; <code>IAudioMixerPlatformInterface::ReadNextBuffer</code> -&gt; <code>FMixerPlatformAndroid::SubmitBuffer</code></p>
+<p><code>SubmitBuffer</code> 的工作内容是，从环形缓冲拷贝数据，然后把该数据再次 <code>Enqueue</code> 到 OpenSL</p>
+<p>开始音乐播放的路径：</p>
+<p><code>FAudioDevice::AddNewActiveSound</code> -&gt; <code>FAudioDevice::AddNewActiveSoundInternal</code></p>
+<p>它将要播放的 <code>FActiveSound</code> 放入一个待播放的队列</p>
+<p>暂停音乐播放的路径：</p>
+<p><code>FAudioDevice::StopActiveSound</code> -&gt; <code>FAudioDevice::AddSoundToStop</code></p>
+<p>它将要暂停的 <code>FActiveSound</code> 放入一个 pending 队列</p>
+<p>填充音频缓冲的路径：</p>
+<p><code>IAudioMixerPlatformInterface::RunInternal</code> -&gt; <code>FOutputBuffer::MixNextBuffer</code> -&gt; <code>FMixerDevice::OnProcessAudioStream</code></p>
+<p>最终是对所有音频混音得到缓冲数据</p>
+<h2 id="UE-Staff-对-AudioMixerAndroid-的介绍">UE Staff 对 AudioMixerAndroid 的介绍</h2>
+<p><a target="_blank" rel="noopener" href="https://forums.unrealengine.com/t/android-new-audiomixerandroid-in-4-17p1-results-in-crackling-audio/392002">https://forums.unrealengine.com/t/android-new-audiomixerandroid-in-4-17p1-results-in-crackling-audio/392002</a></p>
+<p>他这里提到，如果出现噼啪声，是因为 OpenSL 缓冲区数据不够</p>
+<p>为了解决这个问题，Staff 通过把一批缓冲入队来缓解（这算合批吗？）</p>
+<p>这会有效果。但是安卓 CPU 性能欠佳，音频线程可能会被别的工作挤占，所以在负载很高的情况下，合批缓冲可能仍然不够。</p>
+<h2 id="更换音频后端">更换音频后端</h2>
+<p>直接改 ini 是不够的。打包的时候，ini 会被刷新</p>
+<p>看了下 DefaultEngine.ini，这里存了默认地图啥的，也没有相关的</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="type">bool</span> <span class="title">FAudioDeviceManager::LoadDefaultAudioDeviceModule</span><span class="params">()</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">	<span class="built_in">check</span>(!AudioDeviceModule);</span><br><span class="line"></span><br><span class="line">	<span class="comment">// Check if we&#x27;re going to try to force loading the audio mixer from the command line</span></span><br><span class="line">	<span class="type">bool</span> bForceAudioMixer = FParse::<span class="built_in">Param</span>(FCommandLine::<span class="built_in">Get</span>(), <span class="built_in">TEXT</span>(<span class="string">&quot;AudioMixer&quot;</span>));</span><br><span class="line"></span><br><span class="line">	<span class="type">bool</span> bForceNoAudioMixer = FParse::<span class="built_in">Param</span>(FCommandLine::<span class="built_in">Get</span>(), <span class="built_in">TEXT</span>(<span class="string">&quot;NoAudioMixer&quot;</span>));</span><br><span class="line"></span><br><span class="line">	<span class="type">bool</span> bForceNonRealtimeRenderer = FParse::<span class="built_in">Param</span>(FCommandLine::<span class="built_in">Get</span>(), <span class="built_in">TEXT</span>(<span class="string">&quot;DeterministicAudio&quot;</span>));</span><br></pre></td></tr></table></figure>
+<p>如果在 Configuration 的 Launch Option - Launch Flags 里面添加 <code>-NoAudioMixer</code></p>
+<p>会导致出现</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">Error running &#x27;app&#x27;</span><br><span class="line">Process ID com.YourCompany.&lt;项目名&gt; was not found. Aborting session</span><br></pre></td></tr></table></figure>
+<p>的错误</p>
+<p>问了 AI，说是需要改成 <code>--es CommandLine &quot;-NoAudioMixer&quot;</code> 也没有效果</p>
+<p>于是我在引擎源码直接改为 <code>bForceNoAudioMixer</code> 为 <code>true</code></p>
+<p>构建出来的引擎可以跑，日志中都有一些 Error 了</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">Error        LogAudio                  Submix buffer listener only works with the audio mixer. Please run with audio mixer enabled.</span><br></pre></td></tr></table></figure>
+<p>不过应该不影响</p>
+<p>然后在这里打断点</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> (!AudioDeviceModule &amp;&amp; AudioDeviceModuleName.<span class="built_in">Len</span>() &gt; <span class="number">0</span>)</span><br><span class="line">&#123;</span><br><span class="line">    AudioDeviceModule = FModuleManager::<span class="built_in">LoadModulePtr</span>&lt;IAudioDeviceModule&gt;(*AudioDeviceModuleName);</span><br></pre></td></tr></table></figure>
+<p>可见他最终加载到 <code>FSLESAudioDeviceModule</code></p>
+<h2 id="创建-FSLESAudioDevice">创建 FSLESAudioDevice</h2>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">* frame #0: 0x0000007aa1887230 libUE4.so`FSLESAudioDeviceModule::CreateAudioDevice(this=0x00000079edc682b0) at AndroidAudioDevice.cpp:23:10</span><br><span class="line">  frame #1: 0x0000007a9fc7b010 libUE4.so`FAudioDeviceManager::FAudioDeviceContainer::FAudioDeviceContainer(this=0x0000007b547e42d0, InParams=&lt;unavailable&gt;, InDeviceID=1, DeviceManager=0x00000079d49abd80) at AudioDeviceManager.cpp:1657:46</span><br><span class="line">  frame #2: 0x0000007a9fc7537c libUE4.so`FAudioDeviceManager::CreateNewDevice(this=0x00000079d49abd80, InParams=0x0000007b547e4418) at AudioDeviceManager.cpp:651:28</span><br><span class="line">  frame #3: 0x0000007a9fc75240 libUE4.so`FAudioDeviceManager::RequestAudioDevice(this=0x00000079d49abd80, InParams=0x0000007b547e4418) at AudioDeviceManager.cpp:465:10</span><br><span class="line">  frame #4: 0x0000007a9fc76650 libUE4.so`FAudioDeviceManager::CreateMainAudioDevice(this=0x00000079d49abd80) at AudioDeviceManager.cpp:552:27</span><br><span class="line">  frame #5: 0x0000007aa0c53b3c libUE4.so`UEngine::InitializeAudioDeviceManager(this=0x00000079d30850b0) at UnrealEngine.cpp:3111:23</span><br><span class="line">  frame #6: 0x0000007aa0c41aac libUE4.so`UEngine::Init(this=&lt;unavailable&gt;, InEngineLoop=&lt;unavailable&gt;) at UnrealEngine.cpp:1643:2</span><br><span class="line">  frame #7: 0x0000007aa022c9b0 libUE4.so`UGameEngine::Init(this=0x00000079d30850b0, InEngineLoop=&lt;unavailable&gt;) at GameEngine.cpp:1072:11</span><br><span class="line">  frame #8: 0x0000007a9b58d158 libUE4.so`FEngineLoop::Init(this=&lt;unavailable&gt;) at LaunchEngineLoop.cpp:4017:12</span><br><span class="line">  frame #9: 0x0000007a9b58c458 libUE4.so`AndroidMain(state=&lt;unavailable&gt;) at LaunchAndroid.cpp:501:14</span><br><span class="line">  frame #10: 0x0000007a9b59c0fc libUE4.so`android_main(state=0x0000007ab106db40) at LaunchAndroid.cpp:777:2</span><br><span class="line">  frame #11: 0x0000007a9b5cb5b8 libUE4.so`android_app_entry(param=0x0000007ab106db40) at android_native_app_glue.c:233:5</span><br><span class="line">  frame #12: 0x0000007c068ab2a8 libc.so`__pthread_start(void*) + 200</span><br><span class="line">  frame #13: 0x0000007c0689c624 libc.so`__start_thread + 68</span><br></pre></td></tr></table></figure>
+<p>初始化</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">* frame #0: 0x0000007aa1881cd4 libUE4.so`FSLESAudioDevice::InitializeHardware(this=0x00000079d4162b80) at AndroidAudioDevice.cpp:77:2</span><br><span class="line">  frame #1: 0x0000007a9fe6c000 libUE4.so`FAudioDevice::Init(this=0x00000079d4162b80, InDeviceID=&lt;unavailable&gt;, InMaxSources=&lt;unavailable&gt;) at AudioDevice.cpp:513:7</span><br><span class="line">  frame #2: 0x0000007a9fc7b054 libUE4.so`FAudioDeviceManager::FAudioDeviceContainer::FAudioDeviceContainer(this=0x0000007b547e42d0, InParams=&lt;unavailable&gt;, InDeviceID=1, DeviceManager=&lt;unavailable&gt;) at AudioDeviceManager.cpp:1672:14</span><br><span class="line">  frame #3: 0x0000007a9fc7537c libUE4.so`FAudioDeviceManager::CreateNewDevice(this=0x00000079d49abd80, InParams=0x0000007b547e4418) at AudioDeviceManager.cpp:651:28</span><br><span class="line">  frame #4: 0x0000007a9fc75240 libUE4.so`FAudioDeviceManager::RequestAudioDevice(this=0x00000079d49abd80, InParams=0x0000007b547e4418) at AudioDeviceManager.cpp:465:10</span><br><span class="line">  frame #5: 0x0000007a9fc76650 libUE4.so`FAudioDeviceManager::CreateMainAudioDevice(this=0x00000079d49abd80) at AudioDeviceManager.cpp:552:27</span><br><span class="line">  frame #6: 0x0000007aa0c53b3c libUE4.so`UEngine::InitializeAudioDeviceManager(this=0x00000079d30850b0) at UnrealEngine.cpp:3111:23</span><br><span class="line">  frame #7: 0x0000007aa0c41aac libUE4.so`UEngine::Init(this=&lt;unavailable&gt;, InEngineLoop=&lt;unavailable&gt;) at UnrealEngine.cpp:1643:2</span><br><span class="line">  frame #8: 0x0000007aa022c9b0 libUE4.so`UGameEngine::Init(this=0x00000079d30850b0, InEngineLoop=&lt;unavailable&gt;) at GameEngine.cpp:1072:11</span><br><span class="line">  frame #9: 0x0000007a9b58d158 libUE4.so`FEngineLoop::Init(this=&lt;unavailable&gt;) at LaunchEngineLoop.cpp:4017:12</span><br><span class="line">  frame #10: 0x0000007a9b58c458 libUE4.so`AndroidMain(state=&lt;unavailable&gt;) at LaunchAndroid.cpp:501:14</span><br></pre></td></tr></table></figure>
+<p>在 <code>FSLESAudioDevice::InitializeHardware</code> 这里其实也是有 Mix 的，他创建了 <code>SL_OutputMixObject</code> 对象</p>
+<h2 id="FSLESAudioDevice-播放与暂停">FSLESAudioDevice 播放与暂停</h2>
+<p>但是在 &lt;引擎根目录&gt;\Engine\Source\Runtime\Android\AndroidAudio\Private\AndroidAudioDevice.cpp 看不到其他的 Play 方法之类的</p>
+<p>于是蹲守 <code>UAudioComponent::PlayInternal</code> 的 <code>AudioDevice-&gt;AddNewActiveSound(NewActiveSound);</code></p>
+<p>这个时候进入的 <code>FAudioDevice</code> 其实就是 <code>FSLESAudioDevice</code></p>
+<p>哦……仍然是管理 ActiveSound 的逻辑，很合理，<code>FAudioDevice</code> 是基类</p>
+<p>搜索 <code>)-&gt;RegisterCallback(</code> 看看 <code>FSLESAudioDevice</code> 怎么绑定回调的？</p>
+<p>哦，于是看到了 Engine/Source/Runtime/Android/AndroidAudio/Private/AndroidAudioSource.cpp 底下有播放相关的代码和 RegisterCallback 相关</p>
+<p>他这个就是属于 AndroidAudio 模块的，所以确实是这里</p>
+<p>于是在 <code>FSLESSoundSource::Play</code> 打断点，看到堆栈</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">* frame #0: 0x0000007aa1886614 libUE4.so`FSLESSoundSource::Play(this=0x00000079d39c5500) at AndroidAudioSource.cpp:537:24</span><br><span class="line">  frame #1: 0x0000007a9fe85f94 libUE4.so`FAudioDevice::StartSources(this=0x00000079d4162b80, WaveInstances=size=1, FirstActiveIndex=&lt;unavailable&gt;, bGameTicking=true) at AudioDevice.cpp:4080:17</span><br><span class="line">  frame #2: 0x0000007a9fe871e0 libUE4.so`FAudioDevice::Update(this=0x00000079d4162b80, bGameTicking=&lt;unavailable&gt;) at AudioDevice.cpp:4347:3</span><br><span class="line">  frame #3: 0x0000007a9b5afedc libUE4.so`TGraphTask&lt;TFunctionGraphTaskImpl&lt;void (), (ESubsequentsMode::Type)0&gt;&gt;::ExecuteTask(TArray&lt;FBaseGraphTask*, TSizedDefaultAllocator&lt;32&gt;&gt;&amp;, ENamedThreads::Type) [inlined] UE4Function_Private::TFunctionRefBase&lt;UE4Function_Private::TFunctionStorage&lt;true&gt;, void ()&gt;::operator()(this=&lt;unavailable&gt;) const at Function.h:676:11</span><br><span class="line">  frame #4: 0x0000007a9b5afeb4 libUE4.so`TGraphTask&lt;TFunctionGraphTaskImpl&lt;void (), (ESubsequentsMode::Type)0&gt;&gt;::ExecuteTask(TArray&lt;FBaseGraphTask*, TSizedDefaultAllocator&lt;32&gt;&gt;&amp;, ENamedThreads::Type) [inlined] TFunctionGraphTaskImpl&lt;void (), (ESubsequentsMode::Type)0&gt;::DoTaskImpl(Function=&lt;unavailable&gt;, CurrentThread=AudioThread, MyCompletionGraphEvent=0x00000079eddfc178) at TaskGraphInterfaces.h:1368</span><br><span class="line">  frame #5: 0x0000007a9b5afeb4 libUE4.so`TGraphTask&lt;TFunctionGraphTaskImpl&lt;void (), (ESubsequentsMode::Type)0&gt;&gt;::ExecuteTask(TArray&lt;FBaseGraphTask*, TSizedDefaultAllocator&lt;32&gt;&gt;&amp;, ENamedThreads::Type) [inlined] TFunctionGraphTaskImpl&lt;void (), (ESubsequentsMode::Type)0&gt;::DoTask(this=&lt;unavailable&gt;, CurrentThread=AudioThread, MyCompletionGraphEvent=0x00000079eddfc178) at TaskGraphInterfaces.h:1361</span><br><span class="line">  frame #6: 0x0000007a9b5afeb0 libUE4.so`TGraphTask&lt;TFunctionGraphTaskImpl&lt;void (), (ESubsequentsMode::Type)0&gt;&gt;::ExecuteTask(this=0x00000079eddfc0e0, NewTasks=&lt;unavailable&gt;, CurrentThread=&lt;unavailable&gt;) at TaskGraphInterfaces.h:886</span><br><span class="line">  frame #7: 0x0000007a9c7d8888 libUE4.so`FNamedTaskThread::ProcessTasksNamedThread(int, bool) [inlined] FBaseGraphTask::Execute(this=&lt;unavailable&gt;, NewTasks=&lt;unavailable&gt;, CurrentThread=AudioThread) at TaskGraphInterfaces.h:524:3</span><br><span class="line">  frame #8: 0x0000007a9c7d8858 libUE4.so`FNamedTaskThread::ProcessTasksNamedThread(this=&lt;unavailable&gt;, QueueIndex=&lt;unavailable&gt;, bAllowStall=&lt;unavailable&gt;) at TaskGraph.cpp:710</span><br><span class="line">  frame #9: 0x0000007a9c7d6f84 libUE4.so`FNamedTaskThread::ProcessTasksUntilQuit(this=0x0000007ab52d9ba0, QueueIndex=0) at TaskGraph.cpp:601:4</span><br><span class="line">  frame #10: 0x0000007a9fec8eb8 libUE4.so`FAudioThread::Run() [inlined] AudioThreadMain(TaskGraphBoundSyncEvent=0x00000079d31715e0) at AudioThread.cpp:104:29</span><br><span class="line">  frame #11: 0x0000007a9fec8e78 libUE4.so`FAudioThread::Run(this=&lt;unavailable&gt;) at AudioThread.cpp:210</span><br><span class="line">  frame #12: 0x0000007a9c8f5698 libUE4.so`FRunnableThreadPThread::Run(this=0x00000079d3113fa0) at PThreadRunnableThread.cpp:25:24</span><br><span class="line">  frame #13: 0x0000007a9c7d2078 libUE4.so`FRunnableThreadPThread::_ThreadProc(pThis=0x00000079d3113fa0) at PThreadRunnableThread.h:185:15</span><br><span class="line">  frame #14: 0x0000007c068ab2a8 libc.so`__pthread_start(void*) + 200</span><br><span class="line">  frame #15: 0x0000007c0689c624 libc.so`__start_thread + 68</span><br></pre></td></tr></table></figure>
+<p>似乎涉及到的就是</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="type">bool</span> <span class="title">FSLESSoundSource::EnqueuePCMBuffer</span><span class="params">( <span class="type">bool</span> bLoop)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">	SLresult result;</span><br><span class="line">	<span class="comment">// If looping, register a callback to requeue the buffer</span></span><br><span class="line">	<span class="keyword">if</span>( bLoop ) </span><br><span class="line">	&#123;</span><br><span class="line">		result = (*SL_PlayerBufferQueue)-&gt;<span class="built_in">RegisterCallback</span>(SL_PlayerBufferQueue, OpenSLBufferQueueCallback, (<span class="type">void</span>*)<span class="keyword">this</span>);</span><br><span class="line">		<span class="keyword">if</span> (result != SL_RESULT_SUCCESS) &#123; <span class="built_in">UE_LOG</span>(LogAndroidAudio, Warning, <span class="built_in">TEXT</span>(<span class="string">&quot;FAILED OPENSL BUFFER QUEUE RegisterCallback 0x%x &quot;</span>), result); <span class="keyword">return</span> <span class="literal">false</span>; &#125;</span><br><span class="line">	&#125;</span><br><span class="line">	</span><br><span class="line">	result = (*SL_PlayerBufferQueue)-&gt;<span class="built_in">Enqueue</span>(SL_PlayerBufferQueue, SLESBuffer-&gt;AudioData, SLESBuffer-&gt;<span class="built_in">GetSize</span>() );</span><br><span class="line">	<span class="keyword">if</span> (result != SL_RESULT_SUCCESS) &#123;</span><br><span class="line">		<span class="built_in">UE_LOG</span>(LogAndroidAudio, Warning, <span class="built_in">TEXT</span>(<span class="string">&quot;FAILED OPENSL BUFFER Enqueue SL_PlayerBufferQueue 0x%x params( %p, %d)&quot;</span>), result, SLESBuffer-&gt;AudioData, <span class="built_in">int32</span>(SLESBuffer-&gt;<span class="built_in">GetSize</span>()));</span><br><span class="line">		<span class="keyword">if</span> (bLoop)</span><br><span class="line">		&#123;</span><br><span class="line">			result = (*SL_PlayerBufferQueue)-&gt;<span class="built_in">RegisterCallback</span>(SL_PlayerBufferQueue, <span class="literal">NULL</span>, <span class="literal">NULL</span>);</span><br><span class="line">		&#125;</span><br><span class="line">		<span class="keyword">return</span> <span class="literal">false</span>;</span><br><span class="line">	&#125;</span><br></pre></td></tr></table></figure>
+<p>还有一个 <code>EnqueuePCMRTBuffer</code> 似乎是变体，就跳过了</p>
+<p>于是去看 <code>FSLESSoundSource::OnRequeueBufferCallback</code></p>
+<p>分为流式传输或者非流式传输</p>
+<p>如果是非流式传输，那么直接 EnQueue 同一个缓冲，那就是循环播放本音频</p>
+<p>如果是流式传输，那么从解码任务（可能异步）那边获得一个缓冲区来 EnQueue，然后再去解码</p>
+<p>在我的 case 中，我啥也没配置，直接是 AudioComp 播放，调试居然也进入流式传输</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">* frame #0: 0x0000007aa1882d24 libUE4.so`FSLESSoundSource::OnRequeueBufferCallback(this=0x00000079d39c5500, InQueueInterface=&lt;unavailable&gt;) at AndroidAudioSource.cpp:34:7</span><br><span class="line">  frame #1: 0x0000007bf7ceaaa0 libwilhelm.so`android::AudioTrackCallback::onMoreData(android::AudioTrack::Buffer const&amp;) - 18446743541271057759</span><br><span class="line">  frame #2: 0x0000007c01f1c398 libaudioclient.so`android::AudioTrack::processAudioBuffer() + 3304</span><br><span class="line">  frame #3: 0x0000007c01f1b354 libaudioclient.so`android::AudioTrack::AudioTrackThread::threadLoop() + 340</span><br><span class="line">  frame #4: 0x0000007be492b5cc libutils.so`android::Thread::_threadLoop(void*) + 252</span><br><span class="line">  frame #5: 0x0000007bf99a2490 libandroid_runtime.so`android::AndroidRuntime::javaThreadShell(void*) + 144</span><br><span class="line">  frame #6: 0x0000007c068ab2a8 libc.so`__pthread_start(void*) + 200</span><br><span class="line">  frame #7: 0x0000007c0689c624 libc.so`__start_thread + 68</span><br></pre></td></tr></table></figure>
+<p>它读取数据的方法 <code>FSLESSoundSource::ReadMorePCMData</code> 我是调试跳到 <code>FSLESSoundBuffer::ReadCompressedData</code> -&gt; <code>FVorbisAudioInfo::ReadCompressedData</code>。这里面用了 <code>ov_read</code> 来实现数据读取</p>
+<p>Stop 的时候就把 OpenSL BufferQueue 回调注销了</p>
+<script src="https://utteranc.es/client.js"
+        repo="CheapMeow/cheapmeow.github.io"
+        issue-term="pathname"
+        theme="github-light"
+        crossorigin="anonymous"
+        async>
+</script>
+      </div>
+      
+        <div class="prev-or-next">
+          <div class="post-foot-next">
+            
+              <a href="/2025/05/28/2025-05-28-ue4_compile_android_when_not_to_uninstall_newer_version_of_Android_Studio/" target="_self">
+                <i class="iconfont icon-chevronleft"></i>
+                <span>Prev</span>
+              </a>
+            
+          </div>
+          <div class="post-attach">
+            <span class="post-pubtime">
+              <i class="iconfont icon-updatetime mr-10" title="Update time"></i>
+              2025-06-01 10:52:45
+            </span>
+            
+                  <span class="post-tags">
+                    <i class="iconfont icon-tags mr-10" title="Tags"></i>
+                    
+                    <span class="span--tag mr-8">
+                      <a href="/tags/Cpp/" title="Cpp">
+                        #Cpp
+                      </a>
+                    </span>
+                    
+                    <span class="span--tag mr-8">
+                      <a href="/tags/Unreal-Engine-4/" title="Unreal Engine 4">
+                        #Unreal Engine 4
+                      </a>
+                    </span>
+                    
+                    <span class="span--tag mr-8">
+                      <a href="/tags/OpenSL-ES/" title="OpenSL ES">
+                        #OpenSL ES
+                      </a>
+                    </span>
+                    
+                  </span>
+              
+          </div>
+          <div class="post-foot-prev">
+            
+              <a href="/2025/05/28/2025-05-28-gradle/" target="_self">
+                <span>Next</span>
+                <i class="iconfont icon-chevronright"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+    </div>
+    
+  <div id="btn-catalog" class="btn-catalog">
+    <i class="iconfont icon-catalog"></i>
+  </div>
+  <div class="post-catalog hidden" id="catalog">
+    <div class="title">Contents</div>
+    <div class="catalog-content">
+      
+        <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#AudioTrack-%E5%88%9D%E5%A7%8B%E5%8C%96"><span class="toc-text">AudioTrack 初始化</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%88%9B%E5%BB%BA%E9%9F%B3%E9%A2%91%E5%90%8E%E7%AB%AF-Device"><span class="toc-text">创建音频后端 Device</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%B3%A8%E5%86%8C-BufferQueue-%E5%9B%9E%E8%B0%83"><span class="toc-text">注册 BufferQueue 回调</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E9%A6%96%E6%AC%A1%E6%92%AD%E6%94%BE%E9%9F%B3%E9%A2%91"><span class="toc-text">首次播放音频</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E9%A6%96%E6%AC%A1%E6%8F%90%E4%BA%A4%E6%95%B0%E6%8D%AE"><span class="toc-text">首次提交数据</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%88%9D%E5%A7%8B%E5%8C%96%E6%B7%B7%E9%9F%B3%E6%95%B0%E6%8D%AE"><span class="toc-text">初始化混音数据</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#BufferQueue-%E5%9B%9E%E8%B0%83%E5%9C%A8-Tick-%E4%B8%AD%E8%A2%AB%E8%B0%83%E7%94%A8"><span class="toc-text">BufferQueue 回调在 Tick 中被调用</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#FAudioDevice-%E6%8E%A7%E5%88%B6%E6%92%AD%E6%94%BE%E4%B8%8E%E6%9A%82%E5%81%9C"><span class="toc-text">FAudioDevice 控制播放与暂停</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%8F%8C%E7%BC%93%E5%86%B2%E5%AE%9E%E7%8E%B0%E6%97%A0%E9%94%81%E5%8C%96"><span class="toc-text">双缓冲实现无锁化</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84%E8%AE%BE%E8%AE%A1"><span class="toc-text">数据结构设计</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%8F%8C%E7%BC%93%E5%86%B2%E5%B7%A5%E4%BD%9C%E6%9C%BA%E5%88%B6"><span class="toc-text">双缓冲工作机制</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#%E7%BC%93%E5%86%B2%E5%8C%BA%E7%B4%A2%E5%BC%95%E7%AE%A1%E7%90%86"><span class="toc-text">缓冲区索引管理</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E5%B7%A5%E4%BD%9C%E6%B5%81%E7%A8%8B"><span class="toc-text">工作流程</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E5%85%B3%E9%94%AE%E5%90%8C%E6%AD%A5%E9%80%BB%E8%BE%91"><span class="toc-text">关键同步逻辑</span></a></li></ol></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#FAudioDevice-%E7%9A%84-Update-%E6%8E%A7%E5%88%B6-FMixerPlatformAndroid-%E7%8E%AF%E5%BD%A2%E7%BC%93%E5%86%B2"><span class="toc-text">FAudioDevice 的 Update 控制 FMixerPlatformAndroid 环形缓冲</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Submit-%E8%B7%AF%E5%BE%84"><span class="toc-text">Submit 路径</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#AudioMixerAndroid-%E6%80%BB%E7%BB%93"><span class="toc-text">AudioMixerAndroid 总结</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%A6%82%E8%BF%B0"><span class="toc-text">概述</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E8%B7%AF%E5%BE%84"><span class="toc-text">路径</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#UE-Staff-%E5%AF%B9-AudioMixerAndroid-%E7%9A%84%E4%BB%8B%E7%BB%8D"><span class="toc-text">UE Staff 对 AudioMixerAndroid 的介绍</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%9B%B4%E6%8D%A2%E9%9F%B3%E9%A2%91%E5%90%8E%E7%AB%AF"><span class="toc-text">更换音频后端</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%88%9B%E5%BB%BA-FSLESAudioDevice"><span class="toc-text">创建 FSLESAudioDevice</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#FSLESAudioDevice-%E6%92%AD%E6%94%BE%E4%B8%8E%E6%9A%82%E5%81%9C"><span class="toc-text">FSLESAudioDevice 播放与暂停</span></a></li></ol>
+      
+    </div>
+  </div>
+
+  
+<script src="/js/catalog.js"></script>
+
+
+
+
+    
+      <div class="comments-container">
+        
+
+
+
+
+
+
+
+      </div>
+    
+  </div>
+
+
+        
+<div class="footer">
+  <div class="social">
+    <ul>
+      
+        <li>
+          
+              <a title="github" target="_blank" rel="noopener" href="https://github.com/zchengsite/hexo-theme-oranges">
+                <i class="iconfont icon-github"></i>
+              </a>
+              
+        </li>
+        
+    </ul>
+  </div>
+  
+    
+    <div class="footer-more">
+      
+        <a target="_blank" rel="noopener" href="https://github.com/zchengsite/hexo-theme-oranges">Copyright © 2025 Oranges</a>
+        
+    </div>
+  
+    
+    <div class="footer-more">
+      
+        <a target="_blank" rel="noopener" href="https://github.com/zchengsite/hexo-theme-oranges">Theme by Oranges | Powered by Hexo</a>
+        
+    </div>
+  
+  
+</div>
+
+      </div>
+
+      <div class="tools-bar">
+        <div class="back-to-top tools-bar-item hidden">
+  <a href="javascript: void(0)">
+    <i class="iconfont icon-chevronup"></i>
+  </a>
+</div>
+
+
+<script src="/js/backtotop.js"></script>
+
+
+
+        
+  <div class="search-icon tools-bar-item" id="search-icon">
+    <a href="javascript: void(0)">
+      <i class="iconfont icon-search"></i>
+    </a>
+  </div>
+
+  <div class="search-overlay hidden">
+    <div class="search-content" tabindex="0">
+      <div class="search-title">
+        <span class="search-icon-input">
+          <a href="javascript: void(0)">
+            <i class="iconfont icon-search"></i>
+          </a>
+        </span>
+        
+          <input type="text" class="search-input" id="search-input" placeholder="搜索...">
+        
+        <span class="search-close-icon" id="search-close-icon">
+          <a href="javascript: void(0)">
+            <i class="iconfont icon-close"></i>
+          </a>
+        </span>
+      </div>
+      <div class="search-result" id="search-result"></div>
+    </div>
+  </div>
+
+  <script type="text/javascript">
+    var inputArea = document.querySelector("#search-input")
+    var searchOverlayArea = document.querySelector(".search-overlay")
+
+    inputArea.onclick = function() {
+      getSearchFile()
+      this.onclick = null
+    }
+
+    inputArea.onkeydown = function() {
+      if(event.keyCode == 13)
+        return false
+    }
+
+    function openOrHideSearchContent() {
+      let isHidden = searchOverlayArea.classList.contains('hidden')
+      if (isHidden) {
+        searchOverlayArea.classList.remove('hidden')
+        document.body.classList.add('hidden')
+        // inputArea.focus()
+      } else {
+        searchOverlayArea.classList.add('hidden')
+        document.body.classList.remove('hidden')
+      }
+    }
+
+    function blurSearchContent(e) {
+      if (e.target === searchOverlayArea) {
+        openOrHideSearchContent()
+      }
+    }
+
+    document.querySelector("#search-icon").addEventListener("click", openOrHideSearchContent, false)
+    document.querySelector("#search-close-icon").addEventListener("click", openOrHideSearchContent, false)
+    searchOverlayArea.addEventListener("click", blurSearchContent, false)
+
+    var searchFunc = function (path, search_id, content_id) {
+      'use strict';
+      var $input = document.getElementById(search_id);
+      var $resultContent = document.getElementById(content_id);
+      $resultContent.innerHTML = "<ul><span class='local-search-empty'>First search, index file loading, please wait...<span></ul>";
+      $.ajax({
+        // 0x01. load xml file
+        url: path,
+        dataType: "xml",
+        success: function (xmlResponse) {
+          // 0x02. parse xml file
+          var datas = $("entry", xmlResponse).map(function () {
+            return {
+              title: $("title", this).text(),
+              content: $("content", this).text(),
+              url: $("url", this).text()
+            };
+          }).get();
+          $resultContent.innerHTML = "";
+
+          $input.addEventListener('input', function () {
+            // 0x03. parse query to keywords list
+            var str = '<ul class=\"search-result-list\">';
+            var keywords = this.value.trim().toLowerCase().split(/[\s\-]+/);
+            $resultContent.innerHTML = "";
+            if (this.value.trim().length <= 0) {
+              return;
+            }
+            // 0x04. perform local searching
+            datas.forEach(function (data) {
+              var isMatch = true;
+              var content_index = [];
+              if (!data.title || data.title.trim() === '') {
+                data.title = "Untitled";
+              }
+              var orig_data_title = data.title.trim();
+              var data_title = orig_data_title.toLowerCase();
+              var orig_data_content = data.content.trim().replace(/<[^>]+>/g, "");
+              var data_content = orig_data_content.toLowerCase();
+              var data_url = data.url;
+              var index_title = -1;
+              var index_content = -1;
+              var first_occur = -1;
+              // only match artiles with not empty contents
+              if (data_content !== '') {
+                keywords.forEach(function (keyword, i) {
+                  index_title = data_title.indexOf(keyword);
+                  index_content = data_content.indexOf(keyword);
+
+                  if (index_title < 0 && index_content < 0) {
+                    isMatch = false;
+                  } else {
+                    if (index_content < 0) {
+                      index_content = 0;
+                    }
+                    if (i == 0) {
+                      first_occur = index_content;
+                    }
+                    // content_index.push({index_content:index_content, keyword_len:keyword_len});
+                  }
+                });
+              } else {
+                isMatch = false;
+              }
+              // 0x05. show search results
+              if (isMatch) {
+                str += "<li><a href='" + data_url + "' class='search-result-title'>" + orig_data_title + "</a>";
+                var content = orig_data_content;
+                if (first_occur >= 0) {
+                  // cut out 100 characters
+                  var start = first_occur - 20;
+                  var end = first_occur + 80;
+
+                  if (start < 0) {
+                    start = 0;
+                  }
+
+                  if (start == 0) {
+                    end = 100;
+                  }
+
+                  if (end > content.length) {
+                    end = content.length;
+                  }
+
+                  var match_content = content.substr(start, end);
+
+                  // highlight all keywords
+                  keywords.forEach(function (keyword) {
+                    var regS = new RegExp(keyword, "gi");
+                    match_content = match_content.replace(regS, "<span class=\"search-keyword\">" + keyword + "</span>");
+                  });
+
+                  str += "<p class=\"search-result-abstract\">" + match_content + "...</p>"
+                }
+                str += "</li>";
+              }
+            });
+            str += "</ul>";
+            if (str.indexOf('<li>') === -1) {
+              return $resultContent.innerHTML = "<ul><span class='local-search-empty'>No result<span></ul>";
+            }
+            $resultContent.innerHTML = str;
+          });
+        },
+        error: function(xhr, status, error) {
+          $resultContent.innerHTML = ""
+          if (xhr.status === 404) {
+            $resultContent.innerHTML = "<ul><span class='local-search-empty'>The search.xml file was not found, please refer to：<a href='https://github.com/zchengsite/hexo-theme-oranges#configuration' target='_black'>configuration</a><span></ul>";
+          } else {
+            $resultContent.innerHTML = "<ul><span class='local-search-empty'>The request failed, Try to refresh the page or try again later.<span></ul>";
+          }
+        }
+      });
+      $(document).on('click', '#search-close-icon', function() {
+        $('#search-input').val('');
+        $('#search-result').html('');
+      });
+    }
+
+    var getSearchFile = function() {
+        var path = "/search.xml";
+        searchFunc(path, 'search-input', 'search-result');
+    }
+  </script>
+
+
+
+
+        
+  <div class="tools-bar-item theme-icon" id="switch-color-scheme">
+    <a href="javascript: void(0)">
+      <i id="theme-icon" class="iconfont icon-moon"></i>
+    </a>
+  </div>
+
+  
+<script src="/js/colorscheme.js"></script>
+
+
+
+
+
+        
+  
+    <div class="share-icon tools-bar-item">
+      <a href="javascript: void(0)" id="share-icon">
+        <i class="iconfont iconshare"></i>
+      </a>
+      <div class="share-content hidden">
+        
+          <a class="share-item" href="https://twitter.com/intent/tweet?text=' + UE4.27.2%20%E5%AE%89%E5%8D%93%E9%9F%B3%E9%A2%91%E5%BA%93%E9%9B%86%E6%88%90%E7%9A%84%E8%B0%83%E8%AF%95%E5%88%86%E6%9E%90 + '&url=' + https%3A%2F%2Fcheapmeow.github.io%2F2025%2F05%2F28%2F2025-05-29-ue4_android_audio%2F + '" target="_blank" title="Twitter">
+            <i class="iconfont icon-twitter"></i>
+          </a>
+        
+        
+          <a class="share-item" href="https://www.facebook.com/sharer.php?u=https://cheapmeow.github.io/2025/05/28/2025-05-29-ue4_android_audio/" target="_blank" title="Facebook">
+            <i class="iconfont icon-facebooksquare"></i>
+          </a>
+        
+      </div>
+    </div>
+  
+  
+<script src="/js/shares.js"></script>
+
+
+
+      </div>
+    </div>
+  </body>
+</html>

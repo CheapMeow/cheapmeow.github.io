@@ -1,0 +1,727 @@
+<!DOCTYPE html>
+<html lang="en" color-mode="light">
+
+  <head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="author" content="John Doe" />
+  <!-- Open Graph Description 简短摘要-->
+  
+  <!-- 用于搜索引擎的文章摘要 -->
+  
+  
+  
+  <title>
+    
+      OpenGL 和 Vulkan 的投影矩阵 
+      
+      
+      |
+    
+     CheapMeow
+  </title>
+
+  
+    <link rel="apple-touch-icon" href="/images/avatar.png">
+    <link rel="icon" href="/images/avatar.png">
+  
+
+  <!-- Raleway-Font -->
+  <link href="https://fonts.googleapis.com/css?family=Raleway&display=swap" rel="stylesheet">
+
+  <!-- hexo site css -->
+  <link rel="stylesheet" href="/css/main.css" />
+  <link rel="stylesheet" href="//at.alicdn.com/t/font_1886449_67xjft27j1l.css" />
+  <!-- 代码块风格 -->
+  
+    
+<link rel="stylesheet" href="/css/figcaption/mac-block.css">
+
+  
+
+  <!-- jquery3.3.1 -->
+  
+    <script defer type="text/javascript" src="/plugins/jquery.min.js"></script>
+  
+
+  <!-- fancybox -->
+  
+    <link href="/plugins/jquery.fancybox.min.css" rel="stylesheet">
+    <script defer type="text/javascript" src="/plugins/jquery.fancybox.min.js"></script>
+  
+  
+<script src="/js/fancybox.js"></script>
+
+
+  
+
+  
+
+  <script>
+    var html = document.documentElement
+    const colorMode = localStorage.getItem('color-mode')
+    if (colorMode) {
+      document.documentElement.setAttribute('color-mode', colorMode)
+    }
+  </script>
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+
+  <body>
+    <div id="app">
+      <div class="header">
+  <div class="avatar">
+    <a href="/">
+      <!-- 头像取消懒加载，添加no-lazy -->
+      
+        <img src="/images/avatar.png" alt="">
+      
+    </a>
+    <div class="nickname"><a href="/">CheapMeow</a></div>
+  </div>
+  <div class="navbar">
+    <ul>
+      
+        <li class="nav-item" data-path="/">
+          <a href="/">Home</a>
+        </li>
+      
+        <li class="nav-item" data-path="/archives/">
+          <a href="/archives/">Archives</a>
+        </li>
+      
+        <li class="nav-item" data-path="/tags/">
+          <a href="/tags/">Tags</a>
+        </li>
+      
+        <li class="nav-item" data-path="/friends/">
+          <a href="/friends/">Friends</a>
+        </li>
+      
+        <li class="nav-item" data-path="/about/">
+          <a href="/about/">About</a>
+        </li>
+      
+    </ul>
+  </div>
+</div>
+
+
+<script src="/js/activeNav.js"></script>
+
+
+
+      <div class="flex-container">
+        <!-- 文章详情页，展示文章具体内容，url形式：https://yoursite/文章标题/ -->
+<!-- 同时为「标签tag」，「朋友friend」，「分类categories」，「关于about」页面的承载页面，具体展示取决于page.type -->
+
+
+  <!-- LaTex Display -->
+
+  
+    <script async type="text/javascript" src="/plugins/mathjax/tex-chtml.js"></script>
+  
+  <script>
+    MathJax = {
+      tex: {
+        inlineMath: [['$', '$'], ['\\(', '\\)']]
+      }
+    }
+  </script>
+
+
+
+
+
+  <!-- clipboard -->
+
+  
+    <script async type="text/javascript" src="/plugins/clipboard.min.js"></script>
+  
+  
+<script src="/js/codeCopy.js"></script>
+
+
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  <!-- 文章内容页 url形式：https://yoursite/文章标题/ -->
+  <div class="container post-details" id="post-details">
+    <div class="post-content">
+      <div class="post-title">OpenGL 和 Vulkan 的投影矩阵</div>
+      <div class="post-attach">
+        <span class="post-pubtime">
+          <i class="iconfont icon-updatetime mr-10" title="Update time"></i>
+          2025-06-01 10:52:45
+        </span>
+        
+              <span class="post-tags">
+                <i class="iconfont icon-tags mr-10" title="Tags"></i>
+                
+                <span class="span--tag mr-8">
+                  <a href="/tags/Grphics/" title="Grphics">
+                    #Grphics
+                  </a>
+                </span>
+                
+                <span class="span--tag mr-8">
+                  <a href="/tags/Vulkan/" title="Vulkan">
+                    #Vulkan
+                  </a>
+                </span>
+                
+                <span class="span--tag mr-8">
+                  <a href="/tags/OpenGL/" title="OpenGL">
+                    #OpenGL
+                  </a>
+                </span>
+                
+              </span>
+          
+      </div>
+      <div class="markdown-body">
+        <p>Vulkan 只是屏幕坐标系和别人不一样。世界空间，view 空间的手性是用户定义的，想怎么做都行，只要最终保证传入 Vulkan 的 NDC 坐标的手性是对的。也就是说，你可以在计算投影矩阵的时候，注意要转换手性。</p>
+<p>如果没有推导过投影矩阵，就可能不会理解到世界空间，view 空间的手性和 NDC 的手性可以毫无关系——毕竟你不知道有矩阵可以转换手性。</p>
+<h2 id="推导透视矩阵时可能遇到的困难">推导透视矩阵时可能遇到的困难</h2>
+<h3 id="物理过程">物理过程</h3>
+<p>首先要知道变换过程是怎么样的</p>
+<div style="overflow-x: scroll">
+<div style="width: 1800px">
+<img src="/images/perspective_matrix_for_opengl_and_vulkan/opengl_pipeline.drawio.svg"></img>
+</div>
+</div>
+<h3 id="物理量的定义">物理量的定义</h3>
+<p>不同的文章对某一个物理量的定义可能不同，但是他们又使用了相同的符号，结果就导致最终的表达式可能差了一个负号</p>
+<p>比如 games101 的推导中，视图空间是右手系，近平面的坐标为 n，远平面的坐标为 f。这说明 n,f 都是负数</p>
+<p>但是在 LearnOpenGL 推荐的贴子 <a target="_blank" rel="noopener" href="https://www.songho.ca/opengl/gl_projectionmatrix.html">https://www.songho.ca/opengl/gl_projectionmatrix.html</a> 中，他视图空间是右手系，但定义 n,f 为正，那么近平面的坐标为 -n，远平面的坐标为 -f</p>
+<h3 id="深度的约定">深度的约定</h3>
+<p>创建 <code>vk::PipelineDepthStencilStateCreateInfo</code> 时，我们一般会传入 <code>vk::CompareOp::eLessOrEqual</code> 到 <code>depthCompareOp</code>，表示传入的深度比存储的深度更小时，就通过了测试，写入新的深度。这就表明近处的物体会遮挡远处的物体，符合了 z 的正值越大表示深度越深的习惯。</p>
+<p>用户可以定义用 z 的正值越大表示深度越深，或者是负值越大表示深度越深，也就是说，用户可以定义用 z 轴垂于屏幕朝内或者朝外来表示深度的正半轴</p>
+<p>理论上来说，你不知道 NDC 的 z 轴朝向，你单单讨论屏幕空间的 x 和 y 之间的关系，你是没办法说 NDC 空间的手性的手性如何</p>
+<p>于是当我们看到某些帖子在说 Vulkan 与 OpenGL 的区别在于 y 轴反了，那是默认 z 轴垂于屏幕朝内表示深度的正半轴</p>
+<h3 id="NDC-深度范围与-z-轴反转">NDC 深度范围与 z 轴反转</h3>
+<p>某些细节会影响结果，但是一般的教程不会强调这些细节，因为他们默认你都知道。比如假设近平面的坐标为 n，远平面的坐标为 f 都是负数，那么他要转换到 [-1, 1]，是 n 对应 -1 还是 f 对应 -1？或者是转换到 [0, 1]？都有可能。</p>
+<h3 id="变换到-clip-空间中的坐标的齐次坐标-w-的符号">变换到 clip 空间中的坐标的齐次坐标 w 的符号</h3>
+<p>在推导挤压平截头体的矩阵的时候，齐次坐标的位置可以用 z 或者 -z，都不影响结果，但是结果矩阵会所有元素差一个负号。最终因为要做透视除法，所以每个元素多出来的一个负号和 w 的负号相抵，所以不会导致变换到裁剪空间的结果不同。</p>
+<p>但是这会导致公式中的符号不同，所以可能令人困惑</p>
+<h3 id="为什么-OpenGL-中相机在-eye-空间中看向-z-轴">为什么 OpenGL 中相机在 eye 空间中看向 -z 轴</h3>
+<p>OpenGL 推导透视矩阵时，相机在 eye 空间中是看向 -z 轴，所以视锥体的近平面坐标和远平面坐标都是负数，这是推导透视矩阵公式的基础。那么为什么是看向 -z 轴而不是 +z 轴呢？</p>
+<p>glm 默认的 <code>lookAt</code> 调用的是 <code>glm::lookAtRH</code></p>
+<p>OpenGL 中的构建 view 矩阵的堆栈（来自 <a target="_blank" rel="noopener" href="https://learnopengl.com/">https://learnopengl.com/</a>）</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">glm::mat4 view = camera.<span class="built_in">GetViewMatrix</span>();</span><br></pre></td></tr></table></figure>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="function">glm::mat4 <span class="title">GetViewMatrix</span><span class="params">()</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="keyword">return</span> glm::<span class="built_in">lookAt</span>(Position, Position + Front, Up);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="type">void</span> <span class="title">updateCameraVectors</span><span class="params">()</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="comment">// calculate the new Front vector</span></span><br><span class="line">    glm::vec3 front;</span><br><span class="line">    front.x = <span class="built_in">cos</span>(glm::<span class="built_in">radians</span>(Yaw)) * <span class="built_in">cos</span>(glm::<span class="built_in">radians</span>(Pitch));</span><br><span class="line">    front.y = <span class="built_in">sin</span>(glm::<span class="built_in">radians</span>(Pitch));</span><br><span class="line">    front.z = <span class="built_in">sin</span>(glm::<span class="built_in">radians</span>(Yaw)) * <span class="built_in">cos</span>(glm::<span class="built_in">radians</span>(Pitch));</span><br><span class="line">    Front = glm::<span class="built_in">normalize</span>(front);</span><br><span class="line">    <span class="comment">// also re-calculate the Right and Up vector</span></span><br><span class="line">    Right = glm::<span class="built_in">normalize</span>(glm::<span class="built_in">cross</span>(Front, WorldUp));  <span class="comment">// normalize the vectors, because their length gets closer to 0 the more you look up or down which results in slower movement.</span></span><br><span class="line">    Up    = glm::<span class="built_in">normalize</span>(glm::<span class="built_in">cross</span>(Right, Front));</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>于是我们知道了，传入 <code>lookAtRH</code> 的期望是摄像机看向 <code>Front</code> 的指向</p>
+<p>但是为什么反而在 eye 空间中却看向 -z 轴呢？按道理来说，乘以 view 矩阵之后，整个世界都被转到相机面向物体的坐标系中了呀？现在你推导透视矩阵时反而认为相机背向物体？</p>
+<p>所以这个事情还是要看 <code>lookAtRH</code> 是怎么做的</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">template</span>&lt;<span class="keyword">typename</span> T, qualifier Q&gt;</span></span><br><span class="line"><span class="function">GLM_FUNC_QUALIFIER mat&lt;4, 4, T, Q&gt; <span class="title">lookAtRH</span><span class="params">(vec&lt;<span class="number">3</span>, T, Q&gt; <span class="type">const</span>&amp; eye, vec&lt;<span class="number">3</span>, T, Q&gt; <span class="type">const</span>&amp; center, vec&lt;<span class="number">3</span>, T, Q&gt; <span class="type">const</span>&amp; up)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">  <span class="function">vec&lt;3, T, Q&gt; <span class="type">const</span> <span class="title">f</span><span class="params">(normalize(center - eye))</span></span>;</span><br><span class="line">  <span class="function">vec&lt;3, T, Q&gt; <span class="type">const</span> <span class="title">s</span><span class="params">(normalize(cross(f, up)))</span></span>;</span><br><span class="line">  <span class="function">vec&lt;3, T, Q&gt; <span class="type">const</span> <span class="title">u</span><span class="params">(cross(s, f))</span></span>;</span><br><span class="line"></span><br><span class="line">  <span class="function">mat&lt;4, 4, T, Q&gt; <span class="title">Result</span><span class="params">(<span class="number">1</span>)</span></span>;</span><br><span class="line">  Result[<span class="number">0</span>][<span class="number">0</span>] = s.x;</span><br><span class="line">  Result[<span class="number">1</span>][<span class="number">0</span>] = s.y;</span><br><span class="line">  Result[<span class="number">2</span>][<span class="number">0</span>] = s.z;</span><br><span class="line">  Result[<span class="number">0</span>][<span class="number">1</span>] = u.x;</span><br><span class="line">  Result[<span class="number">1</span>][<span class="number">1</span>] = u.y;</span><br><span class="line">  Result[<span class="number">2</span>][<span class="number">1</span>] = u.z;</span><br><span class="line">  Result[<span class="number">0</span>][<span class="number">2</span>] =-f.x;</span><br><span class="line">  Result[<span class="number">1</span>][<span class="number">2</span>] =-f.y;</span><br><span class="line">  Result[<span class="number">2</span>][<span class="number">2</span>] =-f.z;</span><br><span class="line">  Result[<span class="number">3</span>][<span class="number">0</span>] =-<span class="built_in">dot</span>(s, eye);</span><br><span class="line">  Result[<span class="number">3</span>][<span class="number">1</span>] =-<span class="built_in">dot</span>(u, eye);</span><br><span class="line">  Result[<span class="number">3</span>][<span class="number">2</span>] = <span class="built_in">dot</span>(f, eye);</span><br><span class="line">  <span class="keyword">return</span> Result;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>可以看出，其实返回的 view 空间的 z 轴是 -front</p>
+<p>但是明明 front 是指向物体的，所以 view 变换之后，摄像机就背向了物体，摄像机的 -z 指向物体</p>
+<p>所以这就说明了 lookAt 矩阵表示的 z 轴他不一定是传入的 front</p>
+<h3 id="lookAt-怎么与透视矩阵对应">lookAt 怎么与透视矩阵对应</h3>
+<p>我不止一次看到别人推荐这个网站 <a target="_blank" rel="noopener" href="https://www.songho.ca/opengl/gl_projectionmatrix.html">https://www.songho.ca/opengl/gl_projectionmatrix.html</a>，然后引用这句话</p>
+<blockquote>
+<p>Note that the eye coordinates are defined in the right-handed coordinate system, but NDC uses the left-handed coordinate system. That is, the camera at the origin is looking along -Z axis in eye space, but it is looking along +Z axis in NDC.</p>
+</blockquote>
+<p>他的意思似乎是，因为 NDC 是左手系，view 空间（eye 空间）是右手系，所以 x 和 y 轴不变的话，就可以认为两者的 z 轴是反的。那么假设视锥体都在一个固定的 NDC 正 z 的地方，那么我在 NDC 中需要看向这个视锥体，所以我在 view 空间中才需要让我的摄像机看向 -z 方向而不是 +z</p>
+<p>当然这是一个倒因为果……并不是因为透视矩阵是这样，视图矩阵才是这样</p>
+<p>而是因为首先你知道了，经过 lookAt 之后，摄像机看向了 -z，所以透视矩阵中注意对 z 反转，使得 NDC 中摄像机看向 +z</p>
+<p>网上大部分教程以及评论都默认你右手系并且用的是 <code>glm::lookAt</code>，这确保了摄像机在 eye 空间中却看向 -z 轴</p>
+<p>原则上你用什么 lookAt 都可以，但是你对应的投影矩阵的公式也要跟着变</p>
+<p>现在大家用的都是 glm 的 lookAt，所以我觉得还是入乡随俗</p>
+<h2 id="从-Games101-的公式开始">从 Games101 的公式开始</h2>
+<p>先假设世界空间，视图空间是右手系</p>
+<p>视图空间中有一个正交长方体的左平面的坐标为 l，右平面的坐标为 r，上平面的坐标为 t，下平面的坐标为 b，近平面的坐标为 n，远平面的坐标为 f</p>
+<p>现在希望转成一个 NDC 标准坐标</p>
+<p>那么 games101 是</p>
+<p><img src="https://math.now.sh?inline=M_%7Bortho%7D%3D%5Cleft%28%5Cbegin%7Barray%7D%7Bcccc%7D%0A%5Cfrac%7B2%7D%7Br-l%7D%20%26%200%20%26%200%20%26%200%5C%5C%0A0%20%26%20%5Cfrac%7B2%7D%7Bt-b%7D%20%26%200%20%26%200%5C%5C%0A0%20%26%200%20%26%20%5Cfrac%7B2%7D%7Bn-f%7D%20%26%200%5C%5C%0A0%20%26%200%20%26%200%20%26%201%0A%5Cend%7Barray%7D%5Cright%29%5Cleft(%5Cbegin%7Barray%7D%7Bcccc%7D%0A1%20%26%200%20%26%200%20%26%20-%5Cfrac%7Br%2Bl%7D%7B2%7D%5C%5C%0A0%20%26%201%20%26%200%20%26%20-%5Cfrac%7Bt%2Bb%7D%7B2%7D%5C%5C%0A0%20%26%200%20%26%201%20%26%20-%5Cfrac%7Bn%2Bf%7D%7B2%7D%5C%5C%0A0%20%26%200%20%26%200%20%26%201%0A%5Cend%7Barray%7D%5Cright)" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/></p>
+<p>注意，这个公式把 [f, n] 转成 [-1, 1] 的，那么原来是 f 比 n 小，现在也是 -1 比 1 小，所以没有改变手性</p>
+<p>frustum 的关系式是</p>
+<p><img src="https://math.now.sh?inline=x'%20%3D%20n%2Fz*x" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/></p>
+<p><img src="https://math.now.sh?inline=y'%20%3D%20n%2Fz*y" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/></p>
+<p>因此设计一个 frustum 挤压成正交长方体的矩阵，使得变换出来的 <img src="https://math.now.sh?inline=x%2Cy%2Cw" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/> 的部分与这个关系式对应。对应的方法就是使得齐次坐标 <img src="https://math.now.sh?inline=w" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/> 的位置放关系式的分母，也就是 <img src="https://math.now.sh?inline=z" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/></p>
+<p><img src="https://math.now.sh?inline=M_%7Bpersp2ortho%7D%20%3D%20%5Cleft%28%5Cbegin%7Barray%7D%7Bcccc%7D%0An%20%26%200%20%26%200%20%26%200%5C%5C%0A0%20%26%20n%20%26%200%20%26%200%5C%5C%0Aa_1%20%26%20a_2%20%26%20a_3%20%26%20a_4%5C%5C%0A0%20%26%200%20%26%201%20%26%200%0A%5Cend%7Barray%7D%5Cright%29" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/></p>
+<p><img src="https://math.now.sh?inline=M_%7Bpersp2ortho%7D%5Cleft%28%5Cbegin%7Barray%7D%7Bc%7D%0Ax%5C%5C%0Ay%5C%5C%0Az%5C%5C%0A1%0A%5Cend%7Barray%7D%5Cright%29%3D%5Cleft(%5Cbegin%7Barray%7D%7Bc%7D%0Anx%5C%5C%0Any%5C%5C%0A%3F%5C%5C%0Az%0A%5Cend%7Barray%7D%5Cright)" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/></p>
+<p>为了求解未知数，有两个关系，一个是近平面上的点在压缩时不变，另一个是远平面的中心点在压缩时不变</p>
+<p>单独看“近平面上的点在压缩时不变”，这使得</p>
+<p><img src="https://math.now.sh?inline=M_%7Bpersp2ortho%7D%5Cleft%28%5Cbegin%7Barray%7D%7Bc%7D%0Ax%5C%5C%0Ay%5C%5C%0An%5C%5C%0A1%0A%5Cend%7Barray%7D%5Cright%29%3D%5Cleft(%5Cbegin%7Barray%7D%7Bc%7D%0Anx%5C%5C%0Any%5C%5C%0An%5E2%5C%5C%0An%0A%5Cend%7Barray%7D%5Cright)" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/></p>
+<p>对任意 x,y 成立</p>
+<p>那么可以证出 <img src="https://math.now.sh?inline=a_1%2Ca_2" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/> 都是 0，因为 <img src="https://math.now.sh?inline=n%5E2" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/> 与 <img src="https://math.now.sh?inline=x%2Cy" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/> 无关</p>
+<p>那么取近平面的中心点不变和远平面的中心点不变，得到两个式子</p>
+<p><img src="https://math.now.sh?inline=M_%7Bpersp2ortho%7D%5Cleft%28%5Cbegin%7Barray%7D%7Bc%7D%0A0%5C%5C%0A0%5C%5C%0An%5C%5C%0A1%0A%5Cend%7Barray%7D%5Cright%29%3D%5Cleft(%5Cbegin%7Barray%7D%7Bc%7D%0A0%5C%5C%0A0%5C%5C%0An%5E2%5C%5C%0An%0A%5Cend%7Barray%7D%5Cright)" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/></p>
+<p><img src="https://math.now.sh?inline=M_%7Bpersp2ortho%7D%5Cleft%28%5Cbegin%7Barray%7D%7Bc%7D%0A0%5C%5C%0A0%5C%5C%0Af%5C%5C%0A1%0A%5Cend%7Barray%7D%5Cright%29%3D%5Cleft(%5Cbegin%7Barray%7D%7Bc%7D%0A0%5C%5C%0A0%5C%5C%0Af%5E2%5C%5C%0Af%0A%5Cend%7Barray%7D%5Cright)" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/></p>
+<p>即</p>
+<p><img src="https://math.now.sh?inline=a_3%20n%20%2B%20a_4%20%3D%20n%5E2" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/><br>
+<img src="https://math.now.sh?inline=a_3%20f%20%2B%20a_4%20%3D%20f%5E2" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/></p>
+<p>解得</p>
+<p><img src="https://math.now.sh?inline=a_3%20%3D%20n%2Bf%2C%20a_4%20%3D%20-nf" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/></p>
+<p>最终结果</p>
+<p><img src="https://math.now.sh?inline=M_%7Bpersp2ortho%7D%20%3D%20%5Cleft%28%5Cbegin%7Barray%7D%7Bcccc%7D%0An%20%26%200%20%26%200%20%26%200%5C%5C%0A0%20%26%20n%20%26%200%20%26%200%5C%5C%0A0%20%26%200%20%26%20f%2Bn%20%26%20-f%5C%2Cn%5C%5C%0A0%20%26%200%20%26%201%20%26%200%0A%5Cend%7Barray%7D%5Cright%29" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/></p>
+<p>两者相乘可以得到</p>
+<p><img src="https://math.now.sh?inline=M_%7Bproj%7D%20%3D%20M_%7Bortho%7D%20*%20M_%7Bpersp2ortho%7D%20%3D%20%5Cleft%28%5Cbegin%7Barray%7D%7Bcccc%7D%0A%5Cfrac%7B2%5C%2Cn%7D%7Br-l%7D%20%26%200%20%26%20%5Cfrac%7Bl%2Br%7D%7Bl-r%7D%20%26%200%5C%5C%0A0%20%26%20%5Cfrac%7B2%5C%2Cn%7D%7Bt-b%7D%20%26%20%5Cfrac%7Bb%2Bt%7D%7Bb-t%7D%20%26%200%5C%5C%0A0%20%26%200%20%26%20-%5Cfrac%7Bf%2Bn%7D%7Bf-n%7D%20%26%20%5Cfrac%7B2%5C%2Cf%5C%2Cn%7D%7Bf-n%7D%5C%5C%0A0%20%26%200%20%26%201%20%26%200%0A%5Cend%7Barray%7D%5Cright%29" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/></p>
+<p>进行这个投影变换之后，原来是右手坐标的视图空间变为右手坐标的裁剪空间</p>
+<h2 id="考虑-OpenGL">考虑 OpenGL</h2>
+<p>OpenGL 的公式中要求 n,f 都是距离，所以都是正值</p>
+<p>那么近平面是 -n，远平面是 -f</p>
+<p>又要求变换之后是左手系，也就是 [-n, -f] 变换到 [-1, 1]</p>
+<p>那么正交投影矩阵</p>
+<p><img src="https://math.now.sh?inline=M_%7Bortho%7D%3D%5Cleft%28%5Cbegin%7Barray%7D%7Bcccc%7D%0A%5Cfrac%7B2%7D%7Br-l%7D%20%26%200%20%26%200%20%26%200%5C%5C%0A0%20%26%20%5Cfrac%7B2%7D%7Bt-b%7D%20%26%200%20%26%200%5C%5C%0A0%20%26%200%20%26%20%5Cfrac%7B2%7D%7Bn-f%7D%20%26%200%5C%5C%0A0%20%26%200%20%26%200%20%26%201%0A%5Cend%7Barray%7D%5Cright%29%5Cleft(%5Cbegin%7Barray%7D%7Bcccc%7D%0A1%20%26%200%20%26%200%20%26%20-%5Cfrac%7Br%2Bl%7D%7B2%7D%5C%5C%0A0%20%26%201%20%26%200%20%26%20-%5Cfrac%7Bt%2Bb%7D%7B2%7D%5C%5C%0A0%20%26%200%20%26%201%20%26%20%5Cfrac%7Bf%2Bn%7D%7B2%7D%5C%5C%0A0%20%26%200%20%26%200%20%26%201%0A%5Cend%7Barray%7D%5Cright)" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/></p>
+<p>frustum 的关系式是</p>
+<p><img src="https://math.now.sh?inline=x'%20%3D%20-n%2Fz*x" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/><br>
+<img src="https://math.now.sh?inline=y'%20%3D%20-n%2Fz*y" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/></p>
+<p>因为这里的 z 是负值，所以要加负号表示距离</p>
+<p>设计压缩矩阵</p>
+<p><img src="https://math.now.sh?inline=M_%7Bpersp2ortho%7D%20%3D%20%5Cleft%28%5Cbegin%7Barray%7D%7Bcccc%7D%0A-n%20%26%200%20%26%200%20%26%200%5C%5C%0A0%20%26%20-n%20%26%200%20%26%200%5C%5C%0A0%20%26%200%20%26%20a_3%20%26%20a_4%5C%5C%0A0%20%26%200%20%26%201%20%26%200%0A%5Cend%7Barray%7D%5Cright%29" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/></p>
+<p><img src="https://math.now.sh?inline=M_%7Bpersp2ortho%7D%5Cleft%28%5Cbegin%7Barray%7D%7Bc%7D%0Ax%5C%5C%0Ay%5C%5C%0Az%5C%5C%0A1%0A%5Cend%7Barray%7D%5Cright%29%3D%5Cleft(%5Cbegin%7Barray%7D%7Bc%7D%0A-nx%5C%5C%0A-ny%5C%5C%0A%3F%5C%5C%0Az%0A%5Cend%7Barray%7D%5Cright)" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/></p>
+<p>那么取近平面的中心点不变和远平面的中心点不变，得到两个式子</p>
+<p><img src="https://math.now.sh?inline=M_%7Bpersp2ortho%7D%5Cleft%28%5Cbegin%7Barray%7D%7Bc%7D%0A0%5C%5C%0A0%5C%5C%0A-n%5C%5C%0A1%0A%5Cend%7Barray%7D%5Cright%29%3D%5Cleft(%5Cbegin%7Barray%7D%7Bc%7D%0A0%5C%5C%0A0%5C%5C%0An%5E2%5C%5C%0A-n%0A%5Cend%7Barray%7D%5Cright)" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/></p>
+<p><img src="https://math.now.sh?inline=M_%7Bpersp2ortho%7D%5Cleft%28%5Cbegin%7Barray%7D%7Bc%7D%0A0%5C%5C%0A0%5C%5C%0A-f%5C%5C%0A1%0A%5Cend%7Barray%7D%5Cright%29%3D%5Cleft(%5Cbegin%7Barray%7D%7Bc%7D%0A0%5C%5C%0A0%5C%5C%0Af%5E2%5C%5C%0A-f%0A%5Cend%7Barray%7D%5Cright)" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/></p>
+<p>即</p>
+<p><img src="https://math.now.sh?inline=-a_3%20n%20%2B%20a_4%20%3D%20n%5E2" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/><br>
+<img src="https://math.now.sh?inline=-a_3%20f%20%2B%20a_4%20%3D%20f%5E2" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/></p>
+<p>解得</p>
+<p><img src="https://math.now.sh?inline=a_3%20%3D%20-%28n%2Bf%29%2C%20a_4%20%3D%20-nf" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/></p>
+<p>最终结果</p>
+<p><img src="https://math.now.sh?inline=M_%7Bpersp2ortho%7D%20%3D%20%5Cleft%28%5Cbegin%7Barray%7D%7Bcccc%7D%0A-n%20%26%200%20%26%200%20%26%200%5C%5C%0A0%20%26%20-n%20%26%200%20%26%200%5C%5C%0A0%20%26%200%20%26%20-(f%2Bn%29%20%26%20-f%5C%2Cn%5C%5C%0A0%20%26%200%20%26%201%20%26%200%0A%5Cend%7Barray%7D%5Cright)" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/></p>
+<p>两者相乘可以得到</p>
+<p><img src="https://math.now.sh?inline=M_%7Bproj%7D%20%3D%20M_%7Bortho%7D%20*%20M_%7Bpersp2ortho%7D%20%3D%20%5Cleft%28%5Cbegin%7Barray%7D%7Bcccc%7D%0A%5Cfrac%7B2%5C%2Cn%7D%7Bl-r%7D%20%26%200%20%26%20%5Cfrac%7Bl%2Br%7D%7Bl-r%7D%20%26%200%5C%5C%0A0%20%26%20%5Cfrac%7B2%5C%2Cn%7D%7Bb-t%7D%20%26%20%5Cfrac%7Bb%2Bt%7D%7Bb-t%7D%20%26%200%5C%5C%0A0%20%26%200%20%26%20%5Cfrac%7Bf%2Bn%7D%7Bf-n%7D%20%26%20%5Cfrac%7B2%5C%2Cf%5C%2Cn%7D%7Bf-n%7D%5C%5C%0A0%20%26%200%20%26%201%20%26%200%0A%5Cend%7Barray%7D%5Cright%29" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/></p>
+<p>但是还是和 OpenGL 的公式搭不上</p>
+<p><img src="https://math.now.sh?inline=M_%7Bproj%7D%20%3D%20M_%7Bortho%7D%20*%20M_%7Bpersp2ortho%7D%20%3D%20%5Cleft%28%5Cbegin%7Barray%7D%7Bcccc%7D%0A%5Cfrac%7B2%5C%2Cn%7D%7Br-l%7D%20%26%200%20%26%20%5Cfrac%7Bl%2Br%7D%7Br-l%7D%20%26%200%5C%5C%0A0%20%26%20%5Cfrac%7B2%5C%2Cn%7D%7Bt-b%7D%20%26%20%5Cfrac%7Bb%2Bt%7D%7Bt-b%7D%20%26%200%5C%5C%0A0%20%26%200%20%26%20-%5Cfrac%7Bf%2Bn%7D%7Bf-n%7D%20%26%20-%5Cfrac%7B2%5C%2Cf%5C%2Cn%7D%7Bf-n%7D%5C%5C%0A0%20%26%200%20%26%20-1%20%26%200%0A%5Cend%7Barray%7D%5Cright%29" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/></p>
+<p>观察发现我自己推出来的矩阵乘以 -1 就是 OpenGL 的公式</p>
+<p>于是说……这两个矩阵的结果会是一样的吗</p>
+<p>之后看了 <a target="_blank" rel="noopener" href="https://www.zhyingkun.com/perspective/perspective/">https://www.zhyingkun.com/perspective/perspective/</a></p>
+<p>才确认了别人也遇到了这个问题，并且他们会是一样的</p>
+<p>重新推一下，frustum 的关系式是</p>
+<p><img src="https://math.now.sh?inline=x'%20%3D%20n%2F%28-z%29*x" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/><br>
+<img src="https://math.now.sh?inline=y'%20%3D%20n%2F%28-z%29*y" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/></p>
+<p>设计压缩矩阵</p>
+<p><img src="https://math.now.sh?inline=M_%7Bpersp2ortho%7D%20%3D%20%5Cleft%28%5Cbegin%7Barray%7D%7Bcccc%7D%0An%20%26%200%20%26%200%20%26%200%5C%5C%0A0%20%26%20n%20%26%200%20%26%200%5C%5C%0A0%20%26%200%20%26%20a_3%20%26%20a_4%5C%5C%0A0%20%26%200%20%26%20-1%20%26%200%0A%5Cend%7Barray%7D%5Cright%29" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/></p>
+<p><img src="https://math.now.sh?inline=M_%7Bpersp2ortho%7D%5Cleft%28%5Cbegin%7Barray%7D%7Bc%7D%0Ax%5C%5C%0Ay%5C%5C%0Az%5C%5C%0A1%0A%5Cend%7Barray%7D%5Cright%29%3D%5Cleft(%5Cbegin%7Barray%7D%7Bc%7D%0Anx%5C%5C%0Any%5C%5C%0A%3F%5C%5C%0A-z%0A%5Cend%7Barray%7D%5Cright)" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/></p>
+<p>那么取近平面的中心点不变和远平面的中心点不变，得到两个式子</p>
+<p><img src="https://math.now.sh?inline=M_%7Bpersp2ortho%7D%5Cleft%28%5Cbegin%7Barray%7D%7Bc%7D%0A0%5C%5C%0A0%5C%5C%0A-n%5C%5C%0A1%0A%5Cend%7Barray%7D%5Cright%29%3D%5Cleft(%5Cbegin%7Barray%7D%7Bc%7D%0A0%5C%5C%0A0%5C%5C%0A-n%5E2%5C%5C%0An%0A%5Cend%7Barray%7D%5Cright)" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/></p>
+<p><img src="https://math.now.sh?inline=M_%7Bpersp2ortho%7D%5Cleft%28%5Cbegin%7Barray%7D%7Bc%7D%0A0%5C%5C%0A0%5C%5C%0A-f%5C%5C%0A1%0A%5Cend%7Barray%7D%5Cright%29%3D%5Cleft(%5Cbegin%7Barray%7D%7Bc%7D%0A0%5C%5C%0A0%5C%5C%0A-f%5E2%5C%5C%0Af%0A%5Cend%7Barray%7D%5Cright)" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/></p>
+<p>即</p>
+<p><img src="https://math.now.sh?inline=-a_3%20n%20%2B%20a_4%20%3D%20-n%5E2" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/><br>
+<img src="https://math.now.sh?inline=-a_3%20f%20%2B%20a_4%20%3D%20-f%5E2" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/></p>
+<p>解得</p>
+<p><img src="https://math.now.sh?inline=a_3%20%3D%20n%2Bf%2C%20a_4%20%3D%20nf" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/></p>
+<p>最终结果</p>
+<p><img src="https://math.now.sh?inline=M_%7Bpersp2ortho%7D%20%3D%20%5Cleft%28%5Cbegin%7Barray%7D%7Bcccc%7D%0An%20%26%200%20%26%200%20%26%200%5C%5C%0A0%20%26%20n%20%26%200%20%26%200%5C%5C%0A0%20%26%200%20%26%20f%2Bn%20%26%20f%5C%2Cn%5C%5C%0A0%20%26%200%20%26%20-1%20%26%200%0A%5Cend%7Barray%7D%5Cright%29" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/></p>
+<p>That’s all. 可以看到投影矩阵和之前的差在乘以一个负号，最终算出来的就是 OpenGL 的公式了。</p>
+<p>glm 的函数</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">template</span>&lt;<span class="keyword">typename</span> T&gt;</span></span><br><span class="line"><span class="function">GLM_FUNC_QUALIFIER mat&lt;4, 4, T, defaultp&gt; <span class="title">perspectiveRH_NO</span><span class="params">(T fovy, T aspect, T zNear, T zFar)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">  <span class="built_in">assert</span>(<span class="built_in">abs</span>(aspect - std::numeric_limits&lt;T&gt;::<span class="built_in">epsilon</span>()) &gt; <span class="built_in">static_cast</span>&lt;T&gt;(<span class="number">0</span>));</span><br><span class="line"></span><br><span class="line">  T <span class="type">const</span> tanHalfFovy = <span class="built_in">tan</span>(fovy / <span class="built_in">static_cast</span>&lt;T&gt;(<span class="number">2</span>));</span><br><span class="line"></span><br><span class="line">  <span class="function">mat&lt;4, 4, T, defaultp&gt; <span class="title">Result</span><span class="params">(<span class="keyword">static_cast</span>&lt;T&gt;(<span class="number">0</span>))</span></span>;</span><br><span class="line">  Result[<span class="number">0</span>][<span class="number">0</span>] = <span class="built_in">static_cast</span>&lt;T&gt;(<span class="number">1</span>) / (aspect * tanHalfFovy);</span><br><span class="line">  Result[<span class="number">1</span>][<span class="number">1</span>] = <span class="built_in">static_cast</span>&lt;T&gt;(<span class="number">1</span>) / (tanHalfFovy);</span><br><span class="line">  Result[<span class="number">2</span>][<span class="number">2</span>] = - (zFar + zNear) / (zFar - zNear);</span><br><span class="line">  Result[<span class="number">2</span>][<span class="number">3</span>] = - <span class="built_in">static_cast</span>&lt;T&gt;(<span class="number">1</span>);</span><br><span class="line">  Result[<span class="number">3</span>][<span class="number">2</span>] = - (<span class="built_in">static_cast</span>&lt;T&gt;(<span class="number">2</span>) * zFar * zNear) / (zFar - zNear);</span><br><span class="line">  <span class="keyword">return</span> Result;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>Matlab 代入我推的公式</p>
+<figure class="highlight matlab"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line">syms zNear zFar width height fovy aspect;  </span><br><span class="line"></span><br><span class="line"><span class="comment">% world space is right hand</span></span><br><span class="line"><span class="comment">% zNear &gt; 0, zFar &gt; 0</span></span><br><span class="line">n = zNear;  </span><br><span class="line">f = zFar;  </span><br><span class="line"></span><br><span class="line">tanHalfFovy = <span class="built_in">tan</span>(fovy/<span class="number">2</span>);  </span><br><span class="line">height = <span class="number">2</span> * n * tanHalfFovy;</span><br><span class="line">width = aspect * height;  </span><br><span class="line">  </span><br><span class="line">r = width/<span class="number">2</span>;  </span><br><span class="line">l = -width/<span class="number">2</span>;</span><br><span class="line">t = height/<span class="number">2</span>;  </span><br><span class="line">b = -height/<span class="number">2</span>;  </span><br><span class="line">  </span><br><span class="line">Mortho = [<span class="number">2</span>/(r-l) <span class="number">0</span> <span class="number">0</span> <span class="number">0</span>; <span class="number">0</span> <span class="number">2</span>/(t-b) <span class="number">0</span> <span class="number">0</span>; <span class="number">0</span> <span class="number">0</span> <span class="number">2</span>/(n-f) <span class="number">0</span>; <span class="number">0</span> <span class="number">0</span> <span class="number">0</span> <span class="number">1</span>] * [<span class="number">1</span> <span class="number">0</span> <span class="number">0</span> -(r+l)/<span class="number">2</span>; <span class="number">0</span> <span class="number">1</span> <span class="number">0</span> -(t+b)/<span class="number">2</span>; <span class="number">0</span> <span class="number">0</span> <span class="number">1</span> (n+f)/<span class="number">2</span>; <span class="number">0</span> <span class="number">0</span> <span class="number">0</span> <span class="number">1</span>];</span><br><span class="line">Mortho = simplify(Mortho);</span><br><span class="line">Mpersp2ortho = [n <span class="number">0</span> <span class="number">0</span> <span class="number">0</span>; <span class="number">0</span> n <span class="number">0</span> <span class="number">0</span>; <span class="number">0</span> <span class="number">0</span> (n+f) n*f; <span class="number">0</span> <span class="number">0</span> <span class="number">-1</span> <span class="number">0</span>];</span><br><span class="line">Mproj = Mortho * Mpersp2ortho;</span><br><span class="line">Mproj = simplify(Mproj)</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>得到的结果一样</p>
+<p><img src="https://math.now.sh?inline=M_%7Bproj%7D%20%3D%20%5Cleft%28%5Cbegin%7Barray%7D%7Bcccc%7D%0A%5Cfrac%7B1%7D%7B%5Cmathrm%7Baspect%7D%5C%2C%5Ctan%20%5Cleft(%5Cfrac%7B%5Cmathrm%7Bfovy%7D%7D%7B2%7D%5Cright%29%7D%20%26%200%20%26%200%20%26%200%5C%5C%0A0%20%26%20%5Cfrac%7B1%7D%7B%5Ctan%20%5Cleft(%5Cfrac%7B%5Cmathrm%7Bfovy%7D%7D%7B2%7D%5Cright)%7D%20%26%200%20%26%200%5C%5C%0A0%20%26%200%20%26%20-%5Cfrac%7B%5Cmathrm%7BzFar%7D%2B%5Cmathrm%7BzNear%7D%7D%7B%5Cmathrm%7BzFar%7D-%5Cmathrm%7BzNear%7D%7D%20%26%20-%5Cfrac%7B2%5C%2C%5Cmathrm%7BzFar%7D%5C%2C%5Cmathrm%7BzNear%7D%7D%7B%5Cmathrm%7BzFar%7D-%5Cmathrm%7BzNear%7D%7D%5C%5C%0A0%20%26%200%20%26%20-1%20%26%200%0A%5Cend%7Barray%7D%5Cright)" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/></p>
+<p>这就是所谓的齐次坐标里面放 z 还是 -z 会导致的公式的不同</p>
+<p>这一点不会导致结果不同</p>
+<h2 id="用于-Vulkan-的透视矩阵">用于 Vulkan 的透视矩阵</h2>
+<p>视图矩阵是右手系，正交长方体的左平面的坐标为 l，右平面的坐标为 r，上平面的坐标为 t，下平面的坐标为 b，近平面的坐标为 -n，远平面的坐标为 -f。转换之后 NDC 坐标还是右手系。</p>
+<p>n, f 为正</p>
+<p>[b, t] 映射到 [1, -1], [-n, -f] 映射到 [0, 1]</p>
+<p><img src="https://math.now.sh?inline=%0AM_%7Bortho%7D%3D%5Cleft%28%5Cbegin%7Barray%7D%7Bcccc%7D%0A%5Cfrac%7B2%7D%7Br-l%7D%20%26%200%20%26%200%20%26%200%5C%5C%0A0%20%26%20%5Cfrac%7B2%7D%7Bb-t%7D%20%26%200%20%26%200%5C%5C%0A0%20%26%200%20%26%20%5Cfrac%7B1%7D%7Bn-f%7D%20%26%200%5C%5C%0A0%20%26%200%20%26%200%20%26%201%0A%5Cend%7Barray%7D%5Cright%29%5Cleft(%5Cbegin%7Barray%7D%7Bcccc%7D%0A1%20%26%200%20%26%200%20%26%20-%5Cfrac%7Br%2Bl%7D%7B2%7D%5C%5C%0A0%20%26%201%20%26%200%20%26%20-%5Cfrac%7Bt%2Bb%7D%7B2%7D%5C%5C%0A0%20%26%200%20%26%201%20%26%20n%5C%5C%0A0%20%26%200%20%26%200%20%26%201%0A%5Cend%7Barray%7D%5Cright)%0A" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/></p>
+<p>沿用之前推 OpenGL 推出来的压缩矩阵</p>
+<p><img src="https://math.now.sh?inline=M_%7Bpersp2ortho%7D%20%3D%20%5Cleft%28%5Cbegin%7Barray%7D%7Bcccc%7D%0An%20%26%200%20%26%200%20%26%200%5C%5C%0A0%20%26%20n%20%26%200%20%26%200%5C%5C%0A0%20%26%200%20%26%20f%2Bn%20%26%20f%5C%2Cn%5C%5C%0A0%20%26%200%20%26%20-1%20%26%200%0A%5Cend%7Barray%7D%5Cright%29" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/></p>
+<p>Matlab 代入</p>
+<figure class="highlight matlab"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line">syms zNear zFar width height fovy aspect;  </span><br><span class="line"></span><br><span class="line"><span class="comment">% world space is right hand</span></span><br><span class="line"><span class="comment">% zNear &gt; 0, zFar &gt; 0</span></span><br><span class="line">n = zNear;  </span><br><span class="line">f = zFar;  </span><br><span class="line"></span><br><span class="line">tanHalfFovy = <span class="built_in">tan</span>(fovy/<span class="number">2</span>);  </span><br><span class="line">height = <span class="number">2</span> * n * tanHalfFovy;</span><br><span class="line">width = aspect * height;  </span><br><span class="line">  </span><br><span class="line">r = width/<span class="number">2</span>;  </span><br><span class="line">l = -width/<span class="number">2</span>;</span><br><span class="line">t = height/<span class="number">2</span>;  </span><br><span class="line">b = -height/<span class="number">2</span>;  </span><br><span class="line">  </span><br><span class="line">Mortho = [<span class="number">2</span>/(r-l) <span class="number">0</span> <span class="number">0</span> <span class="number">0</span>; <span class="number">0</span> <span class="number">2</span>/(b-t) <span class="number">0</span> <span class="number">0</span>; <span class="number">0</span> <span class="number">0</span> <span class="number">1</span>/(n-f) <span class="number">0</span>; <span class="number">0</span> <span class="number">0</span> <span class="number">0</span> <span class="number">1</span>] * [<span class="number">1</span> <span class="number">0</span> <span class="number">0</span> -(r+l)/<span class="number">2</span>; <span class="number">0</span> <span class="number">1</span> <span class="number">0</span> -(t+b)/<span class="number">2</span>; <span class="number">0</span> <span class="number">0</span> <span class="number">1</span> n; <span class="number">0</span> <span class="number">0</span> <span class="number">0</span> <span class="number">1</span>];</span><br><span class="line">Mortho = simplify(Mortho);</span><br><span class="line">Mpersp2ortho = [n <span class="number">0</span> <span class="number">0</span> <span class="number">0</span>; <span class="number">0</span> n <span class="number">0</span> <span class="number">0</span>; <span class="number">0</span> <span class="number">0</span> (n+f) n*f; <span class="number">0</span> <span class="number">0</span> <span class="number">-1</span> <span class="number">0</span>];</span><br><span class="line">Mproj = Mortho * Mpersp2ortho;</span><br><span class="line">Mproj = simplify(Mproj)</span><br></pre></td></tr></table></figure>
+<p>Matlab 结果</p>
+<p><img src="https://math.now.sh?inline=M_%7Bproj%7D%20%3D%20%5Cleft%28%5Cbegin%7Barray%7D%7Bcccc%7D%0A%5Cfrac%7B1%7D%7B%5Cmathrm%7Baspect%7D%5C%2C%5Ctan%20%5Cleft(%5Cfrac%7B%5Cmathrm%7Bfovy%7D%7D%7B2%7D%5Cright%29%7D%20%26%200%20%26%200%20%26%200%5C%5C%0A0%20%26%20-%5Cfrac%7B1%7D%7B%5Ctan%20%5Cleft(%5Cfrac%7B%5Cmathrm%7Bfovy%7D%7D%7B2%7D%5Cright)%7D%20%26%200%20%26%200%5C%5C%0A0%20%26%200%20%26%20-%5Cfrac%7B%5Cmathrm%7BzFar%7D%7D%7B%5Cmathrm%7BzFar%7D-%5Cmathrm%7BzNear%7D%7D%20%26%20-%5Cfrac%7B%5Cmathrm%7BzFar%7D%5C%2C%5Cmathrm%7BzNear%7D%7D%7B%5Cmathrm%7BzFar%7D-%5Cmathrm%7BzNear%7D%7D%5C%5C%0A0%20%26%200%20%26%20-1%20%26%200%0A%5Cend%7Barray%7D%5Cright)" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/></p>
+<p>得到的结果与 <code>perspectiveRH_ZO</code> 确实仅仅在 [1][1] 差一个负号</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">template</span>&lt;<span class="keyword">typename</span> T&gt;</span></span><br><span class="line"><span class="function">GLM_FUNC_QUALIFIER mat&lt;4, 4, T, defaultp&gt; <span class="title">perspectiveRH_ZO</span><span class="params">(T fovy, T aspect, T zNear, T zFar)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">  <span class="built_in">assert</span>(<span class="built_in">abs</span>(aspect - std::numeric_limits&lt;T&gt;::<span class="built_in">epsilon</span>()) &gt; <span class="built_in">static_cast</span>&lt;T&gt;(<span class="number">0</span>));</span><br><span class="line"></span><br><span class="line">  T <span class="type">const</span> tanHalfFovy = <span class="built_in">tan</span>(fovy / <span class="built_in">static_cast</span>&lt;T&gt;(<span class="number">2</span>));</span><br><span class="line"></span><br><span class="line">  <span class="function">mat&lt;4, 4, T, defaultp&gt; <span class="title">Result</span><span class="params">(<span class="keyword">static_cast</span>&lt;T&gt;(<span class="number">0</span>))</span></span>;</span><br><span class="line">  Result[<span class="number">0</span>][<span class="number">0</span>] = <span class="built_in">static_cast</span>&lt;T&gt;(<span class="number">1</span>) / (aspect * tanHalfFovy);</span><br><span class="line">  Result[<span class="number">1</span>][<span class="number">1</span>] = <span class="built_in">static_cast</span>&lt;T&gt;(<span class="number">1</span>) / (tanHalfFovy);</span><br><span class="line">  Result[<span class="number">2</span>][<span class="number">2</span>] = zFar / (zNear - zFar);</span><br><span class="line">  Result[<span class="number">2</span>][<span class="number">3</span>] = - <span class="built_in">static_cast</span>&lt;T&gt;(<span class="number">1</span>);</span><br><span class="line">  Result[<span class="number">3</span>][<span class="number">2</span>] = -(zFar * zNear) / (zFar - zNear);</span><br><span class="line">  <span class="keyword">return</span> Result;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>但是如果仅仅就这么用了</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">glm::vec3 forward = transfrom_comp_ptr-&gt;rotation * glm::<span class="built_in">vec3</span>(<span class="number">0.0f</span>, <span class="number">0.0f</span>, <span class="number">1.0f</span>);</span><br><span class="line">glm::mat4 view    = glm::<span class="built_in">lookAt</span>(</span><br><span class="line">    transfrom_comp_ptr-&gt;position, transfrom_comp_ptr-&gt;position + forward, glm::<span class="built_in">vec3</span>(<span class="number">0.0f</span>, <span class="number">1.0f</span>, <span class="number">0.0f</span>));</span><br><span class="line"></span><br><span class="line">ubo_data.view       = view;</span><br><span class="line">ubo_data.projection = glm::<span class="built_in">perspectiveRH_ZO</span>(camera_comp_ptr-&gt;field_of_view,</span><br><span class="line">                                            (<span class="type">float</span>)window_size[<span class="number">0</span>] / (<span class="type">float</span>)window_size[<span class="number">1</span>],</span><br><span class="line">                                            camera_comp_ptr-&gt;near_plane,</span><br><span class="line">                                            camera_comp_ptr-&gt;far_plane);</span><br><span class="line">ubo_data.projection[<span class="number">1</span>][<span class="number">1</span>] *= <span class="number">-1.f</span>;</span><br></pre></td></tr></table></figure>
+<p>还会有 x 轴反转的问题</p>
+<p>这个确实……有点难以思考原因。我觉得可能还是因为反转了 z 轴的问题。</p>
+<p>于是最终还是自己抄了一个透视矩阵，其中与 <code>glm::perspectiveRH_ZO</code> 的区别就是反转了 x 轴，然后用 viewport 负高度，front 设置为 <code>vk::FrontFace::eClockwise</code></p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="type">static</span> glm::mat4 <span class="title">perspective_vk</span><span class="params">(<span class="type">float</span> fovy, <span class="type">float</span> aspect, <span class="type">float</span> zNear, <span class="type">float</span> zFar)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="built_in">assert</span>(<span class="built_in">abs</span>(aspect - std::numeric_limits&lt;<span class="type">float</span>&gt;::<span class="built_in">epsilon</span>()) &gt; <span class="built_in">static_cast</span>&lt;<span class="type">float</span>&gt;(<span class="number">0</span>));</span><br><span class="line"></span><br><span class="line">    <span class="type">float</span> <span class="type">const</span> tanHalfFovy = <span class="built_in">tan</span>(fovy / <span class="number">2.0f</span>);</span><br><span class="line"></span><br><span class="line">    <span class="function">glm::mat4 <span class="title">Result</span><span class="params">(<span class="number">0.0f</span>)</span></span>;</span><br><span class="line">    Result[<span class="number">0</span>][<span class="number">0</span>] = <span class="number">-1.0f</span> / (aspect * tanHalfFovy);</span><br><span class="line">    Result[<span class="number">1</span>][<span class="number">1</span>] = <span class="number">1.0f</span> / (tanHalfFovy);</span><br><span class="line">    Result[<span class="number">2</span>][<span class="number">2</span>] = zFar / (zNear - zFar);</span><br><span class="line">    Result[<span class="number">2</span>][<span class="number">3</span>] = <span class="number">-1.0f</span>;</span><br><span class="line">    Result[<span class="number">3</span>][<span class="number">2</span>] = -(zFar * zNear) / (zFar - zNear);</span><br><span class="line">    <span class="keyword">return</span> Result;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>这样是可以 work，也可以保证用的是 glm 的 view 空间，也是基于 glm 的透视矩阵改的，我觉得还 ok</p>
+<p>别人也会有类似的 x 轴翻转的问题</p>
+<p><a target="_blank" rel="noopener" href="https://stackoverflow.com/questions/65049297/perspective-projection-inverting-x-axis-glmperspective">https://stackoverflow.com/questions/65049297/perspective-projection-inverting-x-axis-glmperspective</a></p>
+<p><a target="_blank" rel="noopener" href="https://stackoverflow.com/questions/78557339/glmlookat-image-is-visually-flipped-both-x-and-y-axis">https://stackoverflow.com/questions/78557339/glmlookat-image-is-visually-flipped-both-x-and-y-axis</a></p>
+<p>但是我脑子有限不知道怎么办</p>
+<script src="https://utteranc.es/client.js"
+        repo="CheapMeow/cheapmeow.github.io"
+        issue-term="pathname"
+        theme="github-light"
+        crossorigin="anonymous"
+        async>
+</script>
+      </div>
+      
+        <div class="prev-or-next">
+          <div class="post-foot-next">
+            
+              <a href="/2024/07/21/2024-07-21-cpp_multiple_dimensional_array/" target="_self">
+                <i class="iconfont icon-chevronleft"></i>
+                <span>Prev</span>
+              </a>
+            
+          </div>
+          <div class="post-attach">
+            <span class="post-pubtime">
+              <i class="iconfont icon-updatetime mr-10" title="Update time"></i>
+              2025-06-01 10:52:45
+            </span>
+            
+                  <span class="post-tags">
+                    <i class="iconfont icon-tags mr-10" title="Tags"></i>
+                    
+                    <span class="span--tag mr-8">
+                      <a href="/tags/Grphics/" title="Grphics">
+                        #Grphics
+                      </a>
+                    </span>
+                    
+                    <span class="span--tag mr-8">
+                      <a href="/tags/Vulkan/" title="Vulkan">
+                        #Vulkan
+                      </a>
+                    </span>
+                    
+                    <span class="span--tag mr-8">
+                      <a href="/tags/OpenGL/" title="OpenGL">
+                        #OpenGL
+                      </a>
+                    </span>
+                    
+                  </span>
+              
+          </div>
+          <div class="post-foot-prev">
+            
+              <a href="/2024/09/03/2024-09-03-cpu_frustum_culling/" target="_self">
+                <span>Next</span>
+                <i class="iconfont icon-chevronright"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+    </div>
+    
+  <div id="btn-catalog" class="btn-catalog">
+    <i class="iconfont icon-catalog"></i>
+  </div>
+  <div class="post-catalog hidden" id="catalog">
+    <div class="title">Contents</div>
+    <div class="catalog-content">
+      
+        <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%8E%A8%E5%AF%BC%E9%80%8F%E8%A7%86%E7%9F%A9%E9%98%B5%E6%97%B6%E5%8F%AF%E8%83%BD%E9%81%87%E5%88%B0%E7%9A%84%E5%9B%B0%E9%9A%BE"><span class="toc-text">推导透视矩阵时可能遇到的困难</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E7%89%A9%E7%90%86%E8%BF%87%E7%A8%8B"><span class="toc-text">物理过程</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E7%89%A9%E7%90%86%E9%87%8F%E7%9A%84%E5%AE%9A%E4%B9%89"><span class="toc-text">物理量的定义</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%B7%B1%E5%BA%A6%E7%9A%84%E7%BA%A6%E5%AE%9A"><span class="toc-text">深度的约定</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#NDC-%E6%B7%B1%E5%BA%A6%E8%8C%83%E5%9B%B4%E4%B8%8E-z-%E8%BD%B4%E5%8F%8D%E8%BD%AC"><span class="toc-text">NDC 深度范围与 z 轴反转</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%8F%98%E6%8D%A2%E5%88%B0-clip-%E7%A9%BA%E9%97%B4%E4%B8%AD%E7%9A%84%E5%9D%90%E6%A0%87%E7%9A%84%E9%BD%90%E6%AC%A1%E5%9D%90%E6%A0%87-w-%E7%9A%84%E7%AC%A6%E5%8F%B7"><span class="toc-text">变换到 clip 空间中的坐标的齐次坐标 w 的符号</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%B8%BA%E4%BB%80%E4%B9%88-OpenGL-%E4%B8%AD%E7%9B%B8%E6%9C%BA%E5%9C%A8-eye-%E7%A9%BA%E9%97%B4%E4%B8%AD%E7%9C%8B%E5%90%91-z-%E8%BD%B4"><span class="toc-text">为什么 OpenGL 中相机在 eye 空间中看向 -z 轴</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#lookAt-%E6%80%8E%E4%B9%88%E4%B8%8E%E9%80%8F%E8%A7%86%E7%9F%A9%E9%98%B5%E5%AF%B9%E5%BA%94"><span class="toc-text">lookAt 怎么与透视矩阵对应</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BB%8E-Games101-%E7%9A%84%E5%85%AC%E5%BC%8F%E5%BC%80%E5%A7%8B"><span class="toc-text">从 Games101 的公式开始</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E8%80%83%E8%99%91-OpenGL"><span class="toc-text">考虑 OpenGL</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%94%A8%E4%BA%8E-Vulkan-%E7%9A%84%E9%80%8F%E8%A7%86%E7%9F%A9%E9%98%B5"><span class="toc-text">用于 Vulkan 的透视矩阵</span></a></li></ol>
+      
+    </div>
+  </div>
+
+  
+<script src="/js/catalog.js"></script>
+
+
+
+
+    
+      <div class="comments-container">
+        
+
+
+
+
+
+
+
+      </div>
+    
+  </div>
+
+
+        
+<div class="footer">
+  <div class="social">
+    <ul>
+      
+        <li>
+          
+              <a title="github" target="_blank" rel="noopener" href="https://github.com/zchengsite/hexo-theme-oranges">
+                <i class="iconfont icon-github"></i>
+              </a>
+              
+        </li>
+        
+    </ul>
+  </div>
+  
+    
+    <div class="footer-more">
+      
+        <a target="_blank" rel="noopener" href="https://github.com/zchengsite/hexo-theme-oranges">Copyright © 2025 Oranges</a>
+        
+    </div>
+  
+    
+    <div class="footer-more">
+      
+        <a target="_blank" rel="noopener" href="https://github.com/zchengsite/hexo-theme-oranges">Theme by Oranges | Powered by Hexo</a>
+        
+    </div>
+  
+  
+</div>
+
+      </div>
+
+      <div class="tools-bar">
+        <div class="back-to-top tools-bar-item hidden">
+  <a href="javascript: void(0)">
+    <i class="iconfont icon-chevronup"></i>
+  </a>
+</div>
+
+
+<script src="/js/backtotop.js"></script>
+
+
+
+        
+  <div class="search-icon tools-bar-item" id="search-icon">
+    <a href="javascript: void(0)">
+      <i class="iconfont icon-search"></i>
+    </a>
+  </div>
+
+  <div class="search-overlay hidden">
+    <div class="search-content" tabindex="0">
+      <div class="search-title">
+        <span class="search-icon-input">
+          <a href="javascript: void(0)">
+            <i class="iconfont icon-search"></i>
+          </a>
+        </span>
+        
+          <input type="text" class="search-input" id="search-input" placeholder="搜索...">
+        
+        <span class="search-close-icon" id="search-close-icon">
+          <a href="javascript: void(0)">
+            <i class="iconfont icon-close"></i>
+          </a>
+        </span>
+      </div>
+      <div class="search-result" id="search-result"></div>
+    </div>
+  </div>
+
+  <script type="text/javascript">
+    var inputArea = document.querySelector("#search-input")
+    var searchOverlayArea = document.querySelector(".search-overlay")
+
+    inputArea.onclick = function() {
+      getSearchFile()
+      this.onclick = null
+    }
+
+    inputArea.onkeydown = function() {
+      if(event.keyCode == 13)
+        return false
+    }
+
+    function openOrHideSearchContent() {
+      let isHidden = searchOverlayArea.classList.contains('hidden')
+      if (isHidden) {
+        searchOverlayArea.classList.remove('hidden')
+        document.body.classList.add('hidden')
+        // inputArea.focus()
+      } else {
+        searchOverlayArea.classList.add('hidden')
+        document.body.classList.remove('hidden')
+      }
+    }
+
+    function blurSearchContent(e) {
+      if (e.target === searchOverlayArea) {
+        openOrHideSearchContent()
+      }
+    }
+
+    document.querySelector("#search-icon").addEventListener("click", openOrHideSearchContent, false)
+    document.querySelector("#search-close-icon").addEventListener("click", openOrHideSearchContent, false)
+    searchOverlayArea.addEventListener("click", blurSearchContent, false)
+
+    var searchFunc = function (path, search_id, content_id) {
+      'use strict';
+      var $input = document.getElementById(search_id);
+      var $resultContent = document.getElementById(content_id);
+      $resultContent.innerHTML = "<ul><span class='local-search-empty'>First search, index file loading, please wait...<span></ul>";
+      $.ajax({
+        // 0x01. load xml file
+        url: path,
+        dataType: "xml",
+        success: function (xmlResponse) {
+          // 0x02. parse xml file
+          var datas = $("entry", xmlResponse).map(function () {
+            return {
+              title: $("title", this).text(),
+              content: $("content", this).text(),
+              url: $("url", this).text()
+            };
+          }).get();
+          $resultContent.innerHTML = "";
+
+          $input.addEventListener('input', function () {
+            // 0x03. parse query to keywords list
+            var str = '<ul class=\"search-result-list\">';
+            var keywords = this.value.trim().toLowerCase().split(/[\s\-]+/);
+            $resultContent.innerHTML = "";
+            if (this.value.trim().length <= 0) {
+              return;
+            }
+            // 0x04. perform local searching
+            datas.forEach(function (data) {
+              var isMatch = true;
+              var content_index = [];
+              if (!data.title || data.title.trim() === '') {
+                data.title = "Untitled";
+              }
+              var orig_data_title = data.title.trim();
+              var data_title = orig_data_title.toLowerCase();
+              var orig_data_content = data.content.trim().replace(/<[^>]+>/g, "");
+              var data_content = orig_data_content.toLowerCase();
+              var data_url = data.url;
+              var index_title = -1;
+              var index_content = -1;
+              var first_occur = -1;
+              // only match artiles with not empty contents
+              if (data_content !== '') {
+                keywords.forEach(function (keyword, i) {
+                  index_title = data_title.indexOf(keyword);
+                  index_content = data_content.indexOf(keyword);
+
+                  if (index_title < 0 && index_content < 0) {
+                    isMatch = false;
+                  } else {
+                    if (index_content < 0) {
+                      index_content = 0;
+                    }
+                    if (i == 0) {
+                      first_occur = index_content;
+                    }
+                    // content_index.push({index_content:index_content, keyword_len:keyword_len});
+                  }
+                });
+              } else {
+                isMatch = false;
+              }
+              // 0x05. show search results
+              if (isMatch) {
+                str += "<li><a href='" + data_url + "' class='search-result-title'>" + orig_data_title + "</a>";
+                var content = orig_data_content;
+                if (first_occur >= 0) {
+                  // cut out 100 characters
+                  var start = first_occur - 20;
+                  var end = first_occur + 80;
+
+                  if (start < 0) {
+                    start = 0;
+                  }
+
+                  if (start == 0) {
+                    end = 100;
+                  }
+
+                  if (end > content.length) {
+                    end = content.length;
+                  }
+
+                  var match_content = content.substr(start, end);
+
+                  // highlight all keywords
+                  keywords.forEach(function (keyword) {
+                    var regS = new RegExp(keyword, "gi");
+                    match_content = match_content.replace(regS, "<span class=\"search-keyword\">" + keyword + "</span>");
+                  });
+
+                  str += "<p class=\"search-result-abstract\">" + match_content + "...</p>"
+                }
+                str += "</li>";
+              }
+            });
+            str += "</ul>";
+            if (str.indexOf('<li>') === -1) {
+              return $resultContent.innerHTML = "<ul><span class='local-search-empty'>No result<span></ul>";
+            }
+            $resultContent.innerHTML = str;
+          });
+        },
+        error: function(xhr, status, error) {
+          $resultContent.innerHTML = ""
+          if (xhr.status === 404) {
+            $resultContent.innerHTML = "<ul><span class='local-search-empty'>The search.xml file was not found, please refer to：<a href='https://github.com/zchengsite/hexo-theme-oranges#configuration' target='_black'>configuration</a><span></ul>";
+          } else {
+            $resultContent.innerHTML = "<ul><span class='local-search-empty'>The request failed, Try to refresh the page or try again later.<span></ul>";
+          }
+        }
+      });
+      $(document).on('click', '#search-close-icon', function() {
+        $('#search-input').val('');
+        $('#search-result').html('');
+      });
+    }
+
+    var getSearchFile = function() {
+        var path = "/search.xml";
+        searchFunc(path, 'search-input', 'search-result');
+    }
+  </script>
+
+
+
+
+        
+  <div class="tools-bar-item theme-icon" id="switch-color-scheme">
+    <a href="javascript: void(0)">
+      <i id="theme-icon" class="iconfont icon-moon"></i>
+    </a>
+  </div>
+
+  
+<script src="/js/colorscheme.js"></script>
+
+
+
+
+
+        
+  
+    <div class="share-icon tools-bar-item">
+      <a href="javascript: void(0)" id="share-icon">
+        <i class="iconfont iconshare"></i>
+      </a>
+      <div class="share-content hidden">
+        
+          <a class="share-item" href="https://twitter.com/intent/tweet?text=' + OpenGL%20%E5%92%8C%20Vulkan%20%E7%9A%84%E6%8A%95%E5%BD%B1%E7%9F%A9%E9%98%B5 + '&url=' + https%3A%2F%2Fcheapmeow.github.io%2F2024%2F09%2F02%2F2024-09-02-perspective_matrix_for_opengl_and_vulkan%2F + '" target="_blank" title="Twitter">
+            <i class="iconfont icon-twitter"></i>
+          </a>
+        
+        
+          <a class="share-item" href="https://www.facebook.com/sharer.php?u=https://cheapmeow.github.io/2024/09/02/2024-09-02-perspective_matrix_for_opengl_and_vulkan/" target="_blank" title="Facebook">
+            <i class="iconfont icon-facebooksquare"></i>
+          </a>
+        
+      </div>
+    </div>
+  
+  
+<script src="/js/shares.js"></script>
+
+
+
+      </div>
+    </div>
+  </body>
+</html>

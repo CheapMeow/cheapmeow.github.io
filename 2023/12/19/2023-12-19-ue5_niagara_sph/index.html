@@ -1,0 +1,1327 @@
+<!DOCTYPE html>
+<html lang="en" color-mode="light">
+
+  <head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="author" content="John Doe" />
+  <!-- Open Graph Description 简短摘要-->
+  
+  <!-- 用于搜索引擎的文章摘要 -->
+  
+  
+  
+  <title>
+    
+      Create SPH Fluid using UE5 Niagara System 
+      
+      
+      |
+    
+     CheapMeow
+  </title>
+
+  
+    <link rel="apple-touch-icon" href="/images/avatar.png">
+    <link rel="icon" href="/images/avatar.png">
+  
+
+  <!-- Raleway-Font -->
+  <link href="https://fonts.googleapis.com/css?family=Raleway&display=swap" rel="stylesheet">
+
+  <!-- hexo site css -->
+  <link rel="stylesheet" href="/css/main.css" />
+  <link rel="stylesheet" href="//at.alicdn.com/t/font_1886449_67xjft27j1l.css" />
+  <!-- 代码块风格 -->
+  
+    
+<link rel="stylesheet" href="/css/figcaption/mac-block.css">
+
+  
+
+  <!-- jquery3.3.1 -->
+  
+    <script defer type="text/javascript" src="/plugins/jquery.min.js"></script>
+  
+
+  <!-- fancybox -->
+  
+    <link href="/plugins/jquery.fancybox.min.css" rel="stylesheet">
+    <script defer type="text/javascript" src="/plugins/jquery.fancybox.min.js"></script>
+  
+  
+<script src="/js/fancybox.js"></script>
+
+
+  
+
+  
+
+  <script>
+    var html = document.documentElement
+    const colorMode = localStorage.getItem('color-mode')
+    if (colorMode) {
+      document.documentElement.setAttribute('color-mode', colorMode)
+    }
+  </script>
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+
+  <body>
+    <div id="app">
+      <div class="header">
+  <div class="avatar">
+    <a href="/">
+      <!-- 头像取消懒加载，添加no-lazy -->
+      
+        <img src="/images/avatar.png" alt="">
+      
+    </a>
+    <div class="nickname"><a href="/">CheapMeow</a></div>
+  </div>
+  <div class="navbar">
+    <ul>
+      
+        <li class="nav-item" data-path="/">
+          <a href="/">Home</a>
+        </li>
+      
+        <li class="nav-item" data-path="/archives/">
+          <a href="/archives/">Archives</a>
+        </li>
+      
+        <li class="nav-item" data-path="/tags/">
+          <a href="/tags/">Tags</a>
+        </li>
+      
+        <li class="nav-item" data-path="/friends/">
+          <a href="/friends/">Friends</a>
+        </li>
+      
+        <li class="nav-item" data-path="/about/">
+          <a href="/about/">About</a>
+        </li>
+      
+    </ul>
+  </div>
+</div>
+
+
+<script src="/js/activeNav.js"></script>
+
+
+
+      <div class="flex-container">
+        <!-- 文章详情页，展示文章具体内容，url形式：https://yoursite/文章标题/ -->
+<!-- 同时为「标签tag」，「朋友friend」，「分类categories」，「关于about」页面的承载页面，具体展示取决于page.type -->
+
+
+  <!-- LaTex Display -->
+
+  
+    <script async type="text/javascript" src="/plugins/mathjax/tex-chtml.js"></script>
+  
+  <script>
+    MathJax = {
+      tex: {
+        inlineMath: [['$', '$'], ['\\(', '\\)']]
+      }
+    }
+  </script>
+
+
+
+
+
+  <!-- clipboard -->
+
+  
+    <script async type="text/javascript" src="/plugins/clipboard.min.js"></script>
+  
+  
+<script src="/js/codeCopy.js"></script>
+
+
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  <!-- 文章内容页 url形式：https://yoursite/文章标题/ -->
+  <div class="container post-details" id="post-details">
+    <div class="post-content">
+      <div class="post-title">Create SPH Fluid using UE5 Niagara System</div>
+      <div class="post-attach">
+        <span class="post-pubtime">
+          <i class="iconfont icon-updatetime mr-10" title="Update time"></i>
+          2025-06-01 10:52:45
+        </span>
+        
+              <span class="post-tags">
+                <i class="iconfont icon-tags mr-10" title="Tags"></i>
+                
+                <span class="span--tag mr-8">
+                  <a href="/tags/Unreal-Engine-5/" title="Unreal Engine 5">
+                    #Unreal Engine 5
+                  </a>
+                </span>
+                
+                <span class="span--tag mr-8">
+                  <a href="/tags/Niagara-System/" title="Niagara System">
+                    #Niagara System
+                  </a>
+                </span>
+                
+                <span class="span--tag mr-8">
+                  <a href="/tags/Game-Effect/" title="Game Effect">
+                    #Game Effect
+                  </a>
+                </span>
+                
+                <span class="span--tag mr-8">
+                  <a href="/tags/Fluid-Simulation/" title="Fluid Simulation">
+                    #Fluid Simulation
+                  </a>
+                </span>
+                
+                <span class="span--tag mr-8">
+                  <a href="/tags/SPH/" title="SPH">
+                    #SPH
+                  </a>
+                </span>
+                
+              </span>
+          
+      </div>
+      <div class="markdown-body">
+        <p>It is an implementation note of SPH using UE5 Niagara System, related about usage of Simulation Stage, Grid 3D, screen space rendering using depth buffer and so on.</p>
+<p>Github repository: <a target="_blank" rel="noopener" href="https://github.com/CheapMeow/UE5-NiagaraSPH">https://github.com/CheapMeow/UE5-NiagaraSPH</a></p>
+<p>I also learn other’s tutorial: <a target="_blank" rel="noopener" href="https://www.bilibili.com/video/BV1pr4y1v78B">https://www.bilibili.com/video/BV1pr4y1v78B</a></p>
+<h2 id="SPH-Introduction">SPH Introduction</h2>
+<p>Basic knowledge about SPH can see other tutorial.</p>
+<p><a target="_blank" rel="noopener" href="https://dl.acm.org/doi/10.5555/846276.846298">Matthias Müller et al, “Particle-based fluid simulation for interactive applications”</a></p>
+<h2 id="Niagara-System-Setup">Niagara System Setup</h2>
+<p>Basic knowledge about Niagara System can see other tutorial.</p>
+<p>To setup, change <code>Sim Target</code> to <code>GPUCompute Sim</code>, because our Niagara System may calculate millions of particles.</p>
+<p>Change <code>Calculate Bounds Mode</code> to <code>Fixed</code>, because particles are upload to GPU so it is hard to calculate bounds every frame.</p>
+<p>Change <code>Life Cycle Mode</code> to <code>Self</code>, in order to set <code>Loop Behaviour</code> as <code>Infinite</code>.</p>
+<h3 id="Add-Neighbor-Grid3D-from-empty">Add Neighbor Grid3D from empty</h3>
+<p>One data structure we should use is <code>Neighbor Grid3D</code>, we will store our particle indice into grid, for convience of searching neighbor particles in 8 grids around certain particle.</p>
+<p>In Niagara System window, find <code>Parameter</code> window (not <code>Details</code> windows), find <code>Emitter Attributes</code>, click “+” button, search <code>neighbor</code> in popup, then you will find <code>Neighbor Grid3D</code> item, confirm.</p>
+<p>You know the adding parameters of Niagara System is similar to actor blueprint.</p>
+<figure style="width: 647px" class="align-center">
+<img src="/images/ue5_niagara_sph/neighbor_grid.png">
+<figcaption align = "center">Fig: Neighbor Grid</figcaption>
+</figure>
+<p>After creating a <code>Neighbor Grid3D</code> parameter, you should drag it into you emitter. Then <code>Neighbor Grid3D</code> will take effect in this emitter.</p>
+<figure style="width: 247px" class="align-center">
+<img src="/images/ue5_niagara_sph/after_drag_neighbor_grid_to_emitter.png">
+<figcaption align = "center">Fig: After Drag Neighbor Grid to Emitter</figcaption>
+</figure>
+<h3 id="Using-module-script-from-content-example">Using module script from content example</h3>
+<p>After you add <code>Neighbor Grid3D</code> variable, you should also define some variable about extent, transform matrix, etc. To skip these details at the first time, I copy two modules <code>Initialize Neighbor Grid</code> and <code>Populate Neighbor Grid</code> from offical Content Example.</p>
+<figure style="width: 428px" class="align-center">
+<img src="/images/ue5_niagara_sph/copy_modules.png">
+<figcaption align = "center">Fig: Copy Modules</figcaption>
+</figure>
+<p>However, after doing this, I add <code>Spawn Rate</code> and then click <code>Fix issue</code>, try to add <code>Emitter State</code>. But UE log “fail to add emitter state” becuase “could not find location”.</p>
+<p>I don’t know why, so I create a emitter from existing copy, and delete redundant module from it. So now I get no error.</p>
+<figure style="width: 440px" class="align-center">
+<img src="/images/ue5_niagara_sph/copy_other_emitter_to_get_emitter_state.png">
+<figcaption align = "center">Fig: Copy Other Emitter to Get Emitter State</figcaption>
+</figure>
+<p>When setup your copied module, be carefull to your default value .</p>
+<p>For example, <code>Populate Neighbor Grid</code> has a Neighbor Grid 3D input, its default value is different from your existing Neighbor Grid 3D in your Niagara System.</p>
+<figure style="width: 721px" class="align-center">
+<img src="/images/ue5_niagara_sph/wrong_default_neighborgrid.png">
+<figcaption align = "center">Fig: Default Neighbor Grid 3D input is different from existing Neighbor Grid 3D</figcaption>
+</figure>
+<figure style="width: 454px" class="align-center">
+<img src="/images/ue5_niagara_sph/right_value_in_module.png">
+<figcaption align = "center">Fig: Right Input value should be your existing Neighbor Grid 3D</figcaption>
+</figure>
+<h3 id="Setup-Parameters-and-Simulaton-Stage">Setup Parameters and Simulaton Stage</h3>
+<p>Next we should add some parameters. Here is an overview of Niagara System and you will what is new.</p>
+<figure style="width: 591px" class="align-center">
+<img src="/images/ue5_niagara_sph/overview_1.png">
+<figcaption align = "center">Fig: Overview 1</figcaption>
+</figure>
+<figure style="width: 269px" class="align-center">
+<img src="/images/ue5_niagara_sph/overview_2.png">
+<figcaption align = "center">Fig: Overview 2</figcaption>
+</figure>
+<p>Parameter value:</p>
+<table>
+<thead>
+<tr>
+<th style="text-align:center">Module</th>
+<th style="text-align:center">Parameter Name</th>
+<th style="text-align:center">Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:center">Set (SYSTEM) WorldGridExtent</td>
+<td style="text-align:center">WorldGridExtent</td>
+<td style="text-align:center">(6,6,6)</td>
+</tr>
+<tr>
+<td style="text-align:center">Initialize Neighbor Grid</td>
+<td style="text-align:center">MaxNeighborsPerCell</td>
+<td style="text-align:center">20</td>
+</tr>
+<tr>
+<td style="text-align:center">Initialize Neighbor Grid</td>
+<td style="text-align:center">NumCellsX</td>
+<td style="text-align:center">25</td>
+</tr>
+<tr>
+<td style="text-align:center">Initialize Neighbor Grid</td>
+<td style="text-align:center">NumCellsY</td>
+<td style="text-align:center">25</td>
+</tr>
+<tr>
+<td style="text-align:center">Initialize Neighbor Grid</td>
+<td style="text-align:center">NumCellsZ</td>
+<td style="text-align:center">25</td>
+</tr>
+<tr>
+<td style="text-align:center">Emitter Spawn</td>
+<td style="text-align:center">RestDensity</td>
+<td style="text-align:center">1</td>
+</tr>
+<tr>
+<td style="text-align:center">Emitter Spawn</td>
+<td style="text-align:center">PointMass</td>
+<td style="text-align:center">0.05</td>
+</tr>
+<tr>
+<td style="text-align:center">Emitter Spawn</td>
+<td style="text-align:center">GasConstantK</td>
+<td style="text-align:center">150</td>
+</tr>
+<tr>
+<td style="text-align:center">Emitter Spawn</td>
+<td style="text-align:center">Viscosity</td>
+<td style="text-align:center">10</td>
+</tr>
+<tr>
+<td style="text-align:center">Emitter Spawn</td>
+<td style="text-align:center">Gravity</td>
+<td style="text-align:center">(0,0,-9.8)</td>
+</tr>
+<tr>
+<td style="text-align:center">Spawn Rate</td>
+<td style="text-align:center">SpawnRate</td>
+<td style="text-align:center">200</td>
+</tr>
+<tr>
+<td style="text-align:center">Initialize Particle</td>
+<td style="text-align:center">Lifetime</td>
+<td style="text-align:center">50</td>
+</tr>
+<tr>
+<td style="text-align:center">Initialize Particle</td>
+<td style="text-align:center">Uniform Sprite Size</td>
+<td style="text-align:center">0.1</td>
+</tr>
+<tr>
+<td style="text-align:center">Set (PARTICLES) Density</td>
+<td style="text-align:center">Density</td>
+<td style="text-align:center">0</td>
+</tr>
+<tr>
+<td style="text-align:center">Set (PARTICLES) Pressure</td>
+<td style="text-align:center">Pressure</td>
+<td style="text-align:center">0</td>
+</tr>
+<tr>
+<td style="text-align:center">Set (PARTICLES) Velocity</td>
+<td style="text-align:center">Velocity</td>
+<td style="text-align:center">(0,10,0)</td>
+</tr>
+<tr>
+<td style="text-align:center">Populate Neighbor Grid</td>
+<td style="text-align:center">NeighborGrid</td>
+<td style="text-align:center">Your Neighbor Grid</td>
+</tr>
+<tr>
+<td style="text-align:center">Populate Neighbor Grid</td>
+<td style="text-align:center">Simulation To Grid Unit Transform</td>
+<td style="text-align:center">WorldToGridUnit</td>
+</tr>
+<tr>
+<td style="text-align:center">Solve Density and Pressure</td>
+<td style="text-align:center">Emitter Name</td>
+<td style="text-align:center">SPHEmitter1</td>
+</tr>
+<tr>
+<td style="text-align:center">Solve Force</td>
+<td style="text-align:center">Emitter Name</td>
+<td style="text-align:center">SPHEmitter1</td>
+</tr>
+<tr>
+<td style="text-align:center">Advent</td>
+<td style="text-align:center">MaxAccel</td>
+<td style="text-align:center">10</td>
+</tr>
+<tr>
+<td style="text-align:center">Advent</td>
+<td style="text-align:center">MaxVelocity</td>
+<td style="text-align:center">30</td>
+</tr>
+<tr>
+<td style="text-align:center">Advent</td>
+<td style="text-align:center">WallDamping</td>
+<td style="text-align:center">-0.1</td>
+</tr>
+</tbody>
+</table>
+<p>These values are set based on experience. They are only suitable for reference but not necessarily the most appropriate.</p>
+<h2 id="Solve-Density-and-Pressure">Solve Density and Pressure</h2>
+<h3 id="Module-View">Module View</h3>
+<figure style="width: 1017px" class="align-center">
+<img src="/images/ue5_niagara_sph/solve_pressure_input.png">
+<figcaption align = "center">Fig: Solve Pressure Input</figcaption>
+</figure>
+<figure style="width: 490px" class="align-center">
+<img src="/images/ue5_niagara_sph/solve_pressure_output.png">
+<figcaption align = "center">Fig: Solve Pressure Output</figcaption>
+</figure>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br></pre></td><td class="code"><pre><span class="line">Density = 0;</span><br><span class="line">Pressure = 0;</span><br><span class="line"></span><br><span class="line">#if GPU_SIMULATION</span><br><span class="line">const int3 IndexOffsets [ 27 ] = </span><br><span class="line">&#123;</span><br><span class="line">    int3(-1,-1,-1),</span><br><span class="line">    int3(-1,-1, 0),</span><br><span class="line">    int3(-1,-1, 1),</span><br><span class="line">    int3(-1, 0,-1),</span><br><span class="line">    int3(-1, 0, 0),</span><br><span class="line">    int3(-1, 0, 1),</span><br><span class="line">    int3(-1, 1,-1),</span><br><span class="line">    int3(-1, 1, 0),</span><br><span class="line">    int3(-1, 1, 1),</span><br><span class="line"></span><br><span class="line">    int3(0,-1,-1),</span><br><span class="line">    int3(0,-1, 0),</span><br><span class="line">    int3(0,-1, 1),</span><br><span class="line">    int3(0, 0,-1),</span><br><span class="line">    int3(0, 0, 0),</span><br><span class="line">    int3(0, 0, 1),</span><br><span class="line">    int3(0, 1,-1),</span><br><span class="line">    int3(0, 1, 0),</span><br><span class="line">    int3(0, 1, 1),</span><br><span class="line"></span><br><span class="line">    int3(1,-1,-1),</span><br><span class="line">    int3(1,-1, 0),</span><br><span class="line">    int3(1,-1, 1),</span><br><span class="line">    int3(1, 0,-1),</span><br><span class="line">    int3(1, 0, 0),</span><br><span class="line">    int3(1, 0, 1),</span><br><span class="line">    int3(1, 1,-1),</span><br><span class="line">    int3(1, 1, 0),</span><br><span class="line">    int3(1, 1, 1),</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line">// Derive the Neighbor Grid Index from the world position</span><br><span class="line">float3 UnitPos;</span><br><span class="line">NeighborGrid.SimulationToUnit(Position, SimulationToUnit, UnitPos);</span><br><span class="line"></span><br><span class="line">int3 Index;</span><br><span class="line">NeighborGrid.UnitToIndex(UnitPos, Index.x,Index.y,Index.z);</span><br><span class="line"></span><br><span class="line">int3 NumCells;</span><br><span class="line">NeighborGrid.GetNumCells(NumCells.x, NumCells.y, NumCells.z);</span><br><span class="line"></span><br><span class="line">// loop over all neighbors in this cell</span><br><span class="line">int MaxNeighborsPerCell;</span><br><span class="line">NeighborGrid.MaxNeighborsPerCell(MaxNeighborsPerCell);</span><br><span class="line"></span><br><span class="line">float3 CellSize = WorldGridExtent / NumCells;</span><br><span class="line"></span><br><span class="line">float DesitySum = 0;</span><br><span class="line">float SmoothRadius = CellSize.x;  // In UE, the length unit is cm, but now just see it as m</span><br><span class="line">float h2 = SmoothRadius * SmoothRadius;</span><br><span class="line"></span><br><span class="line">float KernelPoly6 = 315.0 / (64.0 * 3.141592 * pow(SmoothRadius, 9));  // 1/m^9</span><br><span class="line"></span><br><span class="line">float temp_max = 0;</span><br><span class="line">for(int xxx = 0; xxx &lt; 27; ++xxx)</span><br><span class="line">&#123;</span><br><span class="line">    for(int i = 0; i &lt; MaxNeighborsPerCell; i++)</span><br><span class="line">    &#123;</span><br><span class="line">        const int3 IndexToUse = Index + IndexOffsets[xxx];</span><br><span class="line">        </span><br><span class="line">        int NeighborLinearIndex;</span><br><span class="line">        NeighborGrid.NeighborGridIndexToLinear(IndexToUse.x, IndexToUse.y, IndexToUse.z, i, NeighborLinearIndex);</span><br><span class="line">        </span><br><span class="line">        int CurrNeighborIdx;</span><br><span class="line">        NeighborGrid.GetParticleNeighbor(NeighborLinearIndex, CurrNeighborIdx);</span><br><span class="line">        </span><br><span class="line">        // temp bool used to catch valid/invalid results for direct reads</span><br><span class="line">        bool myBool; </span><br><span class="line">        float3 OtherPos;</span><br><span class="line">        DirectReads.GetVectorByIndex&lt;Attribute=&quot;Position&quot;&gt;(CurrNeighborIdx, myBool, OtherPos);</span><br><span class="line"></span><br><span class="line">        const float3 vectorFromOtherToSelf = Position - OtherPos;</span><br><span class="line">        const float r = length(vectorFromOtherToSelf);  // In UE, the length unit is cm, but now just see it as m</span><br><span class="line">        const float h2_r2 = h2 - r * r;</span><br><span class="line"></span><br><span class="line">        if(IndexToUse.x &gt;= 0 &amp;&amp; IndexToUse.x &lt; NumCells.x &amp;&amp;</span><br><span class="line">           IndexToUse.y &gt;= 0 &amp;&amp; IndexToUse.y &lt; NumCells.y &amp;&amp;</span><br><span class="line">           IndexToUse.z &gt;= 0 &amp;&amp; IndexToUse.z &lt; NumCells.z &amp;&amp;</span><br><span class="line">           CurrNeighborIdx != -1 &amp;&amp; r &lt; SmoothRadius)</span><br><span class="line">        &#123;</span><br><span class="line">            if(SelfParticleIndex == CurrNeighborIdx)</span><br><span class="line">            &#123;</span><br><span class="line">                DesitySum += pow(h2, 3);  // m^3</span><br><span class="line">            &#125;</span><br><span class="line">            else</span><br><span class="line">            &#123;</span><br><span class="line">                DesitySum += pow(h2_r2, 3);  // m^3</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">Density = KernelPoly6 * PointMass * DesitySum;  // kg/m^3</span><br><span class="line">Pressure = max((Density - RestDensity) * GasConstantK, 0);  // N/m^2</span><br><span class="line">#endif</span><br></pre></td></tr></table></figure>
+<h3 id="Problem-NeighborGrid-GetCellSize-return-0">Problem: NeighborGrid.GetCellSize return 0</h3>
+<p>This method has an error, that <code>NeighborGrid.GetCellSize</code> always return 0.</p>
+<p>I have post a thread in UE forum,</p>
+<p><a target="_blank" rel="noopener" href="https://forums.unrealengine.com/t/ue5-niagara-how-does-neighbor-grid-3d-getcellsize-working-it-always-return-0/1564078">UE5 Niagara How does Neighbor Grid 3D GetCellSize working? It always return 0</a></p>
+<h3 id="Solution">Solution</h3>
+<p>but now just quickly fix it by passing extra value.</p>
+<p>Solution is to add <code>WorldGridExtent</code> input, and calcuate cellsize by myself.</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">float3 CellSize = WorldGridExtent / NumCells;</span><br></pre></td></tr></table></figure>
+<h3 id="Problem-pow-0-01-3-return-NaN">Problem: pow(-0.01, 3) return NaN</h3>
+<p>After that, I found power of negative number may return NaN, such as <code>pow(-0.01, 3)</code> return NaN.</p>
+<figure style="width: 529px" class="align-center">
+<img src="/images/ue5_niagara_sph/pow_return_NaN.png">
+<figcaption align = "center">Fig: pow(-0.01, 3) return NaN</figcaption>
+</figure>
+<h3 id="Solution-2">Solution</h3>
+<p>So solution is add a condition statement <code>r &lt; SmoothRadius</code>, to avoid power of negative number.</p>
+<h2 id="Solve-Force">Solve Force</h2>
+<h3 id="Module-View-2">Module View</h3>
+<figure style="width: 1001px" class="align-center">
+<img src="/images/ue5_niagara_sph/solve_force_input.png">
+<figcaption align = "center">Fig: Solve Force Input</figcaption>
+</figure>
+<figure style="width: 376px" class="align-center">
+<img src="/images/ue5_niagara_sph/solve_force_output.png">
+<figcaption align = "center">Fig: Solve Force Output</figcaption>
+</figure>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br></pre></td><td class="code"><pre><span class="line">OutAcceleration = float3(0,0,0);</span><br><span class="line"></span><br><span class="line">#if GPU_SIMULATION</span><br><span class="line">const int3 IndexOffsets [ 27 ] = </span><br><span class="line">&#123;</span><br><span class="line">    int3(-1,-1,-1),</span><br><span class="line">    int3(-1,-1, 0),</span><br><span class="line">    int3(-1,-1, 1),</span><br><span class="line">    int3(-1, 0,-1),</span><br><span class="line">    int3(-1, 0, 0),</span><br><span class="line">    int3(-1, 0, 1),</span><br><span class="line">    int3(-1, 1,-1),</span><br><span class="line">    int3(-1, 1, 0),</span><br><span class="line">    int3(-1, 1, 1),</span><br><span class="line"></span><br><span class="line">    int3(0,-1,-1),</span><br><span class="line">    int3(0,-1, 0),</span><br><span class="line">    int3(0,-1, 1),</span><br><span class="line">    int3(0, 0,-1),</span><br><span class="line">    int3(0, 0, 0),</span><br><span class="line">    int3(0, 0, 1),</span><br><span class="line">    int3(0, 1,-1),</span><br><span class="line">    int3(0, 1, 0),</span><br><span class="line">    int3(0, 1, 1),</span><br><span class="line"></span><br><span class="line">    int3(1,-1,-1),</span><br><span class="line">    int3(1,-1, 0),</span><br><span class="line">    int3(1,-1, 1),</span><br><span class="line">    int3(1, 0,-1),</span><br><span class="line">    int3(1, 0, 0),</span><br><span class="line">    int3(1, 0, 1),</span><br><span class="line">    int3(1, 1,-1),</span><br><span class="line">    int3(1, 1, 0),</span><br><span class="line">    int3(1, 1, 1),</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line">// Derive the Neighbor Grid Index from the world position</span><br><span class="line">float3 UnitPos;</span><br><span class="line">NeighborGrid.SimulationToUnit(Position, SimulationToUnit, UnitPos);</span><br><span class="line"></span><br><span class="line">int3 Index;</span><br><span class="line">NeighborGrid.UnitToIndex(UnitPos, Index.x,Index.y,Index.z);</span><br><span class="line"></span><br><span class="line">int3 NumCells;</span><br><span class="line">NeighborGrid.GetNumCells(NumCells.x, NumCells.y, NumCells.z);</span><br><span class="line"></span><br><span class="line">// loop over all neighbors in this cell</span><br><span class="line">int MaxNeighborsPerCell;</span><br><span class="line">NeighborGrid.MaxNeighborsPerCell(MaxNeighborsPerCell);</span><br><span class="line"></span><br><span class="line">float3 CellSize = WorldGridExtent / NumCells;  // cm</span><br><span class="line"></span><br><span class="line">float SmoothRadius = CellSize.x;  // In UE, the length unit is cm, but now just see it as m</span><br><span class="line">float h2 = SmoothRadius * SmoothRadius;  // m^2</span><br><span class="line"></span><br><span class="line">float KernelSpiky = -45.0 / (3.141592 * pow(SmoothRadius, 6));  // 1/m^6</span><br><span class="line">float KernelViscosity = 45.0 / (3.141592 * pow(SmoothRadius, 6));  // 1/m^6</span><br><span class="line"></span><br><span class="line">for(int xxx = 0; xxx &lt; 27; ++xxx)</span><br><span class="line">&#123;</span><br><span class="line">    for(int i = 0; i &lt; MaxNeighborsPerCell; i++)</span><br><span class="line">    &#123;</span><br><span class="line">        const int3 IndexToUse = Index + IndexOffsets[xxx];</span><br><span class="line">        </span><br><span class="line">        int NeighborLinearIndex;</span><br><span class="line">        NeighborGrid.NeighborGridIndexToLinear(IndexToUse.x, IndexToUse.y, IndexToUse.z, i, NeighborLinearIndex);</span><br><span class="line">        </span><br><span class="line">        int CurrNeighborIdx;</span><br><span class="line">        NeighborGrid.GetParticleNeighbor(NeighborLinearIndex, CurrNeighborIdx);</span><br><span class="line">        </span><br><span class="line">        // avoid r divided by 0</span><br><span class="line">        if (SelfParticleIndex == CurrNeighborIdx)</span><br><span class="line">        &#123;</span><br><span class="line">            continue;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        // temp bool used to catch valid/invalid results for direct reads</span><br><span class="line">        bool myBool; </span><br><span class="line">        float3 OtherPos;</span><br><span class="line">        DirectReads.GetVectorByIndex&lt;Attribute=&quot;Position&quot;&gt;(CurrNeighborIdx, myBool, OtherPos);</span><br><span class="line">        float OtherDensity;</span><br><span class="line">        DirectReads.GetFloatByIndex&lt;Attribute=&quot;Density&quot;&gt;(CurrNeighborIdx, myBool, OtherDensity);</span><br><span class="line">        float OtherPressure;</span><br><span class="line">        DirectReads.GetFloatByIndex&lt;Attribute=&quot;Pressure&quot;&gt;(CurrNeighborIdx, myBool, OtherPressure);</span><br><span class="line">        float3 OtherVel;</span><br><span class="line">        DirectReads.GetVectorByIndex&lt;Attribute=&quot;Velocity&quot;&gt;(CurrNeighborIdx, myBool, OtherVel);</span><br><span class="line"></span><br><span class="line">        const float3 vectorFromOtherToSelf = Position - OtherPos;</span><br><span class="line">        const float3 dirFromOtherToSelf = normalize(vectorFromOtherToSelf);  // unit dir</span><br><span class="line">        const float r = length(vectorFromOtherToSelf);  // In UE, the length unit is cm, but now just see it as m</span><br><span class="line"></span><br><span class="line">        if(IndexToUse.x &gt;= 0 &amp;&amp; IndexToUse.x &lt; NumCells.x &amp;&amp;</span><br><span class="line">           IndexToUse.y &gt;= 0 &amp;&amp; IndexToUse.y &lt; NumCells.y &amp;&amp;</span><br><span class="line">           IndexToUse.z &gt;= 0 &amp;&amp; IndexToUse.z &lt; NumCells.z &amp;&amp;</span><br><span class="line">           CurrNeighborIdx != -1 &amp;&amp; r &lt; SmoothRadius)</span><br><span class="line">        &#123;</span><br><span class="line">            const float h_r = SmoothRadius - r; // m</span><br><span class="line">            const float h2_r2 = h2 - r * r; // m^2</span><br><span class="line"></span><br><span class="line">            // F_Pressure</span><br><span class="line">            const float3 pterm = -PointMass * KernelSpiky * h_r * h_r * (Pressure + OtherPressure) / (2.f * Density * OtherDensity) * dirFromOtherToSelf;</span><br><span class="line"></span><br><span class="line">            // F_Viscosity</span><br><span class="line">            const float3 vterm = PointMass * KernelViscosity * Viscosity * h_r * (OtherVel - Velocity) / (Density * OtherDensity);</span><br><span class="line"></span><br><span class="line">            OutAcceleration += pterm + vterm;  // m/s^2</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line">#endif</span><br></pre></td></tr></table></figure>
+<h2 id="Advent">Advent</h2>
+<h3 id="Module-View-3">Module View</h3>
+<figure style="width: 580px" class="align-center">
+<img src="/images/ue5_niagara_sph/advent_input.png">
+<figcaption align = "center">Fig: Advent Input</figcaption>
+</figure>
+<figure style="width: 635px" class="align-center">
+<img src="/images/ue5_niagara_sph/advent_output.png">
+<figcaption align = "center">Fig: Advent Output</figcaption>
+</figure>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br></pre></td><td class="code"><pre><span class="line">#pragma once</span><br><span class="line"></span><br><span class="line">OutVelocity = float3(0.0, 0.0, 0.0);</span><br><span class="line">OutPosition = float3(0.0, 0.0, 0.0);</span><br><span class="line"></span><br><span class="line">#if GPU_SIMULATION</span><br><span class="line"></span><br><span class="line">Acceleration += Gravity;  // m/s^2</span><br><span class="line"></span><br><span class="line">// acceleration limit</span><br><span class="line">if(length(Acceleration) &gt; MaxAccel)</span><br><span class="line">&#123;</span><br><span class="line">	Acceleration = normalize(Acceleration) * MaxAccel;  // m/s^2</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">// advent</span><br><span class="line">Velocity += 100 * Acceleration * DeltaTime;  // cm/s</span><br><span class="line"></span><br><span class="line">// velocity limit</span><br><span class="line">if(length(Velocity) &gt; MaxVelocity)</span><br><span class="line">&#123;</span><br><span class="line">	Velocity = normalize(Velocity) * MaxVelocity;  // cm/s</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">// advent</span><br><span class="line">Position += Velocity * DeltaTime;  // cm</span><br><span class="line"></span><br><span class="line">// wall avoidance</span><br><span class="line">if(Position.x &lt; -WorldGridExtent.x/2)</span><br><span class="line">&#123;</span><br><span class="line">    Velocity.x *= WallDamping;</span><br><span class="line">    Position.x = -WorldGridExtent.x/2;</span><br><span class="line">&#125;</span><br><span class="line">if(Position.x &gt; WorldGridExtent.x/2)</span><br><span class="line">&#123;</span><br><span class="line">    Velocity.x *= WallDamping;</span><br><span class="line">    Position.x = WorldGridExtent.x/2;</span><br><span class="line">&#125;</span><br><span class="line">if(Position.y &lt; -WorldGridExtent.y/2)</span><br><span class="line">&#123;</span><br><span class="line">    Velocity.y *= WallDamping;</span><br><span class="line">    Position.y = -WorldGridExtent.y/2;</span><br><span class="line">&#125;</span><br><span class="line">if(Position.y &gt; WorldGridExtent.y/2)</span><br><span class="line">&#123;</span><br><span class="line">    Velocity.y *= WallDamping;</span><br><span class="line">    Position.y = WorldGridExtent.y/2;</span><br><span class="line">&#125;</span><br><span class="line">if(Position.z &lt; -WorldGridExtent.z/2)</span><br><span class="line">&#123;</span><br><span class="line">    Velocity.z *= WallDamping;</span><br><span class="line">    Position.z = -WorldGridExtent.z/2;</span><br><span class="line">&#125;</span><br><span class="line">if(Position.z &gt; WorldGridExtent.z/2)</span><br><span class="line">&#123;</span><br><span class="line">    Velocity.z *= WallDamping;</span><br><span class="line">    Position.z = WorldGridExtent.z/2;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">OutPosition = Position;  // cm</span><br><span class="line">OutVelocity = Velocity;  // cm</span><br><span class="line"></span><br><span class="line">#endif // GPU_SIMULATION</span><br></pre></td></tr></table></figure>
+<h3 id="Problem-Oscillation-may-be-too-violent">Problem: Oscillation may be too violent</h3>
+<p>You may find your particles have violent oscillation and never become idle, which is unexpected.</p>
+<h3 id="Solution-3">Solution</h3>
+<p>Simulation method has common problem about stability, a direct solution is to reduce your timestep.</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">DeltaTime = DeltaTime / 5;</span><br></pre></td></tr></table></figure>
+<p>However, it will make your particle effect very slow, it is unbearable for gamer.</p>
+<p>Or you can increase viscoity, reduce acceleration limit and velocity limit.</p>
+<h2 id="Current-Effect">Current Effect</h2>
+<p>Current effect is as below, the particles should be stacked multiple layer, and have little oscillation.</p>
+<figure style="width: 345px" class="align-center">
+<img src="/images/ue5_niagara_sph/effect_1.gif">
+<figcaption align = "center">Fig: Current Effect</figcaption>
+</figure>
+<h3 id="Problem-Effect-doesn’t-show-up-in-level">Problem: Effect doesn’t show up in level</h3>
+<p>If you drag your Niagara System to your level and then there is nothing show up.</p>
+<h3 id="Solution-4">Solution</h3>
+<p>If particles is too small, then, maybe because of LOD or some built-in engine behaviour, you can’t see it in the level. To make particles visible, you should change <code>Sprite Size</code>.</p>
+<figure style="width: 536px" class="align-center">
+<img src="/images/ue5_niagara_sph/too_small_to_see.png">
+<figcaption align = "center">Fig: Too small to see particles</figcaption>
+</figure>
+<figure style="width: 273px" class="align-center">
+<img src="/images/ue5_niagara_sph/change_sprite_size.png">
+<figcaption align = "center">Fig: Change Sprite Size</figcaption>
+</figure>
+<h2 id="Render-Setup">Render Setup</h2>
+<p>Traditional method of rendering water surface is marching cube method. It generates density field from particles, then extract polygon mesh isosurface. It can be done on GPU, but very expensive.</p>
+<p>Another way is to project all all particles into screen space. A direct idea is using depth buffer, but I think that depth buffer can only tells where the particles are. However, later I learned that normal can be calculated from depth buffer.</p>
+<h3 id="Another-Neighbor-Grid-3D-Used-for-rendering-in-Screen-Space">Another Neighbor Grid 3D Used for rendering in Screen Space</h3>
+<p>At first, project all particles into screen space. More specifically, you create an empty depth buffer, then project each particle’s world position into screen space position, and draw a circle with given radius, in the depth buffer, with the particle’s depth. For sure, small depth value will override large depth value.</p>
+<p>However, if you draw circle into depth buffer, you may encounter memory access conflict becuase you are running kernel function on each particles. Then each thread may need to write same pixel of depth buffer at the same time. You should take strategy to solve the conflict, such as mutex lock. It definitly hurts parallel performance.</p>
+<p>Think in the opposite way, after creating an empty depth buffer, for each pixels in screen space, find particles projected in the screen space position of pixel. To do this, create a new Neighbor Grid 3D, which is used for accelerating searching particles. From the view of occupying space, the Neighbor Grid 3D should occupys full space of screen, so one cell of Neighbor Grid 3D may overlaps with many pixels.</p>
+<p>Now kernel function on each pixels may read particles attributes at the same time, but there is not conflict problem.</p>
+<figure style="width: 600px" class="align-center">
+<img src="/images/ue5_niagara_sph/sph_render.svg">
+<figcaption align = "center">Fig: Render each pixels</figcaption>
+</figure>
+<h3 id="Use-Grid-2D-to-Store-Depth-Value">Use Grid 2D to Store Depth Value</h3>
+<p>Here Grid 2D is used to stored depth and then write it into Render Target.</p>
+<p>To initialize Grid 2D, you can use bulit-in module <code>Grid 2D Set Resolution</code>. But if can’t find it after clicking plus symbol on the right side of <code>Emitter Spawn</code>, the reason may be you should uncheck <code>Library Only</code>.</p>
+<p><a target="_blank" rel="noopener" href="https://forums.unrealengine.com/t/grid2d-collection-no-cellnums-setting-shown-in-ue5-niagara/531971/4">Grid2d collection no cellnums setting shown in ue5 niagara</a></p>
+<p>Similarly, you can use built-in module <code>Neighbor Grid 3D Set Resolution</code> to initialize your Render Neighbor Grid 3D.</p>
+<p>You can also set half float format for Grid 2D.</p>
+<figure style="width: 587px" class="align-center">
+<img src="/images/ue5_niagara_sph/set_grid_2d_half_float.png">
+<figcaption align = "center">Fig: Set Half Float Format for Grid 2D</figcaption>
+</figure>
+<h3 id="Texture-Render-Target-and-Render-Target-2D">Texture Render Target and Render Target 2D</h3>
+<p>You should be familiar with Render Target file in Content Browser, but you may don’t know how to link it with Niagara System.</p>
+<p>First you should create a Texture Render Target with <code>User</code> namespace.</p>
+<p>Be caution, it is not Render Target 2D. For example, you can see I create a Render Target 2D named <code>RT_Depth</code> and a Texture Render Target named <code>TextureRenderTarget_Depth</code>.</p>
+<figure style="width: 510px" class="align-center">
+<img src="/images/ue5_niagara_sph/RT_2D_and_Texture_RT.png">
+<figcaption align = "center">Fig: Texture Render Target and Render Target 2D</figcaption>
+</figure>
+<p>Then crate a Render Target 2D also named <code>RT_Depth</code> with <code>Emitter</code> namespace, drag it into <code>Emitter Spawn</code> to initialize it.</p>
+<p>Then you will see, in property <code>Render Target User Parameter</code>, there is only one choice <code>TextureRenderTarget_Depth</code>. It means that you can only assign Texture Render Target as Render Target User Parameter of Render Target 2D.</p>
+<figure style="width: 1079px" class="align-center">
+<img src="/images/ue5_niagara_sph/set_Texture_RT_to_RT_2D.png">
+<figcaption align = "center">Fig: Set Texture Render Target as Render Target User Parameter of Render Target 2D</figcaption>
+</figure>
+<p>After setting, you validate whether the Render Target is associate with Niagara System immediately. To do this, create a new simulation stage, set <code>Data Interface</code> as Render Target 2D. Create a new module, enter the module, add Render Target 2D in Map Get, drag from Render Target 2D input and search <code>Set Render Target Value</code> in the popup. Create <code>Execution Index</code> block, link to <code>Linear To Index</code>, link <code>IndexX, IndexY</code> to <code>Set Render Target Value</code>. Create <code>Make Linear Color</code> and link to <code>Set Render Target Value</code>. For example, choose a purple color, open your Render Target file from Content Browser, then you will see your Render Target change corresponding to your <code>Make Linear Color</code> block.</p>
+<h3 id="Overview">Overview</h3>
+<figure style="width: 250px" class="align-center">
+<img src="/images/ue5_niagara_sph/overview_3.png">
+<figcaption align = "center">Fig: Overview 3</figcaption>
+</figure>
+<figure style="width: 266px" class="align-center">
+<img src="/images/ue5_niagara_sph/overview_4.png">
+<figcaption align = "center">Fig: Overview 4</figcaption>
+</figure>
+<h2 id="Calc-Depth-And-Write-Neighbor">Calc Depth And Write Neighbor</h2>
+<h3 id="Module-View-4">Module View</h3>
+<p>First module is <code>CalcuateParticleDepth</code>.</p>
+<figure style="width: 1171px" class="align-center">
+<img src="/images/ue5_niagara_sph/CalcuateParticleDepth_1.png">
+<figcaption align = "center">Fig: CalcuateParticleDepth Module View 1</figcaption>
+</figure>
+<figure style="width: 1105px" class="align-center">
+<img src="/images/ue5_niagara_sph/CalcuateParticleDepth_2.png">
+<figcaption align = "center">Fig: CalcuateParticleDepth Module View 2</figcaption>
+</figure>
+<p>The hlsl is borrow from <code>World Position to Screen UV</code> block. This is about projecting particle’s position into screen space.</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">ScreenUV = float2(0,0);</span><br><span class="line"></span><br><span class="line">#if GPU_SIMULATION</span><br><span class="line"></span><br><span class="line">float4 SamplePosition = float4(In_SamplePos, 1);</span><br><span class="line">float4 ClipPosition = mul(SamplePosition, View.WorldToClip);</span><br><span class="line">float2 ScreenPosition = ClipPosition.xy / ClipPosition.w;</span><br><span class="line"></span><br><span class="line">ScreenUV = float2(ScreenPosition.x, ScreenPosition.y*-1)/2 + (0.5, 0.5);</span><br><span class="line"></span><br><span class="line">#endif</span><br></pre></td></tr></table></figure>
+<p>Calcuating depth is simple, in short, it is vector multiples with forward.</p>
+<figure style="width: 600px" class="align-center">
+<img src="/images/ue5_niagara_sph/sph_particle_depth.svg">
+<figcaption align = "center">Fig: Particle Depth</figcaption>
+</figure>
+<p>You should also check whether the particle is behind camera, if so, then discard.</p>
+<p>The second module is <code>WriteRenderNeighbor</code>. This is about storing particles into Neighbor Grid 3D according to particle’s projected position.</p>
+<figure style="width: 788px" class="align-center">
+<img src="/images/ue5_niagara_sph/WriteRenderNeighbor_1.png">
+<figcaption align = "center">Fig: WriteRenderNeighbor Module View 1</figcaption>
+</figure>
+<figure style="width: 677px" class="align-center">
+<img src="/images/ue5_niagara_sph/WriteRenderNeighbor_2.png">
+<figcaption align = "center">Fig: WriteRenderNeighbor Module View 2</figcaption>
+</figure>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><span class="line">#if GPU_SIMULATION</span><br><span class="line"></span><br><span class="line">int3 Index;</span><br><span class="line">NeighborGrid.UnitToIndex(float3(UnitPos, 0), Index.x,Index.y,Index.z);</span><br><span class="line"></span><br><span class="line">int3 NumCells;</span><br><span class="line">NeighborGrid.GetNumCells(NumCells.x, NumCells.y, NumCells.z);</span><br><span class="line"></span><br><span class="line">int MaxNeighborsPerCell;</span><br><span class="line">NeighborGrid.MaxNeighborsPerCell(MaxNeighborsPerCell);</span><br><span class="line">		</span><br><span class="line">if (Index.x &gt;= 0 &amp;&amp; Index.x &lt; NumCells.x &amp;&amp; </span><br><span class="line">    Index.y &gt;= 0 &amp;&amp; Index.y &lt; NumCells.y)</span><br><span class="line">&#123;</span><br><span class="line">    int LinearIndex;</span><br><span class="line">    NeighborGrid.IndexToLinear(Index.x, Index.y, 0, LinearIndex);</span><br><span class="line"></span><br><span class="line">    int PreviousNeighborCount;</span><br><span class="line">    NeighborGrid.SetParticleNeighborCount(LinearIndex, 1, PreviousNeighborCount);</span><br><span class="line"></span><br><span class="line">    if (PreviousNeighborCount &lt; MaxNeighborsPerCell)</span><br><span class="line">    &#123;</span><br><span class="line">        int NeighborGridLinear;</span><br><span class="line">        NeighborGrid.NeighborGridIndexToLinear(Index.x, Index.y, Index.z, PreviousNeighborCount, NeighborGridLinear);</span><br><span class="line"></span><br><span class="line">        int IGNORE;</span><br><span class="line">        NeighborGrid.SetParticleNeighbor(NeighborGridLinear, InstanceIdx, IGNORE);</span><br><span class="line">    &#125;		</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">#endif</span><br></pre></td></tr></table></figure>
+<h3 id="Problem-Capturing-result-of-camera-query-always-located-at-world-origin">Problem: Capturing result of camera query always located at world origin</h3>
+<p>Niagara System capturing result of camera query always located at world origin. That means, only when player look at world origin can player see it, no matter where the Niagara System instance is.</p>
+<p>For example, in this gif, Niagara System is moving in the world, but capturing result doesn’t move in the Render Target.</p>
+<figure style="width: 622px" class="align-center">
+<img src="/images/ue5_niagara_sph/sph_moving_but_dont_move_in_render_target.gif">
+<figcaption align = "center">Fig: Capturing result of camera query always located at world origin</figcaption>
+</figure>
+<h3 id="Solution-5">Solution</h3>
+<p>I don’t know it is a bug or not. Maybe it is because I enable <code>Local Space</code> in emitter property. Anyway, it is confusing.</p>
+<p>However, simple hack is adding Niagara System position to particle’s position when you are capturing particles.</p>
+<figure style="width: 860px" class="align-center">
+<img src="/images/ue5_niagara_sph/simple_hack.png">
+<figcaption align = "center">Fig: Simple hack to ensure camera captures right particle position</figcaption>
+</figure>
+<p>I have post a discussion in UE forum, maybe someone knows why.</p>
+<p><a target="_blank" rel="noopener" href="https://forums.unrealengine.com/t/niagara-system-capturing-result-of-camera-query-always-located-at-world-origin/1582261">Niagara System capturing result of camera query always located at world origin</a></p>
+<p>But only add a Niagara System position is not enough. The result position reflected on the Render Target is still not correct.</p>
+<p>So after trying, the correct position is particles’ position + Niagara System position / 2.</p>
+<figure style="width: 848px" class="align-center">
+<img src="/images/ue5_niagara_sph/correct_pos_hack.png">
+<figcaption align = "center">Fig: Correct position hack</figcaption>
+</figure>
+<p>Although I haven’t said it here yet, if you have set Render Target as Material Input, and link it with opacity mask, you will see:</p>
+<figure style="width: 662px" class="align-center">
+<img src="/images/ue5_niagara_sph/render_mask.gif">
+<figcaption align = "center">Fig: Correct Position in Render Target</figcaption>
+</figure>
+<p>To observe this, scale of plane should be a litter smaller than it should be.</p>
+<h2 id="Draw-Depth-To-Grid-2D">Draw Depth To Grid 2D</h2>
+<p>Set <code>Iteration Source</code> as <code>Data Interface</code>, and drag <code>RenderGrid2D</code> to <code>Data Interface</code>, then in the module, if you set namespace of a value in map out as <code>STACKCONTEXT</code>, the value will be stored into <code>Data Interface</code> automatically.</p>
+<p>Now, if you want <code>for loop</code> pixels, logically you first traverse Grid 2D, stored your desired value into cells of Grid 2D. After travering finished, you write value from Grid 2D to a render target.</p>
+<figure style="width: 600px" class="align-center">
+<img src="/images/ue5_niagara_sph/sph_is_particle_overlap_with_cell.svg">
+<figcaption align = "center">Fig: Is particle overlap with cell?</figcaption>
+</figure>
+<p>If you found your Render Target shows cube-like particle but not sphere, try to adjust <code>RenderSpriteSize</code> from small value to large one.</p>
+<h3 id="Module-View-5">Module View</h3>
+<figure style="width: 987px" class="align-center">
+<img src="/images/ue5_niagara_sph/draw_depth_input.png">
+<figcaption align = "center">Fig: Draw Depth To Grid 2D Input</figcaption>
+</figure>
+<figure style="width: 631px" class="align-center">
+<img src="/images/ue5_niagara_sph/draw_depth_output.png">
+<figcaption align = "center">Fig: Draw Depth To Grid 2D Output</figcaption>
+</figure>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br></pre></td><td class="code"><pre><span class="line">const int2 IndexOffsets [ 9 ] = </span><br><span class="line">&#123;</span><br><span class="line">    int2(-1,-1),</span><br><span class="line">    int2(-1, 0),</span><br><span class="line">    int2(-1, 1),</span><br><span class="line">    int2(0,-1),</span><br><span class="line">    int2(0, 0),</span><br><span class="line">    int2(0, 1),</span><br><span class="line">    int2(1,-1),</span><br><span class="line">    int2(1, 0),</span><br><span class="line">    int2(1, 1)</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line">OutDepth = 0;</span><br><span class="line"></span><br><span class="line">#if GPU_SIMULATION</span><br><span class="line"></span><br><span class="line">int3 Index;</span><br><span class="line">NeighborGrid.UnitToIndex(float3(CellPos, 0), Index.x,Index.y,Index.z);</span><br><span class="line"></span><br><span class="line">int3 NumCells;</span><br><span class="line">NeighborGrid.GetNumCells(NumCells.x, NumCells.y, NumCells.z);</span><br><span class="line"></span><br><span class="line">int MaxNeighborsPerCell;</span><br><span class="line">NeighborGrid.MaxNeighborsPerCell(MaxNeighborsPerCell);</span><br><span class="line"></span><br><span class="line">float minDepth = 3.402823466e+38;</span><br><span class="line"></span><br><span class="line">for(int xxx = 0; xxx &lt; 9; ++xxx)</span><br><span class="line">&#123;</span><br><span class="line">    for(int i = 0; i &lt; MaxNeighborsPerCell; i++)</span><br><span class="line">    &#123;</span><br><span class="line">        const int3 IndexToUse = int3(Index.x + IndexOffsets[xxx].x, Index.y + IndexOffsets[xxx].y, 0);</span><br><span class="line">        </span><br><span class="line">        int NeighborLinearIndex;</span><br><span class="line">        NeighborGrid.NeighborGridIndexToLinear(IndexToUse.x, IndexToUse.y, IndexToUse.z, i, NeighborLinearIndex);</span><br><span class="line">        </span><br><span class="line">        int CurrNeighborIdx;</span><br><span class="line">        NeighborGrid.GetParticleNeighbor(NeighborLinearIndex, CurrNeighborIdx);</span><br><span class="line"></span><br><span class="line">        bool myBool; </span><br><span class="line">        float2 ProjectedParticlePos;</span><br><span class="line">        ParticleReader.GetVector2DByIndex&lt;Attribute=&quot;ProjectedPos&quot;&gt;(CurrNeighborIdx, myBool, ProjectedParticlePos);</span><br><span class="line"></span><br><span class="line">        float ParticleDepth;</span><br><span class="line">        ParticleReader.GetFloatByIndex&lt;Attribute=&quot;Depth&quot;&gt;(CurrNeighborIdx, myBool, ParticleDepth);</span><br><span class="line">        </span><br><span class="line">        float DistanceFromCellToParticle = length(ProjectedParticlePos - CellPos);</span><br><span class="line">        float ProjectedRenderSpriteSize = RenderSpriteSize/ParticleDepth;</span><br><span class="line"></span><br><span class="line">        if(IndexToUse.x &gt;= 0 &amp;&amp; IndexToUse.x &lt; NumCells.x &amp;&amp;</span><br><span class="line">           IndexToUse.y &gt;= 0 &amp;&amp; IndexToUse.y &lt; NumCells.y &amp;&amp;</span><br><span class="line">           CurrNeighborIdx != -1 &amp;&amp;</span><br><span class="line">           DistanceFromCellToParticle &lt; ProjectedRenderSpriteSize &amp;&amp;</span><br><span class="line">           ParticleDepth != 0)</span><br><span class="line">        &#123;</span><br><span class="line">            minDepth = minDepth &lt; ParticleDepth ? minDepth : ParticleDepth;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line">if(minDepth &lt; 1e+38)</span><br><span class="line">&#123;</span><br><span class="line">    OutDepth = minDepth;</span><br><span class="line">&#125;</span><br><span class="line">#endif</span><br></pre></td></tr></table></figure>
+<p>There is still concern about we shouldn’t stored particle depth directly, because it is depth at particle cell. What we need is actually depth at cell center.</p>
+<figure style="width: 600px" class="align-center">
+<img src="/images/ue5_niagara_sph/sph_actual_depth.svg">
+<figcaption align = "center">Fig: Particle actual depth</figcaption>
+</figure>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br></pre></td><td class="code"><pre><span class="line">const int2 IndexOffsets [ 9 ] = </span><br><span class="line">&#123;</span><br><span class="line">    int2(-1,-1),</span><br><span class="line">    int2(-1, 0),</span><br><span class="line">    int2(-1, 1),</span><br><span class="line">    int2(0,-1),</span><br><span class="line">    int2(0, 0),</span><br><span class="line">    int2(0, 1),</span><br><span class="line">    int2(1,-1),</span><br><span class="line">    int2(1, 0),</span><br><span class="line">    int2(1, 1)</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line">OutDepth = 0;</span><br><span class="line"></span><br><span class="line">#if GPU_SIMULATION</span><br><span class="line"></span><br><span class="line">int3 Index;</span><br><span class="line">NeighborGrid.UnitToIndex(float3(CellPos, 0), Index.x,Index.y,Index.z);</span><br><span class="line"></span><br><span class="line">int3 NumCells;</span><br><span class="line">NeighborGrid.GetNumCells(NumCells.x, NumCells.y, NumCells.z);</span><br><span class="line"></span><br><span class="line">int MaxNeighborsPerCell;</span><br><span class="line">NeighborGrid.MaxNeighborsPerCell(MaxNeighborsPerCell);</span><br><span class="line"></span><br><span class="line">float minDepth = 3.402823466e+38;</span><br><span class="line">int minDepthIndex = -1;</span><br><span class="line"></span><br><span class="line">for(int xxx = 0; xxx &lt; 9; ++xxx)</span><br><span class="line">&#123;</span><br><span class="line">    for(int i = 0; i &lt; MaxNeighborsPerCell; i++)</span><br><span class="line">    &#123;</span><br><span class="line">        const int3 IndexToUse = int3(Index.x + IndexOffsets[xxx].x, Index.y + IndexOffsets[xxx].y, 0);</span><br><span class="line">        </span><br><span class="line">        int NeighborLinearIndex;</span><br><span class="line">        NeighborGrid.NeighborGridIndexToLinear(IndexToUse.x, IndexToUse.y, IndexToUse.z, i, NeighborLinearIndex);</span><br><span class="line">        </span><br><span class="line">        int CurrNeighborIdx;</span><br><span class="line">        NeighborGrid.GetParticleNeighbor(NeighborLinearIndex, CurrNeighborIdx);</span><br><span class="line"></span><br><span class="line">        bool myBool; </span><br><span class="line">        float2 ProjectedParticlePos;</span><br><span class="line">        ParticleReader.GetVector2DByIndex&lt;Attribute=&quot;ProjectedPos&quot;&gt;(CurrNeighborIdx, myBool, ProjectedParticlePos);</span><br><span class="line"></span><br><span class="line">        float ParticleDepth;</span><br><span class="line">        ParticleReader.GetFloatByIndex&lt;Attribute=&quot;Depth&quot;&gt;(CurrNeighborIdx, myBool, ParticleDepth);</span><br><span class="line">        </span><br><span class="line">        float DistanceFromCellToParticle = length(ProjectedParticlePos - CellPos);</span><br><span class="line">        float ProjectedRenderSpriteSize = RenderSpriteSize/ParticleDepth;</span><br><span class="line"></span><br><span class="line">        if(IndexToUse.x &gt;= 0 &amp;&amp; IndexToUse.x &lt; NumCells.x &amp;&amp;</span><br><span class="line">           IndexToUse.y &gt;= 0 &amp;&amp; IndexToUse.y &lt; NumCells.y &amp;&amp;</span><br><span class="line">           CurrNeighborIdx != -1 &amp;&amp;</span><br><span class="line">           DistanceFromCellToParticle &lt; ProjectedRenderSpriteSize &amp;&amp;</span><br><span class="line">           ParticleDepth != 0)</span><br><span class="line">        &#123;</span><br><span class="line">            minDepth = minDepth &lt; ParticleDepth ? minDepth : ParticleDepth;</span><br><span class="line">            minDepthIndex = minDepth &lt; ParticleDepth ? minDepthIndex : CurrNeighborIdx;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">if(minDepthIndex != -1)</span><br><span class="line">&#123;</span><br><span class="line">    bool myBool; </span><br><span class="line">    float2 ProjectedParticlePos;</span><br><span class="line">    ParticleReader.GetVector2DByIndex&lt;Attribute=&quot;ProjectedPos&quot;&gt;(minDepthIndex, myBool, ProjectedParticlePos);</span><br><span class="line"></span><br><span class="line">    float DistanceFromCellToParticle = length(ProjectedParticlePos - CellPos);</span><br><span class="line">    float ProjectedRenderSpriteSize = RenderSpriteSize/minDepth;</span><br><span class="line"></span><br><span class="line">    OutDepth = minDepth + ProjectedRenderSpriteSize - sqrt(ProjectedRenderSpriteSize * ProjectedRenderSpriteSize - DistanceFromCellToParticle * DistanceFromCellToParticle);</span><br><span class="line">&#125;</span><br><span class="line">#endif</span><br></pre></td></tr></table></figure>
+<p>But I think there is little difference between them.</p>
+<h3 id="Problem-Performance-is-N-A">Problem: Performance is N/A</h3>
+<p>Niagara is compiled successfully, but the running time of a certain simulation stage is N/A.</p>
+<figure style="width: 887px" class="align-center">
+<img src="/images/ue5_niagara_sph/performance_NA.png">
+<figcaption align = "center">Fig: Performance is N/A</figcaption>
+</figure>
+<p>I have post a question in UE forum.</p>
+<p><a target="_blank" rel="noopener" href="https://forums.unrealengine.com/t/ue5-niagara-compilation-succeeded-but-certain-simulation-stages-performance-time-is-n-a/1575522">UE5 Niagara Compilation succeeded but certain simulation stage’s performance time is N/A</a></p>
+<h3 id="Solution-6">Solution</h3>
+<p>After one day of work, I found the error disappear surprisingly.</p>
+<p>From the time I encounter the problem to the time I found the problem disappear, I have done many step, most of them are irrelevant about Grid 2D. The only relevant step is adding a built-in <code>Grid 2D Set Resolution</code> module. But if I delete the module, the performance logging time is still work well. So it is a magic and I don’t want to pay attention to this issue anymore.</p>
+<h2 id="Bilateral-Filtering">Bilateral Filtering</h2>
+<p>The module does Bilateral Filtering on depth map stored in Grid 2D. Blur will make your depth map smooth, which will make your normal map look less like particles. Gauss Filterign will blur the whole image, but Bilateral Filtering will preserves sharp edges.</p>
+<h3 id="Module-View-6">Module View</h3>
+<figure style="width: 736px" class="align-center">
+<img src="/images/ue5_niagara_sph/Bilateral_Filtering_input.png">
+<figcaption align = "center">Fig: Bilateral Filtering Input</figcaption>
+</figure>
+<figure style="width: 752px" class="align-center">
+<img src="/images/ue5_niagara_sph/Bilateral_Filtering_output.png">
+<figcaption align = "center">Fig: Bilateral Filtering Output</figcaption>
+</figure>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br></pre></td><td class="code"><pre><span class="line">OutDepth = 0;</span><br><span class="line"></span><br><span class="line">#if GPU_SIMULATION</span><br><span class="line"></span><br><span class="line">int2 NumCells;</span><br><span class="line">Grid2D.GetNumCells(NumCells.x, NumCells.y);</span><br><span class="line"></span><br><span class="line">float weightSum = 0;</span><br><span class="line">float depthSum = 0;</span><br><span class="line"></span><br><span class="line">float CurrDepth;</span><br><span class="line">Grid2D.GetFloatValue&lt;Attribute=&quot;Depth&quot;&gt;(IndexX, IndexY, CurrDepth);</span><br><span class="line"></span><br><span class="line">if(CurrDepth &gt; 0)</span><br><span class="line">&#123;</span><br><span class="line">    for(int x = -BlurRadius; x &lt;= BlurRadius; x++)</span><br><span class="line">    &#123;</span><br><span class="line">        for(int y = -BlurRadius; y &lt;= BlurRadius; y++)</span><br><span class="line">        &#123;</span><br><span class="line">            float spaceWeight = exp(-(x*x + y*y)*BlurScale*BlurScale);</span><br><span class="line"></span><br><span class="line">            float NeighborDepth;</span><br><span class="line">            Grid2D.GetFloatValue&lt;Attribute=&quot;Depth&quot;&gt;(IndexX + x, IndexY + y, NeighborDepth);</span><br><span class="line">            float r2 = (NeighborDepth - CurrDepth)*BlurDepthFalloff;</span><br><span class="line">            float depthWeight = exp(-r2*r2);</span><br><span class="line"></span><br><span class="line">            if(NeighborDepth &gt; 0)</span><br><span class="line">            &#123;</span><br><span class="line">                weightSum += spaceWeight * depthWeight;</span><br><span class="line">                depthSum += NeighborDepth * spaceWeight * depthWeight;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">if(weightSum &gt; 0)&#123;</span><br><span class="line">    OutDepth = depthSum / weightSum;</span><br><span class="line">&#125;</span><br><span class="line">#endif</span><br></pre></td></tr></table></figure>
+<p>Toggle Blur module, you should see the difference.</p>
+<figure style="width: 342px" class="align-center">
+<img src="/images/ue5_niagara_sph/disable_blur.png">
+<figcaption align = "center">Fig: Disable Blur</figcaption>
+</figure>
+<figure style="width: 330px" class="align-center">
+<img src="/images/ue5_niagara_sph/enable_blur.png">
+<figcaption align = "center">Fig: Enable Blur</figcaption>
+</figure>
+<p>However, blur parameter also matters. Inappropriate parameters are equivalent to you not blurring, and your normal map will end up looking like particles, such as the image above.</p>
+<p>In the last I will show a more natural result, where parameters setting is:</p>
+<table>
+<thead>
+<tr>
+<th style="text-align:center">Name</th>
+<th style="text-align:center">Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:center">BlurRadius</td>
+<td style="text-align:center">5.0</td>
+</tr>
+<tr>
+<td style="text-align:center">RenderSpriteSize</td>
+<td style="text-align:center">3.0</td>
+</tr>
+<tr>
+<td style="text-align:center">BlurDepthFalloff</td>
+<td style="text-align:center">1.0</td>
+</tr>
+<tr>
+<td style="text-align:center">BlurScale</td>
+<td style="text-align:center">0.1</td>
+</tr>
+</tbody>
+</table>
+<h2 id="Draw-Depth-To-Render-Target">Draw Depth To Render Target</h2>
+<p>Now <code>Data Interface</code> can choose Render Target 2D or Grid 2D.</p>
+<h3 id="Module-View-7">Module View</h3>
+<figure style="width: 1029px" class="align-center">
+<img src="/images/ue5_niagara_sph/DrawDepthRenderTarget_input.png">
+<figcaption align = "center">Fig: Draw Depth Render Target Input</figcaption>
+</figure>
+<figure style="width: 968px" class="align-center">
+<img src="/images/ue5_niagara_sph/DrawDepthRenderTarget_middle.png">
+<figcaption align = "center">Fig: Draw Depth Render Target Middle Part</figcaption>
+</figure>
+<figure style="width: 669px" class="align-center">
+<img src="/images/ue5_niagara_sph/DrawDepthRenderTarget_output.png">
+<figcaption align = "center">Fig: Draw Depth Render Target Output</figcaption>
+</figure>
+<h3 id="Problem-Only-one-line-in-Render-Target-is-white">Problem: Only one line in Render Target is white</h3>
+<p>After drawing to render target, there should be a beautiful depth map in Render Target, but I only see one line in Render Target is white.</p>
+<figure style="width: 1011px" class="align-center">
+<img src="/images/ue5_niagara_sph/only_one_line_is_white.png">
+<figcaption align = "center">Fig: Only One Line in Render Target is White</figcaption>
+</figure>
+<p>Log the proejcted position stored on particles, and it seems correct, because all of them are in (0,1) and there are not strange values.</p>
+<figure style="width: 373px" class="align-center">
+<img src="/images/ue5_niagara_sph/projected_position_is_correct.png">
+<figcaption align = "center">Fig: Projected Position is Correct</figcaption>
+</figure>
+<p>Depth values stored on particles are also checked. They are located in (10, 100) roughly, and it is reasonable. My WorldGridExtent is (6,6,6), so distance of camera to particles should be of the same magnitude as grid length, if camera want to see the particles clearly.</p>
+<p>Then another reason may be calcuation of index is wrong. Error may located in <code>Write Depth to Grid 2D</code> module or <code>Write Depth to Render Target</code> module.</p>
+<p>Firstly I validate <code>Write Depth to Render Target</code> module quickly. I add a test module before <code>Write Depth to Render Target</code> module, add output <code>x*y</code> as <code>Depth</code>.</p>
+<figure style="width: 249px" class="align-center">
+<img src="/images/ue5_niagara_sph/quick_validate_write_depth_to_render_target_1.png">
+<figcaption align = "center">Fig: Quickly Validate Write Depth to Render Target 1</figcaption>
+</figure>
+<figure style="width: 1240px" class="align-center">
+<img src="/images/ue5_niagara_sph/quick_validate_write_depth_to_render_target_2.png">
+<figcaption align = "center">Fig: Quickly Validate Write Depth to Render Target 2</figcaption>
+</figure>
+<figure style="width: 511px" class="align-center">
+<img src="/images/ue5_niagara_sph/quick_validate_write_depth_to_render_target_3.png">
+<figcaption align = "center">Fig: Quickly Validate Write Depth to Render Target 3</figcaption>
+</figure>
+<p>You can see Render Target perfectly displayed <code>x*y</code> result, so <code>Write Depth to Render Target</code> module has no error. So problem is in <code>Write Depth to Grid 2D</code> module.</p>
+<p>In <code>Write Depth to Grid 2D</code> module, type same testing code in the end of custom hlsl, and you will get same result on Render Target.</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">OutDepth = (float)Index.x/(float)NumCells.x * (float)Index.y/(float)NumCells.y;</span><br></pre></td></tr></table></figure>
+<p>Use <code>CellPos</code> to get same result.</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">OutDepth = CellPos.x * CellPos.y;</span><br></pre></td></tr></table></figure>
+<p>At least it shows that grid index and <code>CellPos</code> is right.</p>
+<p>After I add condition statement between <code>IndexToUse</code> and <code>NumCells</code>, the flashing white line disappear, only pure black left.</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">if(IndexToUse.x &gt;= 0 &amp;&amp; IndexToUse.x &lt; NumCells.x &amp;&amp;</span><br><span class="line">    IndexToUse.y &gt;= 0 &amp;&amp; IndexToUse.y &lt; NumCells.y &amp;&amp;</span><br><span class="line">    CurrNeighborIdx != -1 &amp;&amp;</span><br><span class="line">    DistanceFromCellToParticle &lt; ProjectedRenderSpriteSize &amp;&amp;</span><br><span class="line">    ParticleDepth != 0)</span><br><span class="line">&#123;</span><br><span class="line">    minDepth = minDepth &lt; ParticleDepth ? minDepth : ParticleDepth;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>Then I realize that problem may not lies in Grid 2D but in Neighbor Grid 3D.</p>
+<p>In fact, if you set <code>-CurrNeighborIdx</code> to depth then you will see pure white in Render Target, it means you never find a valid neighbor.</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">minDepth = -CurrNeighborIdx;</span><br></pre></td></tr></table></figure>
+<p>I guess particles may not be stored into Neighbor Grid 3D, so I go back to <code>Write Render Neighbor</code> module.</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">#if GPU_SIMULATION</span><br><span class="line"></span><br><span class="line">int3 Index;</span><br><span class="line">NeighborGrid.UnitToIndex(float3(UnitPos, 0), Index.x,Index.y,Index.z);</span><br><span class="line"></span><br><span class="line">...</span><br><span class="line"></span><br><span class="line">OutIndexX = Index.x;</span><br><span class="line">OutIndexY = Index.y;</span><br><span class="line">OutIndexZ = Index.z;</span><br><span class="line">#endif</span><br></pre></td></tr></table></figure>
+<figure style="width: 496px" class="align-center">
+<img src="/images/ue5_niagara_sph/unit_to_index_is_right.png">
+<figcaption align = "center">Fig: Unit to Index is right</figcaption>
+</figure>
+<p>So next I have tried other debug method, but still don’t know what is wrong.</p>
+<h3 id="Solution-7">Solution</h3>
+<p>The finally solution is pretty simple: I should drag Neighbor Grid 3D to Emitter Spawn Group to initialize it.</p>
+<figure style="width: 267px" class="align-center">
+<img src="/images/ue5_niagara_sph/have_to_drag_neighbor_grid_3d_to_emitter_spawn.png">
+<figcaption align = "center">Fig: Have to drag Neighbor Grid 3D to Emitter Spawn Group</figcaption>
+</figure>
+<p>It is confusing me bacause if I use the Neighbor Grid 3D in later module, there is no error.</p>
+<p>Anyway, leave it behind.</p>
+<h3 id="Problem-Unexpected-Render-Target-Flickering">Problem: Unexpected Render Target Flickering</h3>
+<p>Right after fix the problem of initializing Neighbor Grid 3D, my Render Target finally have right depth map but unexpected flickering occurs.</p>
+<p>The flickering in the recorded gif is not due to image compression.</p>
+<figure style="width: 688px" class="align-center">
+<img src="/images/ue5_niagara_sph/flashing_render_target.gif">
+<figcaption align = "center">Fig: Unexpected Flickering</figcaption>
+</figure>
+<figure style="width: 688px" class="align-center">
+<img src="/images/ue5_niagara_sph/flashing_render_target_stop_at_one_frame.png">
+<figcaption align = "center">Fig: Render Target Stop at One Frame</figcaption>
+</figure>
+<p>I have searched UE forum:</p>
+<p><a target="_blank" rel="noopener" href="https://forums.unrealengine.com/t/niagara-particles-flickering-in-latest-26-release/153007/1">Niagara particles flickering in latest .26 release</a></p>
+<p>Their solutions:</p>
+<ol>
+<li>
+<p>Reduce spawn rate</p>
+</li>
+<li>
+<p>Reduce particle emitter sphere radius</p>
+</li>
+<li>
+<p>Enlarge <code>Fixed Bounds</code> in <code>Emitter Properties</code></p>
+</li>
+<li>
+<p>Change to <code>CPU Simualtion</code></p>
+</li>
+<li>
+<p>Set the <code>Sort Mode</code> to <code>View Depth</code> in Sprite Renderer</p>
+<p>It mey be problem about translucent sorting</p>
+</li>
+<li>
+<p>Enable <code>Camera Distance Culling</code> in Sprite Renderer, adjust max camera distance</p>
+</li>
+<li>
+<p>Change the mesh size much smaller</p>
+</li>
+</ol>
+<p>However, in this case, it is not about translucent particles, because it is not about capturing particles actually. The camera capture only capture particles’ depth. Then simulation stage writes the depth into Grid 2D. So my situation may be totally different from other.</p>
+<h3 id="Solution-8">Solution</h3>
+<p>Finally I don’t want to waste my time on the engine bug, so I give up trying.</p>
+<p>But just after an hour I come back to work, the problem disapper amazingly.</p>
+<p>Nothing to say with the kind of situtation.</p>
+<p>Updated: After a few days, I happen to find the flickering reason: Render Target is switching between scene capturing result and Niagara System capturing result. You can see it clearly in my record.</p>
+<figure style="width: 955px" class="align-center">
+<img src="/images/ue5_niagara_sph/flickering_reason.gif">
+<figcaption align = "center">Fig: Flickering Reason</figcaption>
+</figure>
+<p>So it is engine bug, not my fault.</p>
+<h3 id="Problem-Render-Target-has-content-in-Niagara-System-Preview-but-no-in-the-level">Problem: Render Target has content in Niagara System Preview but no in the level</h3>
+<p>After I found Render Target doesn’t flicker, I put the Niagara System into level. Becuase my WorldGridExtent is very small, which is (6, 6, 6), so I had to scale the Niagara System to (100, 100, 100) size. I had talked before sprite size should also be large, but now we don’t need sprite to show where the particles are, we only need a plane to show fluid rendering result, so we can disable sprite renderer in the SPH emitter. But as I continued to make the fluid material, I found that Render Target has content in Niagara System Preview but no in the level.</p>
+<figure style="width: 955px" class="align-center">
+<img src="/images/ue5_niagara_sph/no_content_in_the_level.png">
+<figcaption align = "center">Fig: Render Target has content in Niagara System Preview but no in the level</figcaption>
+</figure>
+<h3 id="Solution-9">Solution</h3>
+<p>It recalls me that small particles is invisible, so I guess that even though we scale Niagara System to make particles visible, in the camera view, it doesn’t apply scale transform to particles in the level. Camera is always capturing particles of original size, so particles move in small space. While small size particles is invisible, or I guess it is also related with small spacing. Combining these two factors, which makes camera can’t capture particles in the level.</p>
+<p>To solve it, the only way is to change WorldGridExtent and adjust SPH parameters to adapt with new extent. This is a torturous thing, so after I obtained a seemingly acceptable result in the small extent, I did not adjust the parameters in the large extent. Now, it seems like an unavoidable task.</p>
+<p>If only want to validate the camera problem, we can leave the quality of visual effect behind. Practice shows that the assumption is right. Make WorldGridExtent larger, then particles move in a larger space, then camera can capture them effectively.</p>
+<figure style="width: 716px" class="align-center">
+<img src="/images/ue5_niagara_sph/have_to_make_niagara_system_large.png">
+<figcaption align = "center">Fig: Have to make WorldGridExtent Large</figcaption>
+</figure>
+<p>New parameter:</p>
+<table>
+<thead>
+<tr>
+<th style="text-align:center">Module</th>
+<th style="text-align:center">Parameter Name</th>
+<th style="text-align:center">Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:center">Set (SYSTEM) WorldGridExtent</td>
+<td style="text-align:center">WorldGridExtent</td>
+<td style="text-align:center">(200,200,200)</td>
+</tr>
+<tr>
+<td style="text-align:center">Emitter Spawn</td>
+<td style="text-align:center">RestDensity</td>
+<td style="text-align:center">-50</td>
+</tr>
+<tr>
+<td style="text-align:center">Emitter Spawn</td>
+<td style="text-align:center">PointMass</td>
+<td style="text-align:center">10</td>
+</tr>
+<tr>
+<td style="text-align:center">Emitter Spawn</td>
+<td style="text-align:center">GasConstantK</td>
+<td style="text-align:center">100</td>
+</tr>
+<tr>
+<td style="text-align:center">Emitter Spawn</td>
+<td style="text-align:center">Viscosity</td>
+<td style="text-align:center">25</td>
+</tr>
+<tr>
+<td style="text-align:center">Advent</td>
+<td style="text-align:center">MaxAccel</td>
+<td style="text-align:center">200</td>
+</tr>
+<tr>
+<td style="text-align:center">Advent</td>
+<td style="text-align:center">MaxVelocity</td>
+<td style="text-align:center">100</td>
+</tr>
+<tr>
+<td style="text-align:center">Advent</td>
+<td style="text-align:center">WallDamping</td>
+<td style="text-align:center">-0.8</td>
+</tr>
+</tbody>
+</table>
+<p>After this parameter adjustment, I found a way to quickly obtain the appropriate parameters: first increase the pressure, such as increasing the gas parameters, and then increase the viscosity. Finally, you will get an effect that looks a bit like a fluid. Although this cannot avoid the so-called jelly water, at least you must first be able to obtain a stable effect before you can start optimizing it.</p>
+<h3 id="Problem-Move-Niagara-System-but-particles-are-blocked-at-border">Problem: Move Niagara System but particles are blocked at border</h3>
+<figure style="width: 221px" class="align-center">
+<img src="/images/ue5_niagara_sph/sph_blocked_at_border.gif">
+<figcaption align = "center">Fig: Move Niagara System but particles are blocked at border</figcaption>
+</figure>
+<h3 id="Solution-10">Solution</h3>
+<p>Enable <code>Local Space</code> in Emitter property, then all particles’ position are calcuated in local space. In other word, the particles’ coordinate follows actor but not world coordinate.</p>
+<h2 id="New-An-Emitter-to-Emit-Plane-for-rendering">New An Emitter to Emit Plane for rendering</h2>
+<p>You should create a plane to show the rendering result. It can be created in Niagara System or in world level. The former looks nice because it hides details into Niagara System itself.</p>
+<p>To do this, new an emitter to emit a plane sprite. The sprite lifetime should be long enough, so it can be set as <code>LoopDuration</code></p>
+<figure style="width: 368px" class="align-center">
+<img src="/images/ue5_niagara_sph/lifetime_is_loop_duration.png">
+<figcaption align = "center">Fig: Lifetime is LoopDuration</figcaption>
+</figure>
+<p>The plane sprite should be located between camera and Niagara System, and should be large enough to cover the whold Niagara System.</p>
+<figure style="width: 354px" class="align-center">
+<img src="/images/ue5_niagara_sph/calc_plane_pos.png">
+<figcaption align = "center">Fig: Calculated Plane Position</figcaption>
+</figure>
+<figure style="width: 254px" class="align-center">
+<img src="/images/ue5_niagara_sph/large_scale_of_plane.png">
+<figcaption align = "center">Fig: Large scale of Plane</figcaption>
+</figure>
+<p>There is room to decide specific distance from camera to plane. Here I choose 100.</p>
+<figure style="width: 1132px" class="align-center">
+<img src="/images/ue5_niagara_sph/distance_100.png">
+<figcaption align = "center">Fig: Distance is 100</figcaption>
+</figure>
+<h3 id="Overview-2">Overview</h3>
+<figure style="width: 793px" class="align-center">
+<img src="/images/ue5_niagara_sph/overview_5.png">
+<figcaption align = "center">Fig: Overview 5</figcaption>
+</figure>
+<h3 id="Problem-Emitter-turns-into-balck-in-the-Niagara-System-Overview-and-Sprite-doesn’t-show-up">Problem: Emitter turns into balck in the Niagara System Overview and Sprite doesn’t show up</h3>
+<p>Sometimes, my plane emitter turns into balck in the Niagara System Overview and plane sprite doesn’t show up.</p>
+<figure style="width: 212px" class="align-center">
+<img src="/images/ue5_niagara_sph/emitter_turns_balck.png">
+<figcaption align = "center">Fig: turns into balck in the Niagara System Overview and Sprite doesn't show up</figcaption>
+</figure>
+<h3 id="Solution-11">Solution</h3>
+<p>It may be UE bug, restart UE project will solve the problem.</p>
+<h2 id="Create-Fluid-Material">Create Fluid Material</h2>
+<p>Next you should add a material to your plane.</p>
+<figure style="width: 351px" class="align-center">
+<img src="/images/ue5_niagara_sph/set_material_to_plane.png">
+<figcaption align = "center">Fig: Set Material to Plane</figcaption>
+</figure>
+<p>This material should have a <code>TextureSampleParameter2D</code> paramter, to get Render Target.</p>
+<p>Create an instance of the material, then you can assign Render Target to the instance parameter.</p>
+<figure style="width: 426px" class="align-center">
+<img src="/images/ue5_niagara_sph/assign_render_target_to_texture_input.png">
+<figcaption align = "center">Fig: Assgin Render Target to Texture Input</figcaption>
+</figure>
+<h3 id="Get-Normal-from-Depth-Map">Get Normal from Depth Map</h3>
+<p>There is method to get normal from depth map, but I haven’t pay time to understand it.</p>
+<p><a target="_blank" rel="noopener" href="https://developer.download.nvidia.com/presentations/2010/gdc/Direct3D_Effects.pdf">Screen Space Fluid Rendering for Games - Nvidia</a></p>
+<p>Unreal has built-in <code>Normal From Height Map</code> block, but it only receives <code>Texture 2D</code> object. So I copy the content from it and replace the <code>Texture 2D</code> part with <code>Input</code> parameter.</p>
+<figure style="width: 639px" class="align-center">
+<img src="/images/ue5_niagara_sph/built_in_normal_from_height_map.png">
+<figcaption align = "center">Fig: Built-in Normal From Height Map Block</figcaption>
+</figure>
+<p align="center">
+<iframe src="https://blueprintue.com/render/y2jbegzh/" height="600" width="900" scrolling="no" allowfullscreen></iframe>
+</p>
+<p>Becuase I store depth to RGB of Render Target, so when you take depth from Render Target, you should choose the same channel.</p>
+<h3 id="Get-Opacity-Mask-from-Depth-Map">Get Opacity Mask from Depth Map</h3>
+<p>To mask space without fluid, sample from Render Target and link it directly to Opacity Mask.</p>
+<p align="center">
+<iframe src="https://blueprintue.com/render/_aluyoo5/" height="600" width="900" scrolling="no" allowfullscreen></iframe>
+</p>
+<p>But if you want other objects to cover fluid, you should compare <code>SceneDepthWithoutWater</code> with fluid depth. If <code>SceneDepthWithoutWater</code> is smaller than fluid depth, then other objects can cover fluid.</p>
+<h3 id="Single-Layer-Water-Material">Single Layer Water Material</h3>
+<p>To use <code>SceneDepthWithoutWater</code> block, you should set your <code>Shading Model</code> to <code>Single Layer Water</code>.</p>
+<figure style="width: 320px" class="align-center">
+<img src="/images/ue5_niagara_sph/switch_to_single_layer_water.png">
+<figcaption align = "center">Fig: Switch to Single Layer Water</figcaption>
+</figure>
+<p>To compile the material, you should have <code>Single Layer Water Material</code> block.</p>
+<figure style="width: 778px" class="align-center">
+<img src="/images/ue5_niagara_sph/single_layer_water_material.png">
+<figcaption align = "center">Fig: Single Layer Water Material</figcaption>
+</figure>
+<h4 id="Problem-ScatteringCoefficients-Node-Link-in-Single-Layer-Water-Material-breaks-alpha-blending">Problem: ScatteringCoefficients Node Link in Single Layer Water Material breaks alpha blending</h4>
+<p>I have fed an occlusion-tested depth into the alpha. The specific method of the occlusion test is, water depth is compared with <code>Single Layer Water Material</code> block, output depth is <code>0  * water depth = 0</code> when water is covered by other objects, <code>1 * water depth = water depth</code> when nothing to block.</p>
+<p>If I link a input value into <code>ScatteringCoefficients</code> node in <code>Single Layer Water Material</code> block, then alpha blending will be break.</p>
+<figure style="width: 528px" class="align-center">
+<img src="/images/ue5_niagara_sph/break_alpha_blending.png">
+<figcaption align = "center">Fig: ScatteringCoefficients Node Link in Single Layer Water Material breaks alpha blending</figcaption>
+</figure>
+<p>If I break <code>ScatteringCoefficients</code> node link, then alpha blending will be correct.</p>
+<figure style="width: 497px" class="align-center">
+<img src="/images/ue5_niagara_sph/correct_alpha_blending.png">
+<figcaption align = "center">Fig: Correct alpha blending</figcaption>
+</figure>
+<p>I have post a thread in UE forum waiting the answer.</p>
+<p><a target="_blank" rel="noopener" href="https://forums.unrealengine.com/t/scatteringcoefficients-node-link-in-single-layer-water-material-breaks-alpha-blending/1586830">ScatteringCoefficients Node Link in Single Layer Water Material breaks alpha blending</a></p>
+<h4 id="Solution-12">Solution(?)</h4>
+<p>Don’t use <code>ScatteringCoefficients</code> node.</p>
+<h4 id="Problem-Water-border-shows-up-ignoring-occlusion">Problem: Water border shows up ignoring occlusion</h4>
+<p>In the image above, you will see water border shows up ignoring occlusion，it is because depth map in Render Target appears weird blur margin.</p>
+<figure style="width: 315px" class="align-center">
+<img src="/images/ue5_niagara_sph/blur_marigin_of_render_target.png">
+<figcaption align = "center">Fig: Blur Margin of Render Target</figcaption>
+</figure>
+<p>Current stage I don’t have a solution to deal with this. Maybe a material hack can takes effect.</p>
+<h2 id="Final-Result">Final Result</h2>
+<p>Although it doesn’t look very good, at least it has normals that look reasonable. How to make it look better after that is a matter for the shader.</p>
+<figure style="width: 213px" class="align-center">
+<img src="/images/ue5_niagara_sph/final_sph_effect.gif">
+<figcaption align = "center">Fig: Final Result</figcaption>
+</figure>
+<script src="https://utteranc.es/client.js"
+        repo="CheapMeow/cheapmeow.github.io"
+        issue-term="pathname"
+        theme="github-light"
+        crossorigin="anonymous"
+        async>
+</script>
+
+      </div>
+      
+        <div class="prev-or-next">
+          <div class="post-foot-next">
+            
+          </div>
+          <div class="post-attach">
+            <span class="post-pubtime">
+              <i class="iconfont icon-updatetime mr-10" title="Update time"></i>
+              2025-06-01 10:52:45
+            </span>
+            
+                  <span class="post-tags">
+                    <i class="iconfont icon-tags mr-10" title="Tags"></i>
+                    
+                    <span class="span--tag mr-8">
+                      <a href="/tags/Unreal-Engine-5/" title="Unreal Engine 5">
+                        #Unreal Engine 5
+                      </a>
+                    </span>
+                    
+                    <span class="span--tag mr-8">
+                      <a href="/tags/Niagara-System/" title="Niagara System">
+                        #Niagara System
+                      </a>
+                    </span>
+                    
+                    <span class="span--tag mr-8">
+                      <a href="/tags/Game-Effect/" title="Game Effect">
+                        #Game Effect
+                      </a>
+                    </span>
+                    
+                    <span class="span--tag mr-8">
+                      <a href="/tags/Fluid-Simulation/" title="Fluid Simulation">
+                        #Fluid Simulation
+                      </a>
+                    </span>
+                    
+                    <span class="span--tag mr-8">
+                      <a href="/tags/SPH/" title="SPH">
+                        #SPH
+                      </a>
+                    </span>
+                    
+                  </span>
+              
+          </div>
+          <div class="post-foot-prev">
+            
+              <a href="/2024/01/10/2024-01-10-fluid_simulation_for_computer_graphics_reading_note/" target="_self">
+                <span>Next</span>
+                <i class="iconfont icon-chevronright"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+    </div>
+    
+  <div id="btn-catalog" class="btn-catalog">
+    <i class="iconfont icon-catalog"></i>
+  </div>
+  <div class="post-catalog hidden" id="catalog">
+    <div class="title">Contents</div>
+    <div class="catalog-content">
+      
+        <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#SPH-Introduction"><span class="toc-text">SPH Introduction</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Niagara-System-Setup"><span class="toc-text">Niagara System Setup</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Add-Neighbor-Grid3D-from-empty"><span class="toc-text">Add Neighbor Grid3D from empty</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Using-module-script-from-content-example"><span class="toc-text">Using module script from content example</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Setup-Parameters-and-Simulaton-Stage"><span class="toc-text">Setup Parameters and Simulaton Stage</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Solve-Density-and-Pressure"><span class="toc-text">Solve Density and Pressure</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Module-View"><span class="toc-text">Module View</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Problem-NeighborGrid-GetCellSize-return-0"><span class="toc-text">Problem: NeighborGrid.GetCellSize return 0</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Solution"><span class="toc-text">Solution</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Problem-pow-0-01-3-return-NaN"><span class="toc-text">Problem: pow(-0.01, 3) return NaN</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Solution-2"><span class="toc-text">Solution</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Solve-Force"><span class="toc-text">Solve Force</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Module-View-2"><span class="toc-text">Module View</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Advent"><span class="toc-text">Advent</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Module-View-3"><span class="toc-text">Module View</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Problem-Oscillation-may-be-too-violent"><span class="toc-text">Problem: Oscillation may be too violent</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Solution-3"><span class="toc-text">Solution</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Current-Effect"><span class="toc-text">Current Effect</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Problem-Effect-doesn%E2%80%99t-show-up-in-level"><span class="toc-text">Problem: Effect doesn’t show up in level</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Solution-4"><span class="toc-text">Solution</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Render-Setup"><span class="toc-text">Render Setup</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Another-Neighbor-Grid-3D-Used-for-rendering-in-Screen-Space"><span class="toc-text">Another Neighbor Grid 3D Used for rendering in Screen Space</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Use-Grid-2D-to-Store-Depth-Value"><span class="toc-text">Use Grid 2D to Store Depth Value</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Texture-Render-Target-and-Render-Target-2D"><span class="toc-text">Texture Render Target and Render Target 2D</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Overview"><span class="toc-text">Overview</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Calc-Depth-And-Write-Neighbor"><span class="toc-text">Calc Depth And Write Neighbor</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Module-View-4"><span class="toc-text">Module View</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Problem-Capturing-result-of-camera-query-always-located-at-world-origin"><span class="toc-text">Problem: Capturing result of camera query always located at world origin</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Solution-5"><span class="toc-text">Solution</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Draw-Depth-To-Grid-2D"><span class="toc-text">Draw Depth To Grid 2D</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Module-View-5"><span class="toc-text">Module View</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Problem-Performance-is-N-A"><span class="toc-text">Problem: Performance is N&#x2F;A</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Solution-6"><span class="toc-text">Solution</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Bilateral-Filtering"><span class="toc-text">Bilateral Filtering</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Module-View-6"><span class="toc-text">Module View</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Draw-Depth-To-Render-Target"><span class="toc-text">Draw Depth To Render Target</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Module-View-7"><span class="toc-text">Module View</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Problem-Only-one-line-in-Render-Target-is-white"><span class="toc-text">Problem: Only one line in Render Target is white</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Solution-7"><span class="toc-text">Solution</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Problem-Unexpected-Render-Target-Flickering"><span class="toc-text">Problem: Unexpected Render Target Flickering</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Solution-8"><span class="toc-text">Solution</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Problem-Render-Target-has-content-in-Niagara-System-Preview-but-no-in-the-level"><span class="toc-text">Problem: Render Target has content in Niagara System Preview but no in the level</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Solution-9"><span class="toc-text">Solution</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Problem-Move-Niagara-System-but-particles-are-blocked-at-border"><span class="toc-text">Problem: Move Niagara System but particles are blocked at border</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Solution-10"><span class="toc-text">Solution</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#New-An-Emitter-to-Emit-Plane-for-rendering"><span class="toc-text">New An Emitter to Emit Plane for rendering</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Overview-2"><span class="toc-text">Overview</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Problem-Emitter-turns-into-balck-in-the-Niagara-System-Overview-and-Sprite-doesn%E2%80%99t-show-up"><span class="toc-text">Problem: Emitter turns into balck in the Niagara System Overview and Sprite doesn’t show up</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Solution-11"><span class="toc-text">Solution</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Create-Fluid-Material"><span class="toc-text">Create Fluid Material</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Get-Normal-from-Depth-Map"><span class="toc-text">Get Normal from Depth Map</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Get-Opacity-Mask-from-Depth-Map"><span class="toc-text">Get Opacity Mask from Depth Map</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Single-Layer-Water-Material"><span class="toc-text">Single Layer Water Material</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#Problem-ScatteringCoefficients-Node-Link-in-Single-Layer-Water-Material-breaks-alpha-blending"><span class="toc-text">Problem: ScatteringCoefficients Node Link in Single Layer Water Material breaks alpha blending</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Solution-12"><span class="toc-text">Solution(?)</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Problem-Water-border-shows-up-ignoring-occlusion"><span class="toc-text">Problem: Water border shows up ignoring occlusion</span></a></li></ol></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Final-Result"><span class="toc-text">Final Result</span></a></li></ol>
+      
+    </div>
+  </div>
+
+  
+<script src="/js/catalog.js"></script>
+
+
+
+
+    
+      <div class="comments-container">
+        
+
+
+
+
+
+
+
+      </div>
+    
+  </div>
+
+
+        
+<div class="footer">
+  <div class="social">
+    <ul>
+      
+        <li>
+          
+              <a title="github" target="_blank" rel="noopener" href="https://github.com/zchengsite/hexo-theme-oranges">
+                <i class="iconfont icon-github"></i>
+              </a>
+              
+        </li>
+        
+    </ul>
+  </div>
+  
+    
+    <div class="footer-more">
+      
+        <a target="_blank" rel="noopener" href="https://github.com/zchengsite/hexo-theme-oranges">Copyright © 2025 Oranges</a>
+        
+    </div>
+  
+    
+    <div class="footer-more">
+      
+        <a target="_blank" rel="noopener" href="https://github.com/zchengsite/hexo-theme-oranges">Theme by Oranges | Powered by Hexo</a>
+        
+    </div>
+  
+  
+</div>
+
+      </div>
+
+      <div class="tools-bar">
+        <div class="back-to-top tools-bar-item hidden">
+  <a href="javascript: void(0)">
+    <i class="iconfont icon-chevronup"></i>
+  </a>
+</div>
+
+
+<script src="/js/backtotop.js"></script>
+
+
+
+        
+  <div class="search-icon tools-bar-item" id="search-icon">
+    <a href="javascript: void(0)">
+      <i class="iconfont icon-search"></i>
+    </a>
+  </div>
+
+  <div class="search-overlay hidden">
+    <div class="search-content" tabindex="0">
+      <div class="search-title">
+        <span class="search-icon-input">
+          <a href="javascript: void(0)">
+            <i class="iconfont icon-search"></i>
+          </a>
+        </span>
+        
+          <input type="text" class="search-input" id="search-input" placeholder="搜索...">
+        
+        <span class="search-close-icon" id="search-close-icon">
+          <a href="javascript: void(0)">
+            <i class="iconfont icon-close"></i>
+          </a>
+        </span>
+      </div>
+      <div class="search-result" id="search-result"></div>
+    </div>
+  </div>
+
+  <script type="text/javascript">
+    var inputArea = document.querySelector("#search-input")
+    var searchOverlayArea = document.querySelector(".search-overlay")
+
+    inputArea.onclick = function() {
+      getSearchFile()
+      this.onclick = null
+    }
+
+    inputArea.onkeydown = function() {
+      if(event.keyCode == 13)
+        return false
+    }
+
+    function openOrHideSearchContent() {
+      let isHidden = searchOverlayArea.classList.contains('hidden')
+      if (isHidden) {
+        searchOverlayArea.classList.remove('hidden')
+        document.body.classList.add('hidden')
+        // inputArea.focus()
+      } else {
+        searchOverlayArea.classList.add('hidden')
+        document.body.classList.remove('hidden')
+      }
+    }
+
+    function blurSearchContent(e) {
+      if (e.target === searchOverlayArea) {
+        openOrHideSearchContent()
+      }
+    }
+
+    document.querySelector("#search-icon").addEventListener("click", openOrHideSearchContent, false)
+    document.querySelector("#search-close-icon").addEventListener("click", openOrHideSearchContent, false)
+    searchOverlayArea.addEventListener("click", blurSearchContent, false)
+
+    var searchFunc = function (path, search_id, content_id) {
+      'use strict';
+      var $input = document.getElementById(search_id);
+      var $resultContent = document.getElementById(content_id);
+      $resultContent.innerHTML = "<ul><span class='local-search-empty'>First search, index file loading, please wait...<span></ul>";
+      $.ajax({
+        // 0x01. load xml file
+        url: path,
+        dataType: "xml",
+        success: function (xmlResponse) {
+          // 0x02. parse xml file
+          var datas = $("entry", xmlResponse).map(function () {
+            return {
+              title: $("title", this).text(),
+              content: $("content", this).text(),
+              url: $("url", this).text()
+            };
+          }).get();
+          $resultContent.innerHTML = "";
+
+          $input.addEventListener('input', function () {
+            // 0x03. parse query to keywords list
+            var str = '<ul class=\"search-result-list\">';
+            var keywords = this.value.trim().toLowerCase().split(/[\s\-]+/);
+            $resultContent.innerHTML = "";
+            if (this.value.trim().length <= 0) {
+              return;
+            }
+            // 0x04. perform local searching
+            datas.forEach(function (data) {
+              var isMatch = true;
+              var content_index = [];
+              if (!data.title || data.title.trim() === '') {
+                data.title = "Untitled";
+              }
+              var orig_data_title = data.title.trim();
+              var data_title = orig_data_title.toLowerCase();
+              var orig_data_content = data.content.trim().replace(/<[^>]+>/g, "");
+              var data_content = orig_data_content.toLowerCase();
+              var data_url = data.url;
+              var index_title = -1;
+              var index_content = -1;
+              var first_occur = -1;
+              // only match artiles with not empty contents
+              if (data_content !== '') {
+                keywords.forEach(function (keyword, i) {
+                  index_title = data_title.indexOf(keyword);
+                  index_content = data_content.indexOf(keyword);
+
+                  if (index_title < 0 && index_content < 0) {
+                    isMatch = false;
+                  } else {
+                    if (index_content < 0) {
+                      index_content = 0;
+                    }
+                    if (i == 0) {
+                      first_occur = index_content;
+                    }
+                    // content_index.push({index_content:index_content, keyword_len:keyword_len});
+                  }
+                });
+              } else {
+                isMatch = false;
+              }
+              // 0x05. show search results
+              if (isMatch) {
+                str += "<li><a href='" + data_url + "' class='search-result-title'>" + orig_data_title + "</a>";
+                var content = orig_data_content;
+                if (first_occur >= 0) {
+                  // cut out 100 characters
+                  var start = first_occur - 20;
+                  var end = first_occur + 80;
+
+                  if (start < 0) {
+                    start = 0;
+                  }
+
+                  if (start == 0) {
+                    end = 100;
+                  }
+
+                  if (end > content.length) {
+                    end = content.length;
+                  }
+
+                  var match_content = content.substr(start, end);
+
+                  // highlight all keywords
+                  keywords.forEach(function (keyword) {
+                    var regS = new RegExp(keyword, "gi");
+                    match_content = match_content.replace(regS, "<span class=\"search-keyword\">" + keyword + "</span>");
+                  });
+
+                  str += "<p class=\"search-result-abstract\">" + match_content + "...</p>"
+                }
+                str += "</li>";
+              }
+            });
+            str += "</ul>";
+            if (str.indexOf('<li>') === -1) {
+              return $resultContent.innerHTML = "<ul><span class='local-search-empty'>No result<span></ul>";
+            }
+            $resultContent.innerHTML = str;
+          });
+        },
+        error: function(xhr, status, error) {
+          $resultContent.innerHTML = ""
+          if (xhr.status === 404) {
+            $resultContent.innerHTML = "<ul><span class='local-search-empty'>The search.xml file was not found, please refer to：<a href='https://github.com/zchengsite/hexo-theme-oranges#configuration' target='_black'>configuration</a><span></ul>";
+          } else {
+            $resultContent.innerHTML = "<ul><span class='local-search-empty'>The request failed, Try to refresh the page or try again later.<span></ul>";
+          }
+        }
+      });
+      $(document).on('click', '#search-close-icon', function() {
+        $('#search-input').val('');
+        $('#search-result').html('');
+      });
+    }
+
+    var getSearchFile = function() {
+        var path = "/search.xml";
+        searchFunc(path, 'search-input', 'search-result');
+    }
+  </script>
+
+
+
+
+        
+  <div class="tools-bar-item theme-icon" id="switch-color-scheme">
+    <a href="javascript: void(0)">
+      <i id="theme-icon" class="iconfont icon-moon"></i>
+    </a>
+  </div>
+
+  
+<script src="/js/colorscheme.js"></script>
+
+
+
+
+
+        
+  
+    <div class="share-icon tools-bar-item">
+      <a href="javascript: void(0)" id="share-icon">
+        <i class="iconfont iconshare"></i>
+      </a>
+      <div class="share-content hidden">
+        
+          <a class="share-item" href="https://twitter.com/intent/tweet?text=' + Create%20SPH%20Fluid%20using%20UE5%20Niagara%20System + '&url=' + https%3A%2F%2Fcheapmeow.github.io%2F2023%2F12%2F19%2F2023-12-19-ue5_niagara_sph%2F + '" target="_blank" title="Twitter">
+            <i class="iconfont icon-twitter"></i>
+          </a>
+        
+        
+          <a class="share-item" href="https://www.facebook.com/sharer.php?u=https://cheapmeow.github.io/2023/12/19/2023-12-19-ue5_niagara_sph/" target="_blank" title="Facebook">
+            <i class="iconfont icon-facebooksquare"></i>
+          </a>
+        
+      </div>
+    </div>
+  
+  
+<script src="/js/shares.js"></script>
+
+
+
+      </div>
+    </div>
+  </body>
+</html>

@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="en" color-mode="light">
+
+  <head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="author" content="John Doe" />
+  <!-- Open Graph Description 简短摘要-->
+  
+  <!-- 用于搜索引擎的文章摘要 -->
+  
+  
+  
+  <title>
+    
+      UE4.27.2 纹理 Reimport With New File 的调试分析 
+      
+      
+      |
+    
+     CheapMeow
+  </title>
+
+  
+    <link rel="apple-touch-icon" href="/images/avatar.png">
+    <link rel="icon" href="/images/avatar.png">
+  
+
+  <!-- Raleway-Font -->
+  <link href="https://fonts.googleapis.com/css?family=Raleway&display=swap" rel="stylesheet">
+
+  <!-- hexo site css -->
+  <link rel="stylesheet" href="/css/main.css" />
+  <link rel="stylesheet" href="//at.alicdn.com/t/font_1886449_67xjft27j1l.css" />
+  <!-- 代码块风格 -->
+  
+    
+<link rel="stylesheet" href="/css/figcaption/mac-block.css">
+
+  
+
+  <!-- jquery3.3.1 -->
+  
+    <script defer type="text/javascript" src="/plugins/jquery.min.js"></script>
+  
+
+  <!-- fancybox -->
+  
+    <link href="/plugins/jquery.fancybox.min.css" rel="stylesheet">
+    <script defer type="text/javascript" src="/plugins/jquery.fancybox.min.js"></script>
+  
+  
+<script src="/js/fancybox.js"></script>
+
+
+  
+
+  
+
+  <script>
+    var html = document.documentElement
+    const colorMode = localStorage.getItem('color-mode')
+    if (colorMode) {
+      document.documentElement.setAttribute('color-mode', colorMode)
+    }
+  </script>
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+
+  <body>
+    <div id="app">
+      <div class="header">
+  <div class="avatar">
+    <a href="/">
+      <!-- 头像取消懒加载，添加no-lazy -->
+      
+        <img src="/images/avatar.png" alt="">
+      
+    </a>
+    <div class="nickname"><a href="/">CheapMeow</a></div>
+  </div>
+  <div class="navbar">
+    <ul>
+      
+        <li class="nav-item" data-path="/">
+          <a href="/">Home</a>
+        </li>
+      
+        <li class="nav-item" data-path="/archives/">
+          <a href="/archives/">Archives</a>
+        </li>
+      
+        <li class="nav-item" data-path="/tags/">
+          <a href="/tags/">Tags</a>
+        </li>
+      
+        <li class="nav-item" data-path="/friends/">
+          <a href="/friends/">Friends</a>
+        </li>
+      
+        <li class="nav-item" data-path="/about/">
+          <a href="/about/">About</a>
+        </li>
+      
+    </ul>
+  </div>
+</div>
+
+
+<script src="/js/activeNav.js"></script>
+
+
+
+      <div class="flex-container">
+        <!-- 文章详情页，展示文章具体内容，url形式：https://yoursite/文章标题/ -->
+<!-- 同时为「标签tag」，「朋友friend」，「分类categories」，「关于about」页面的承载页面，具体展示取决于page.type -->
+
+
+  <!-- LaTex Display -->
+
+  
+    <script async type="text/javascript" src="/plugins/mathjax/tex-chtml.js"></script>
+  
+  <script>
+    MathJax = {
+      tex: {
+        inlineMath: [['$', '$'], ['\\(', '\\)']]
+      }
+    }
+  </script>
+
+
+
+
+
+  <!-- clipboard -->
+
+  
+    <script async type="text/javascript" src="/plugins/clipboard.min.js"></script>
+  
+  
+<script src="/js/codeCopy.js"></script>
+
+
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  <!-- 文章内容页 url形式：https://yoursite/文章标题/ -->
+  <div class="container post-details" id="post-details">
+    <div class="post-content">
+      <div class="post-title">UE4.27.2 纹理 Reimport With New File 的调试分析</div>
+      <div class="post-attach">
+        <span class="post-pubtime">
+          <i class="iconfont icon-updatetime mr-10" title="Update time"></i>
+          2025-06-01 10:52:45
+        </span>
+        
+              <span class="post-tags">
+                <i class="iconfont icon-tags mr-10" title="Tags"></i>
+                
+                <span class="span--tag mr-8">
+                  <a href="/tags/Cpp/" title="Cpp">
+                    #Cpp
+                  </a>
+                </span>
+                
+                <span class="span--tag mr-8">
+                  <a href="/tags/Unreal-Engine-4/" title="Unreal Engine 4">
+                    #Unreal Engine 4
+                  </a>
+                </span>
+                
+                <span class="span--tag mr-8">
+                  <a href="/tags/Render/" title="Render">
+                    #Render
+                  </a>
+                </span>
+                
+              </span>
+          
+      </div>
+      <div class="markdown-body">
+        <h2 id="Reimport-With-New-File-入口">Reimport With New File 入口</h2>
+<p><code>FAssetFileContextMenu::ExecuteReimportWithNewFile</code> 收集所有重新导入的资产，传给 <code>FReimportManager::ValidateAllSourceFileAndReimport</code></p>
+<p><code>FReimportManager::ValidateAllSourceFileAndReimport</code> 处理那些丢失的资产对象 missing file，然后把剩下的那些资产对象传给 <code>FReimportManager::ReimportMultiple</code></p>
+<p><code>FReimportManager::ReimportMultiple</code> 遍历资产对象，对每一个资产对象调用 <code>FReimportManager::Reimport</code> 进行重新导入</p>
+<p><code>FReimportManager::Reimport</code> 对这一个资产对象的所有源文件检查是否丢失等，然后寻找合适的 <code>FReimportHandler</code>，最终调用 <code>FReimportHandler::Reimport</code> 来重新导入</p>
+<p>这是一个虚函数，以实现导入行为的多态</p>
+<p>对于重新加载纹理，进入的是 <code>UReimportTextureFactory::Reimport</code></p>
+<p>最终到 <code>UTextureFactory::FactoryCreateBinary</code>，堆栈如下，就不分析了</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">UTextureFactory::FactoryCreateBinary(UClass *, UObject *, FName, EObjectFlags, UObject *, const wchar_t *, const unsigned char *&amp;, const unsigned char *, FFeedbackContext *) EditorFactories.cpp:4337</span><br><span class="line">UFactory::FactoryCreateBinary(UClass *, UObject *, FName, EObjectFlags, UObject *, const wchar_t *, const unsigned char *&amp;, const unsigned char *, FFeedbackContext *, bool &amp;) Factory.h:354</span><br><span class="line">UFactory::FactoryCreateFile(UClass *, UObject *, FName, EObjectFlags, const FString &amp;, const wchar_t *, FFeedbackContext *, bool &amp;) Factory.cpp:112</span><br><span class="line">UFactory::ImportObject(UClass *, UObject *, FName, EObjectFlags, const FString &amp;, const wchar_t *, bool &amp;) Factory.cpp:201</span><br><span class="line">UReimportTextureFactory::Reimport(UObject *) EditorFactories.cpp:6018</span><br><span class="line">FReimportHandler::Reimport(UObject *, int) EditorReimportHandler.h:238</span><br><span class="line">FReimportManager::Reimport(UObject *, bool, bool, FString, FReimportHandler *, int, bool, bool) Editor.cpp:375</span><br><span class="line">FReimportManager::ReimportMultiple(TArrayView&lt;…&gt;, bool, bool, FString, FReimportHandler *, int, bool, bool) Editor.cpp:622</span><br><span class="line">FReimportManager::ValidateAllSourceFileAndReimport(TArray&lt;…&gt; &amp;, bool, int, bool, bool) Editor.cpp:583</span><br><span class="line">FAssetFileContextMenu::ExecuteReimportWithNewFile(int) AssetFileContextMenu.cpp:1444</span><br></pre></td></tr></table></figure>
+<h2 id="UTextureFactory-FactoryCreateBinary">UTextureFactory::FactoryCreateBinary</h2>
+<p>删掉了类型检查、事件、UDIM、保存图片导入设置、guid、法线贴图、LOD 组、恢复图片导入设置、纹理数组、自动创建纹理等内容，精简为</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br></pre></td><td class="code"><pre><span class="line"><span class="function">UObject* <span class="title">UTextureFactory::FactoryCreateBinary</span></span></span><br><span class="line"><span class="function"><span class="params">(</span></span></span><br><span class="line"><span class="params"><span class="function">	UClass*				Class,</span></span></span><br><span class="line"><span class="params"><span class="function">	UObject*			InParent,</span></span></span><br><span class="line"><span class="params"><span class="function">	FName				Name,</span></span></span><br><span class="line"><span class="params"><span class="function">	EObjectFlags		Flags,</span></span></span><br><span class="line"><span class="params"><span class="function">	UObject*			Context,</span></span></span><br><span class="line"><span class="params"><span class="function">	<span class="type">const</span> TCHAR*		Type,</span></span></span><br><span class="line"><span class="params"><span class="function">	<span class="type">const</span> uint8*&amp;		Buffer,</span></span></span><br><span class="line"><span class="params"><span class="function">	<span class="type">const</span> uint8*			BufferEnd,</span></span></span><br><span class="line"><span class="params"><span class="function">	FFeedbackContext*	Warn</span></span></span><br><span class="line"><span class="params"><span class="function">)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">	FName TextureName = Name;</span><br><span class="line"></span><br><span class="line">	<span class="comment">// if the texture already exists, remember the user settings</span></span><br><span class="line">	UTexture* ExistingTexture = <span class="built_in">FindObject</span>&lt;UTexture&gt;( InParent, *TextureName.<span class="built_in">ToString</span>() );</span><br><span class="line">	UTexture2D* ExistingTexture2D = <span class="built_in">FindObject</span>&lt;UTexture2D&gt;( InParent, *TextureName.<span class="built_in">ToString</span>() );</span><br><span class="line"></span><br><span class="line">	<span class="keyword">if</span> (ExistingTexture2D)</span><br><span class="line">	&#123;</span><br><span class="line">		<span class="comment">// Update with new settings, which should disable streaming...</span></span><br><span class="line">		ExistingTexture2D-&gt;<span class="built_in">UpdateResource</span>();</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">if</span>(ExistingTexture)</span><br><span class="line">	&#123;</span><br><span class="line">		<span class="comment">// Wait for InitRHI() to complete before the FTextureReferenceReplacer calls ReleaseRHI() to follow the workflow.</span></span><br><span class="line">		<span class="comment">// Static texture needs to avoid having pending InitRHI() before enqueuing ReleaseRHI() to safely track access of the PlatformData on the renderthread.</span></span><br><span class="line">		ExistingTexture-&gt;<span class="built_in">WaitForPendingInitOrStreaming</span>();</span><br><span class="line">	&#125;</span><br><span class="line">	</span><br><span class="line">	<span class="function">FTextureReferenceReplacer <span class="title">RefReplacer</span><span class="params">(ExistingTexture)</span></span>;</span><br><span class="line"></span><br><span class="line">	UTexture* Texture = <span class="literal">nullptr</span>;</span><br><span class="line">	Texture = <span class="built_in">ImportTexture</span>(Class, InParent, TextureName, Flags, Type, Buffer, BufferEnd, Warn);</span><br><span class="line">    <span class="keyword">if</span> (Texture)</span><br><span class="line">    &#123;</span><br><span class="line">        Texture-&gt;AssetImportData-&gt;<span class="built_in">Update</span>(CurrentFilename, FileHash.<span class="built_in">IsValid</span>() ? &amp;FileHash : <span class="literal">nullptr</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">if</span>(!Texture)</span><br><span class="line">	&#123;</span><br><span class="line">		<span class="keyword">if</span> (ExistingTexture)</span><br><span class="line">		&#123;</span><br><span class="line">			<span class="comment">// We failed to import over the existing texture. Make sure the resource is ready in the existing texture.</span></span><br><span class="line">			ExistingTexture-&gt;<span class="built_in">UpdateResource</span>();</span><br><span class="line">		&#125;</span><br><span class="line"></span><br><span class="line">		<span class="keyword">return</span> <span class="literal">nullptr</span>;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="comment">//Replace the reference for the new texture with the existing one so that all current users still have valid references.</span></span><br><span class="line">	RefReplacer.<span class="built_in">Replace</span>(Texture);</span><br><span class="line"></span><br><span class="line">	<span class="keyword">return</span> Texture;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>前面是确保被替换的纹理已经初始化了 RHI 资源</p>
+<p>然后就是替换的核心逻辑了 <code>RefReplacer.Replace(Texture);</code></p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/** </span></span><br><span class="line"><span class="comment">* Replaces the RHI reference of one texture with another.</span></span><br><span class="line"><span class="comment">* Allows one texture to be replaced with another at runtime and have all existing references to it remain valid.</span></span><br><span class="line"><span class="comment">*/</span></span><br><span class="line"><span class="keyword">struct</span> <span class="title class_">FTextureReferenceReplacer</span></span><br><span class="line">&#123;</span><br><span class="line">	FTextureReferenceRHIRef OriginalRef;</span><br><span class="line"></span><br><span class="line">	<span class="built_in">FTextureReferenceReplacer</span>(UTexture* OriginalTexture)</span><br><span class="line">	&#123;</span><br><span class="line">		<span class="keyword">if</span> (OriginalTexture)</span><br><span class="line">		&#123;</span><br><span class="line">			OriginalTexture-&gt;<span class="built_in">ReleaseResource</span>();</span><br><span class="line">			OriginalRef = OriginalTexture-&gt;TextureReference.TextureReferenceRHI;</span><br><span class="line">		&#125;</span><br><span class="line">		<span class="keyword">else</span></span><br><span class="line">		&#123;</span><br><span class="line">			OriginalRef = <span class="literal">nullptr</span>;</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="function"><span class="type">void</span> <span class="title">Replace</span><span class="params">(UTexture* NewTexture)</span></span></span><br><span class="line"><span class="function">	</span>&#123;</span><br><span class="line">		<span class="keyword">if</span> (OriginalRef)</span><br><span class="line">		&#123;</span><br><span class="line">			NewTexture-&gt;TextureReference.TextureReferenceRHI = OriginalRef;</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+<p>搜索了整个引擎，只有 Editor 的这个 reimport 的功能使用了 <code>FTextureReferenceReplacer</code> 这个结构体</p>
+<script src="https://utteranc.es/client.js"
+        repo="CheapMeow/cheapmeow.github.io"
+        issue-term="pathname"
+        theme="github-light"
+        crossorigin="anonymous"
+        async>
+</script>
+      </div>
+      
+        <div class="prev-or-next">
+          <div class="post-foot-next">
+            
+              <a href="/2025/05/20/2025-05-20_ue4_deferred_render_mesh_opaque_draw_call/" target="_self">
+                <i class="iconfont icon-chevronleft"></i>
+                <span>Prev</span>
+              </a>
+            
+          </div>
+          <div class="post-attach">
+            <span class="post-pubtime">
+              <i class="iconfont icon-updatetime mr-10" title="Update time"></i>
+              2025-06-01 10:52:45
+            </span>
+            
+                  <span class="post-tags">
+                    <i class="iconfont icon-tags mr-10" title="Tags"></i>
+                    
+                    <span class="span--tag mr-8">
+                      <a href="/tags/Cpp/" title="Cpp">
+                        #Cpp
+                      </a>
+                    </span>
+                    
+                    <span class="span--tag mr-8">
+                      <a href="/tags/Unreal-Engine-4/" title="Unreal Engine 4">
+                        #Unreal Engine 4
+                      </a>
+                    </span>
+                    
+                    <span class="span--tag mr-8">
+                      <a href="/tags/Render/" title="Render">
+                        #Render
+                      </a>
+                    </span>
+                    
+                  </span>
+              
+          </div>
+          <div class="post-foot-prev">
+            
+              <a href="/2025/05/28/2025-05-28-ue4_compile_android_when_not_to_uninstall_newer_version_of_Android_Studio/" target="_self">
+                <span>Next</span>
+                <i class="iconfont icon-chevronright"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+    </div>
+    
+  <div id="btn-catalog" class="btn-catalog">
+    <i class="iconfont icon-catalog"></i>
+  </div>
+  <div class="post-catalog hidden" id="catalog">
+    <div class="title">Contents</div>
+    <div class="catalog-content">
+      
+        <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#Reimport-With-New-File-%E5%85%A5%E5%8F%A3"><span class="toc-text">Reimport With New File 入口</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#UTextureFactory-FactoryCreateBinary"><span class="toc-text">UTextureFactory::FactoryCreateBinary</span></a></li></ol>
+      
+    </div>
+  </div>
+
+  
+<script src="/js/catalog.js"></script>
+
+
+
+
+    
+      <div class="comments-container">
+        
+
+
+
+
+
+
+
+      </div>
+    
+  </div>
+
+
+        
+<div class="footer">
+  <div class="social">
+    <ul>
+      
+        <li>
+          
+              <a title="github" target="_blank" rel="noopener" href="https://github.com/zchengsite/hexo-theme-oranges">
+                <i class="iconfont icon-github"></i>
+              </a>
+              
+        </li>
+        
+    </ul>
+  </div>
+  
+    
+    <div class="footer-more">
+      
+        <a target="_blank" rel="noopener" href="https://github.com/zchengsite/hexo-theme-oranges">Copyright © 2025 Oranges</a>
+        
+    </div>
+  
+    
+    <div class="footer-more">
+      
+        <a target="_blank" rel="noopener" href="https://github.com/zchengsite/hexo-theme-oranges">Theme by Oranges | Powered by Hexo</a>
+        
+    </div>
+  
+  
+</div>
+
+      </div>
+
+      <div class="tools-bar">
+        <div class="back-to-top tools-bar-item hidden">
+  <a href="javascript: void(0)">
+    <i class="iconfont icon-chevronup"></i>
+  </a>
+</div>
+
+
+<script src="/js/backtotop.js"></script>
+
+
+
+        
+  <div class="search-icon tools-bar-item" id="search-icon">
+    <a href="javascript: void(0)">
+      <i class="iconfont icon-search"></i>
+    </a>
+  </div>
+
+  <div class="search-overlay hidden">
+    <div class="search-content" tabindex="0">
+      <div class="search-title">
+        <span class="search-icon-input">
+          <a href="javascript: void(0)">
+            <i class="iconfont icon-search"></i>
+          </a>
+        </span>
+        
+          <input type="text" class="search-input" id="search-input" placeholder="搜索...">
+        
+        <span class="search-close-icon" id="search-close-icon">
+          <a href="javascript: void(0)">
+            <i class="iconfont icon-close"></i>
+          </a>
+        </span>
+      </div>
+      <div class="search-result" id="search-result"></div>
+    </div>
+  </div>
+
+  <script type="text/javascript">
+    var inputArea = document.querySelector("#search-input")
+    var searchOverlayArea = document.querySelector(".search-overlay")
+
+    inputArea.onclick = function() {
+      getSearchFile()
+      this.onclick = null
+    }
+
+    inputArea.onkeydown = function() {
+      if(event.keyCode == 13)
+        return false
+    }
+
+    function openOrHideSearchContent() {
+      let isHidden = searchOverlayArea.classList.contains('hidden')
+      if (isHidden) {
+        searchOverlayArea.classList.remove('hidden')
+        document.body.classList.add('hidden')
+        // inputArea.focus()
+      } else {
+        searchOverlayArea.classList.add('hidden')
+        document.body.classList.remove('hidden')
+      }
+    }
+
+    function blurSearchContent(e) {
+      if (e.target === searchOverlayArea) {
+        openOrHideSearchContent()
+      }
+    }
+
+    document.querySelector("#search-icon").addEventListener("click", openOrHideSearchContent, false)
+    document.querySelector("#search-close-icon").addEventListener("click", openOrHideSearchContent, false)
+    searchOverlayArea.addEventListener("click", blurSearchContent, false)
+
+    var searchFunc = function (path, search_id, content_id) {
+      'use strict';
+      var $input = document.getElementById(search_id);
+      var $resultContent = document.getElementById(content_id);
+      $resultContent.innerHTML = "<ul><span class='local-search-empty'>First search, index file loading, please wait...<span></ul>";
+      $.ajax({
+        // 0x01. load xml file
+        url: path,
+        dataType: "xml",
+        success: function (xmlResponse) {
+          // 0x02. parse xml file
+          var datas = $("entry", xmlResponse).map(function () {
+            return {
+              title: $("title", this).text(),
+              content: $("content", this).text(),
+              url: $("url", this).text()
+            };
+          }).get();
+          $resultContent.innerHTML = "";
+
+          $input.addEventListener('input', function () {
+            // 0x03. parse query to keywords list
+            var str = '<ul class=\"search-result-list\">';
+            var keywords = this.value.trim().toLowerCase().split(/[\s\-]+/);
+            $resultContent.innerHTML = "";
+            if (this.value.trim().length <= 0) {
+              return;
+            }
+            // 0x04. perform local searching
+            datas.forEach(function (data) {
+              var isMatch = true;
+              var content_index = [];
+              if (!data.title || data.title.trim() === '') {
+                data.title = "Untitled";
+              }
+              var orig_data_title = data.title.trim();
+              var data_title = orig_data_title.toLowerCase();
+              var orig_data_content = data.content.trim().replace(/<[^>]+>/g, "");
+              var data_content = orig_data_content.toLowerCase();
+              var data_url = data.url;
+              var index_title = -1;
+              var index_content = -1;
+              var first_occur = -1;
+              // only match artiles with not empty contents
+              if (data_content !== '') {
+                keywords.forEach(function (keyword, i) {
+                  index_title = data_title.indexOf(keyword);
+                  index_content = data_content.indexOf(keyword);
+
+                  if (index_title < 0 && index_content < 0) {
+                    isMatch = false;
+                  } else {
+                    if (index_content < 0) {
+                      index_content = 0;
+                    }
+                    if (i == 0) {
+                      first_occur = index_content;
+                    }
+                    // content_index.push({index_content:index_content, keyword_len:keyword_len});
+                  }
+                });
+              } else {
+                isMatch = false;
+              }
+              // 0x05. show search results
+              if (isMatch) {
+                str += "<li><a href='" + data_url + "' class='search-result-title'>" + orig_data_title + "</a>";
+                var content = orig_data_content;
+                if (first_occur >= 0) {
+                  // cut out 100 characters
+                  var start = first_occur - 20;
+                  var end = first_occur + 80;
+
+                  if (start < 0) {
+                    start = 0;
+                  }
+
+                  if (start == 0) {
+                    end = 100;
+                  }
+
+                  if (end > content.length) {
+                    end = content.length;
+                  }
+
+                  var match_content = content.substr(start, end);
+
+                  // highlight all keywords
+                  keywords.forEach(function (keyword) {
+                    var regS = new RegExp(keyword, "gi");
+                    match_content = match_content.replace(regS, "<span class=\"search-keyword\">" + keyword + "</span>");
+                  });
+
+                  str += "<p class=\"search-result-abstract\">" + match_content + "...</p>"
+                }
+                str += "</li>";
+              }
+            });
+            str += "</ul>";
+            if (str.indexOf('<li>') === -1) {
+              return $resultContent.innerHTML = "<ul><span class='local-search-empty'>No result<span></ul>";
+            }
+            $resultContent.innerHTML = str;
+          });
+        },
+        error: function(xhr, status, error) {
+          $resultContent.innerHTML = ""
+          if (xhr.status === 404) {
+            $resultContent.innerHTML = "<ul><span class='local-search-empty'>The search.xml file was not found, please refer to：<a href='https://github.com/zchengsite/hexo-theme-oranges#configuration' target='_black'>configuration</a><span></ul>";
+          } else {
+            $resultContent.innerHTML = "<ul><span class='local-search-empty'>The request failed, Try to refresh the page or try again later.<span></ul>";
+          }
+        }
+      });
+      $(document).on('click', '#search-close-icon', function() {
+        $('#search-input').val('');
+        $('#search-result').html('');
+      });
+    }
+
+    var getSearchFile = function() {
+        var path = "/search.xml";
+        searchFunc(path, 'search-input', 'search-result');
+    }
+  </script>
+
+
+
+
+        
+  <div class="tools-bar-item theme-icon" id="switch-color-scheme">
+    <a href="javascript: void(0)">
+      <i id="theme-icon" class="iconfont icon-moon"></i>
+    </a>
+  </div>
+
+  
+<script src="/js/colorscheme.js"></script>
+
+
+
+
+
+        
+  
+    <div class="share-icon tools-bar-item">
+      <a href="javascript: void(0)" id="share-icon">
+        <i class="iconfont iconshare"></i>
+      </a>
+      <div class="share-content hidden">
+        
+          <a class="share-item" href="https://twitter.com/intent/tweet?text=' + UE4.27.2%20%E7%BA%B9%E7%90%86%20Reimport%20With%20New%20File%20%E7%9A%84%E8%B0%83%E8%AF%95%E5%88%86%E6%9E%90 + '&url=' + https%3A%2F%2Fcheapmeow.github.io%2F2025%2F05%2F21%2F2025-05-21_ue4_texture_reimport_with_new_file%2F + '" target="_blank" title="Twitter">
+            <i class="iconfont icon-twitter"></i>
+          </a>
+        
+        
+          <a class="share-item" href="https://www.facebook.com/sharer.php?u=https://cheapmeow.github.io/2025/05/21/2025-05-21_ue4_texture_reimport_with_new_file/" target="_blank" title="Facebook">
+            <i class="iconfont icon-facebooksquare"></i>
+          </a>
+        
+      </div>
+    </div>
+  
+  
+<script src="/js/shares.js"></script>
+
+
+
+      </div>
+    </div>
+  </body>
+</html>

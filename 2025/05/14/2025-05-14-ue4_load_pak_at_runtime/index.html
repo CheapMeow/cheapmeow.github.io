@@ -1,0 +1,762 @@
+<!DOCTYPE html>
+<html lang="en" color-mode="light">
+
+  <head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="author" content="John Doe" />
+  <!-- Open Graph Description 简短摘要-->
+  
+  <!-- 用于搜索引擎的文章摘要 -->
+  
+  
+  
+  <title>
+    
+      UE4.27.2 PAK 文件运行时加载的调试分析 
+      
+      
+      |
+    
+     CheapMeow
+  </title>
+
+  
+    <link rel="apple-touch-icon" href="/images/avatar.png">
+    <link rel="icon" href="/images/avatar.png">
+  
+
+  <!-- Raleway-Font -->
+  <link href="https://fonts.googleapis.com/css?family=Raleway&display=swap" rel="stylesheet">
+
+  <!-- hexo site css -->
+  <link rel="stylesheet" href="/css/main.css" />
+  <link rel="stylesheet" href="//at.alicdn.com/t/font_1886449_67xjft27j1l.css" />
+  <!-- 代码块风格 -->
+  
+    
+<link rel="stylesheet" href="/css/figcaption/mac-block.css">
+
+  
+
+  <!-- jquery3.3.1 -->
+  
+    <script defer type="text/javascript" src="/plugins/jquery.min.js"></script>
+  
+
+  <!-- fancybox -->
+  
+    <link href="/plugins/jquery.fancybox.min.css" rel="stylesheet">
+    <script defer type="text/javascript" src="/plugins/jquery.fancybox.min.js"></script>
+  
+  
+<script src="/js/fancybox.js"></script>
+
+
+  
+
+  
+
+  <script>
+    var html = document.documentElement
+    const colorMode = localStorage.getItem('color-mode')
+    if (colorMode) {
+      document.documentElement.setAttribute('color-mode', colorMode)
+    }
+  </script>
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+
+  <body>
+    <div id="app">
+      <div class="header">
+  <div class="avatar">
+    <a href="/">
+      <!-- 头像取消懒加载，添加no-lazy -->
+      
+        <img src="/images/avatar.png" alt="">
+      
+    </a>
+    <div class="nickname"><a href="/">CheapMeow</a></div>
+  </div>
+  <div class="navbar">
+    <ul>
+      
+        <li class="nav-item" data-path="/">
+          <a href="/">Home</a>
+        </li>
+      
+        <li class="nav-item" data-path="/archives/">
+          <a href="/archives/">Archives</a>
+        </li>
+      
+        <li class="nav-item" data-path="/tags/">
+          <a href="/tags/">Tags</a>
+        </li>
+      
+        <li class="nav-item" data-path="/friends/">
+          <a href="/friends/">Friends</a>
+        </li>
+      
+        <li class="nav-item" data-path="/about/">
+          <a href="/about/">About</a>
+        </li>
+      
+    </ul>
+  </div>
+</div>
+
+
+<script src="/js/activeNav.js"></script>
+
+
+
+      <div class="flex-container">
+        <!-- 文章详情页，展示文章具体内容，url形式：https://yoursite/文章标题/ -->
+<!-- 同时为「标签tag」，「朋友friend」，「分类categories」，「关于about」页面的承载页面，具体展示取决于page.type -->
+
+
+  <!-- LaTex Display -->
+
+  
+    <script async type="text/javascript" src="/plugins/mathjax/tex-chtml.js"></script>
+  
+  <script>
+    MathJax = {
+      tex: {
+        inlineMath: [['$', '$'], ['\\(', '\\)']]
+      }
+    }
+  </script>
+
+
+
+
+
+  <!-- clipboard -->
+
+  
+    <script async type="text/javascript" src="/plugins/clipboard.min.js"></script>
+  
+  
+<script src="/js/codeCopy.js"></script>
+
+
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  <!-- 文章内容页 url形式：https://yoursite/文章标题/ -->
+  <div class="container post-details" id="post-details">
+    <div class="post-content">
+      <div class="post-title">UE4.27.2 PAK 文件运行时加载的调试分析</div>
+      <div class="post-attach">
+        <span class="post-pubtime">
+          <i class="iconfont icon-updatetime mr-10" title="Update time"></i>
+          2025-06-01 10:52:45
+        </span>
+        
+              <span class="post-tags">
+                <i class="iconfont icon-tags mr-10" title="Tags"></i>
+                
+                <span class="span--tag mr-8">
+                  <a href="/tags/Cpp/" title="Cpp">
+                    #Cpp
+                  </a>
+                </span>
+                
+                <span class="span--tag mr-8">
+                  <a href="/tags/Unreal-Engine-4/" title="Unreal Engine 4">
+                    #Unreal Engine 4
+                  </a>
+                </span>
+                
+                <span class="span--tag mr-8">
+                  <a href="/tags/Package/" title="Package">
+                    #Package
+                  </a>
+                </span>
+                
+                <span class="span--tag mr-8">
+                  <a href="/tags/PAK/" title="PAK">
+                    #PAK
+                  </a>
+                </span>
+                
+              </span>
+          
+      </div>
+      <div class="markdown-body">
+        <h2 id="分析目标：挂载了-pak-之后怎么加载其中的资产？">分析目标：挂载了 pak 之后怎么加载其中的资产？</h2>
+<p>脑子里暂时比较乱，在网上查了一些东西也没看懂</p>
+<p><code>AssetRegistry.bin</code> 是干什么的，为什么我在 Cooked 文件夹中看到了它，但是在我的 pak 文件的解压结果中却没有？它会影响我挂载 pak 时的资源查找吗？</p>
+<p><code>AssetRegistry.ScanPathsSynchronous</code> 实际干了什么？为什么我挂载了 pak 之后，调用了它，我还是找不到我 pak 中的资产？</p>
+<p><code>FPakPlatformFile::MountAllPakFiles</code> 是游戏开始时加载所有 pak 的入口，这个内部也是调用 <code>FPakPlatformFile::Mount</code></p>
+<p><code>LoadObject</code> 怎么找到这些文件的？</p>
+<h2 id="挂载-PAK-文件">挂载 PAK 文件</h2>
+<p>通过 <code>FPakPlatformFile::Mount</code> 来挂载 pak 文件</p>
+<p>前半部分是创建 <code>FPakFile</code> 对象，加到 <code>FPakPlatformFile</code> 自己的数组里面</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">TRefCountPtr&lt;FPakFile&gt; Pak = <span class="keyword">new</span> <span class="built_in">FPakFile</span>(LowerLevel, InPakFilename, bSigned, bLoadIndex);</span><br></pre></td></tr></table></figure>
+<p>那么其实这里相当于仅仅是创建对象而已</p>
+<p>要么具体从磁盘加载到 package 的逻辑在后面，要么在 <code>FPakFile</code> 构造函数里面</p>
+<p>那么可以看到 <code>FPakFile</code> 构造函数调用了 <code>FPakFile::Initialize</code>。这里面也仅仅是读取 pak 文件信息，而不是读取所有内容。</p>
+<p>于是看到 <code>FPakPlatformFile::Mount</code> 的后面的部分</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> (FIoDispatcher::<span class="built_in">IsInitialized</span>())</span><br><span class="line">&#123;</span><br><span class="line">	FIoStoreEnvironment IoStoreEnvironment;</span><br><span class="line">	IoStoreEnvironment.<span class="built_in">InitializeFileEnvironment</span>(FPaths::<span class="built_in">ChangeExtension</span>(InPakFilename, <span class="built_in">FString</span>()), PakOrder);</span><br><span class="line">	FIoStatus IoStatus = FIoDispatcher::<span class="built_in">Get</span>().<span class="built_in">Mount</span>(IoStoreEnvironment, EncryptionKeyGuid, EncryptionKey);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p><code>FIoDispatcher::Mount</code> -&gt; <code>FIoDispatcherImpl::Mount</code> -&gt; <code>FFileIoStore::Mount</code></p>
+<p>于是看到是要加载 utoc 文件</p>
+<p>这跟我想看的不一样</p>
+<p>所以我还是没有看到 pak mount 之后，是怎么影响 package 的</p>
+<h2 id="LoadObject">LoadObject</h2>
+<p><code>LoadObject</code> 是 <code>StaticLoadObject</code> 的一层包装，只是转换参数，没做别的事</p>
+<p><code>StaticLoadObject</code> 是 <code>StaticLoadObjectInternal</code> 的一层包装，检查了线程状态和返回值</p>
+<p><code>StaticLoadObjectInternal</code> 决定了从哪里加载对象。</p>
+<p>如果允许重用且名称完整，先尝试在内存中查找对象。</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">		<span class="comment">// If we have a full UObject name then attempt to find the object in memory first,</span></span><br><span class="line">		<span class="keyword">if</span> (bAllowObjectReconciliation &amp;&amp; (bContainsObjectName</span><br><span class="line"><span class="meta">#<span class="keyword">if</span> WITH_EDITOR</span></span><br><span class="line">			|| GIsImportingT3D</span><br><span class="line"><span class="meta">#<span class="keyword">endif</span></span></span><br><span class="line">			))</span><br><span class="line">		&#123;</span><br><span class="line">			Result = <span class="built_in">StaticFindObjectFast</span>(ObjectClass, InOuter, *StrName);</span><br><span class="line">			<span class="keyword">if</span> (Result &amp;&amp; Result-&gt;<span class="built_in">HasAnyFlags</span>(RF_NeedLoad | RF_NeedPostLoad | RF_NeedPostLoadSubobjects | RF_WillBeLoaded))</span><br><span class="line">			&#123;</span><br><span class="line">				<span class="comment">// Object needs loading so load it before returning</span></span><br><span class="line">				Result = <span class="literal">nullptr</span>;</span><br><span class="line">			&#125;</span><br><span class="line">		&#125;</span><br></pre></td></tr></table></figure>
+<p>如果对象未找到且Outer所在包不是编译进来的，加载整个包。</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> (!Result)</span><br><span class="line">&#123;</span><br><span class="line">	<span class="keyword">if</span> (!InOuter-&gt;<span class="built_in">GetOutermost</span>()-&gt;<span class="built_in">HasAnyPackageFlags</span>(PKG_CompiledIn))</span><br><span class="line">	&#123;</span><br><span class="line">		<span class="comment">// now that we have one asset per package, we load the entire package whenever a single object is requested</span></span><br><span class="line">		<span class="built_in">LoadPackage</span>(<span class="literal">NULL</span>, *InOuter-&gt;<span class="built_in">GetOutermost</span>()-&gt;<span class="built_in">GetName</span>(), LoadFlags &amp; ~LOAD_Verify, <span class="literal">nullptr</span>, InstancingContext);</span><br><span class="line">	&#125;</span><br></pre></td></tr></table></figure>
+<p>包加载后再次查找对象。</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// now, find the object in the package</span></span><br><span class="line">Result = <span class="built_in">StaticFindObjectFast</span>(ObjectClass, InOuter, *StrName);</span><br><span class="line"><span class="keyword">if</span> (GEventDrivenLoaderEnabled &amp;&amp; Result &amp;&amp; Result-&gt;<span class="built_in">HasAnyFlags</span>(RF_NeedLoad | RF_NeedPostLoad | RF_NeedPostLoadSubobjects | RF_WillBeLoaded))</span><br><span class="line">&#123;</span><br><span class="line">	<span class="built_in">UE_LOG</span>(LogUObjectGlobals, Fatal, <span class="built_in">TEXT</span>(<span class="string">&quot;Return an object still needing load from StaticLoadObjectInternal %s&quot;</span>), *<span class="built_in">GetFullNameSafe</span>(Result));</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>如果没找到对象，且允许重定向，尝试查找重定向器</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// If the object was not found, check for a redirector and follow it if the class matches</span></span><br><span class="line"><span class="keyword">if</span> (!Result &amp;&amp; !(LoadFlags &amp; LOAD_NoRedirects))</span><br><span class="line">&#123;</span><br><span class="line">	UObjectRedirector* Redirector = <span class="built_in">FindObjectFast</span>&lt;UObjectRedirector&gt;(InOuter, *StrName);</span><br><span class="line">	<span class="keyword">if</span> (Redirector &amp;&amp; Redirector-&gt;DestinationObject &amp;&amp; Redirector-&gt;DestinationObject-&gt;<span class="built_in">IsA</span>(ObjectClass))</span><br><span class="line">	&#123;</span><br><span class="line">		<span class="keyword">return</span> Redirector-&gt;DestinationObject;</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>如果没有找到对象，且名称不包含<code>.</code>，则假设对象是包内主资产，构造完整名称后递归调用自身加载。</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> (!Result &amp;&amp; !bContainsObjectName)</span><br><span class="line">&#123;</span><br><span class="line">	<span class="comment">// Assume that the object we&#x27;re trying to load is the main asset inside of the package </span></span><br><span class="line">	<span class="comment">// which usually has the same name as the short package name.</span></span><br><span class="line">	StrName = InName;</span><br><span class="line">	StrName += <span class="built_in">TEXT</span>(<span class="string">&quot;.&quot;</span>);</span><br><span class="line">	StrName += FPackageName::<span class="built_in">GetShortName</span>(InName);</span><br><span class="line">	Result = <span class="built_in">StaticLoadObjectInternal</span>(ObjectClass, InOuter, *StrName, Filename, LoadFlags, Sandbox, bAllowObjectReconciliation, InstancingContext);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h2 id="LoadPackage">LoadPackage</h2>
+<h3 id="挣扎于-LoadPackageInternal-的前半部分">挣扎于 LoadPackageInternal 的前半部分</h3>
+<p><code>LoadPackage</code> 是 <code>LoadPackageInternal</code> 的包装，该包装添加了 debug 信息</p>
+<p><code>LoadPackageInternal</code> 内部处理包装名参数 <code>InLongPackageNameOrFilename</code>，然后调用 <code>LoadPackageAsync</code> 去异步加载包</p>
+<p><code>LoadPackageAsync</code> 是发起加载请求的包装。该包装获取 <code>IAsyncPackageLoader</code> 单例调用 <code>FAsyncLoadingThread::LoadPackage</code></p>
+<p><code>FAsyncLoadingThread::LoadPackage</code> 把请求入队</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// Add new package request</span></span><br><span class="line"><span class="function">FAsyncPackageDesc <span class="title">PackageDesc</span><span class="params">(RequestID, *PackageName, *PackageNameToLoad, InGuid ? *InGuid : FGuid(), MoveTemp(CompletionDelegatePtr), InPackageFlags, InPIEInstanceID, InPackagePriority)</span></span>;</span><br><span class="line"><span class="keyword">if</span> (InstancingContext)</span><br><span class="line">&#123;</span><br><span class="line">  PackageDesc.<span class="built_in">SetInstancingContext</span>(*InstancingContext);</span><br><span class="line">&#125;</span><br><span class="line"><span class="built_in">QueuePackage</span>(PackageDesc);</span><br></pre></td></tr></table></figure>
+<p>入队的存储在 <code>QueuedPackages</code></p>
+<p>通过查找引用可以看到 <code>FAsyncLoadingThread::CreateAsyncPackagesFromQueue</code> 处理了 <code>QueuedPackages</code></p>
+<p><code>FAsyncLoadingThread::ProcessAsyncLoading</code> 被 <code>FAsyncLoadingThread::ProcessAsyncLoading</code> 和 <code>FAsyncLoadingThread::TickAsyncThread</code> 调用</p>
+<p>对于我目前的调试，在 <code>FAsyncLoadingThread::ProcessAsyncLoading</code> 打断点，可以看到是 <code>FAsyncLoadingThread::TickAsyncThread</code> 调用了它</p>
+<p>来源是 <code>LoadPackageInternal</code> 调用了一个 flush 方法，这个方法最终调用到 <code>FAsyncLoadingThread::FlushLoading</code>, 它调用到 <code>TickAsyncThread</code></p>
+<p>那么继续看 <code>FAsyncLoadingThread::ProcessAsyncPackageRequest</code> 是怎么处理包加载的</p>
+<p>先在AsyncPackageNameLookup（异步加载队列的包名查找表）中查找是否已有对应包。</p>
+<p>如果找到，说明包已经在异步加载队列中，调用UpdateExistingPackagePriorities确保该包及其依赖包的优先级至少和当前请求的优先级一样高，避免优先级倒置。</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">FAsyncPackage* Package = <span class="built_in">FindExistingPackageAndAddCompletionCallback</span>(InRequest, AsyncPackageNameLookup, FlushTree);</span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> (Package)</span><br><span class="line">&#123;</span><br><span class="line">  <span class="comment">// The package is already sitting in the queue. Make sure the its priority, and the priority of all its</span></span><br><span class="line">  <span class="comment">// dependencies is at least as high as the priority of this request</span></span><br><span class="line">  <span class="built_in">UpdateExistingPackagePriorities</span>(Package, InRequest-&gt;Priority);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>如果未找到，尝试在已加载包集合中查找</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> (Package)</span><br><span class="line">&#123;</span><br><span class="line">  ...</span><br><span class="line">&#125;</span><br><span class="line"><span class="keyword">else</span></span><br><span class="line">&#123;</span><br><span class="line">  <span class="comment">// [BLOCKING] LoadedPackages are accessed on the main thread too, so lock to be able to add a completion callback</span></span><br><span class="line"><span class="meta">#<span class="keyword">if</span> THREADSAFE_UOBJECTS</span></span><br><span class="line">  FScopeLock <span class="built_in">LoadedLock</span>(&amp;LoadedPackagesCritical);</span><br><span class="line"><span class="meta">#<span class="keyword">endif</span></span></span><br><span class="line">  Package = <span class="built_in">FindExistingPackageAndAddCompletionCallback</span>(InRequest, LoadedPackagesNameLookup, FlushTree);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>如果仍未找到，尝试在待处理加载包集合中查找</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> (!Package)</span><br><span class="line">&#123;</span><br><span class="line">  <span class="comment">// [BLOCKING] LoadedPackagesToProcess are modified on the main thread, so lock to be able to add a completion callback</span></span><br><span class="line"><span class="meta">#<span class="keyword">if</span> THREADSAFE_UOBJECTS</span></span><br><span class="line">  <span class="function">FScopeLock <span class="title">LoadedLock</span><span class="params">(&amp;LoadedPackagesToProcessCritical)</span></span>;</span><br><span class="line"><span class="meta">#<span class="keyword">endif</span></span></span><br><span class="line">  Package = <span class="built_in">FindExistingPackageAndAddCompletionCallback</span>(InRequest, LoadedPackagesToProcessNameLookup, FlushTree);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>如果依然没找到，创建新包并加入队列</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> (!Package)</span><br><span class="line">&#123;</span><br><span class="line">  <span class="comment">// New package that needs to be loaded or a package has already been loaded long time ago</span></span><br><span class="line">  &#123;</span><br><span class="line">    <span class="comment">// GC can&#x27;t run in here</span></span><br><span class="line">    FGCScopeGuard GCGuard;</span><br><span class="line">    Package = <span class="keyword">new</span> <span class="built_in">FAsyncPackage</span>(*<span class="keyword">this</span>, *InRequest, EDLBootNotificationManager);</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">if</span> (InRequest-&gt;PackageLoadedDelegate.<span class="built_in">IsValid</span>())</span><br><span class="line">  &#123;</span><br><span class="line">    <span class="type">const</span> <span class="type">bool</span> bInternalCallback = <span class="literal">false</span>;</span><br><span class="line">    Package-&gt;<span class="built_in">AddCompletionCallback</span>(<span class="built_in">MoveTemp</span>(InRequest-&gt;PackageLoadedDelegate), bInternalCallback);</span><br><span class="line">  &#125;</span><br><span class="line">  Package-&gt;<span class="built_in">SetDependencyRootPackage</span>(InRootPackage);</span><br><span class="line">  <span class="keyword">if</span> (FlushTree)</span><br><span class="line">  &#123;</span><br><span class="line">    Package-&gt;<span class="built_in">PopulateFlushTree</span>(FlushTree);</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="comment">// Add to queue according to priority.</span></span><br><span class="line">  <span class="built_in">InsertPackage</span>(Package, <span class="literal">false</span>, EAsyncPackageInsertMode::InsertAfterMatchingPriorities);</span><br><span class="line"></span><br><span class="line">  <span class="comment">// For all other cases this is handled in FindExistingPackageAndAddCompletionCallback</span></span><br><span class="line">  <span class="type">const</span> int32 QueuedPackagesCount = QueuedPackagesCounter.<span class="built_in">Decrement</span>();</span><br><span class="line">  <span class="built_in">NotifyAsyncLoadingStateHasMaybeChanged</span>();</span><br><span class="line">  <span class="built_in">check</span>(QueuedPackagesCount &gt;= <span class="number">0</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>这里的逻辑也只有一个 <code>InsertPackage</code> 把包插入到 <code>AsyncPackages</code> 了</p>
+<p>我还是没有看到包是怎么被查找的</p>
+<p>重新看 <code>LoadPackageInternal</code></p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">int32 RequestID = <span class="built_in">LoadPackageAsync</span>(InName, <span class="literal">nullptr</span>, *InPackageName);</span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> (RequestID != INDEX_NONE)</span><br><span class="line">&#123;</span><br><span class="line">  <span class="built_in">FlushAsyncLoading</span>(RequestID);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">Result = (InOuter ? InOuter : <span class="built_in">FindObjectFast</span>&lt;UPackage&gt;(<span class="literal">nullptr</span>, PackageFName));</span><br><span class="line"><span class="keyword">return</span> Result;</span><br></pre></td></tr></table></figure>
+<p>他这里还是进入了 <code>FindObjectFast</code></p>
+<p>fine，最终还是没有看到是怎么创建的</p>
+<p>之后去看了一些别人的分析，我才发现，这个 <code>LoadPackage</code> 不负责加载资源</p>
+<p>它更多是负责抽象出来资源包的状态管理？比如管理加载这个状态之类的？但是真正的加载函数，他也是调用别人的？</p>
+<h3 id="为什么一直留在-LoadPackageInternal-前半部分">为什么一直留在 LoadPackageInternal 前半部分</h3>
+<p>其实我前面一直困顿于这段代码</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> ((FPlatformProperties::<span class="built_in">RequiresCookedData</span>() &amp;&amp; GEventDrivenLoaderEnabled</span><br><span class="line">	&amp;&amp; EVENT_DRIVEN_ASYNC_LOAD_ACTIVE_AT_RUNTIME)</span><br><span class="line"><span class="meta">#<span class="keyword">if</span> WITH_IOSTORE_IN_EDITOR</span></span><br><span class="line">	|| FIoDispatcher::<span class="built_in">IsInitialized</span>()</span><br><span class="line"><span class="meta">#<span class="keyword">endif</span></span></span><br><span class="line">	)</span><br><span class="line">&#123;</span><br><span class="line">	FString InName;</span><br><span class="line">	FString InPackageName;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">if</span> (FPackageName::<span class="built_in">IsPackageFilename</span>(InLongPackageNameOrFilename))</span><br><span class="line">	&#123;</span><br><span class="line">		FPackageName::<span class="built_in">TryConvertFilenameToLongPackageName</span>(InLongPackageNameOrFilename, InPackageName);</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">else</span></span><br><span class="line">	&#123;</span><br><span class="line">		InPackageName = InLongPackageNameOrFilename;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">if</span> (InOuter)</span><br><span class="line">	&#123;</span><br><span class="line">		InName = InOuter-&gt;<span class="built_in">GetPathName</span>();</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">else</span></span><br><span class="line">	&#123;</span><br><span class="line">		InName = InPackageName;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="function">FName <span class="title">PackageFName</span><span class="params">(*InPackageName)</span></span>;</span><br><span class="line"><span class="meta">#<span class="keyword">if</span> WITH_IOSTORE_IN_EDITOR</span></span><br><span class="line">	<span class="comment">// Use the old loader if an uncooked package exists on disk</span></span><br><span class="line">	<span class="type">const</span> <span class="type">bool</span> bDoesUncookedPackageExist = FPackageName::<span class="built_in">DoesPackageExist</span>(InPackageName, <span class="literal">nullptr</span>, <span class="literal">nullptr</span>, <span class="literal">true</span>) &amp;&amp; !<span class="built_in">DoesPackageExistInIoStore</span>(<span class="built_in">FName</span>(*InPackageName));</span><br><span class="line">	<span class="keyword">if</span> (!bDoesUncookedPackageExist)</span><br><span class="line"><span class="meta">#<span class="keyword">endif</span></span></span><br><span class="line">	&#123;</span><br><span class="line">		<span class="keyword">if</span> (FCoreDelegates::OnSyncLoadPackage.<span class="built_in">IsBound</span>())</span><br><span class="line">		&#123;</span><br><span class="line">			FCoreDelegates::OnSyncLoadPackage.<span class="built_in">Broadcast</span>(InName);</span><br><span class="line">		&#125;</span><br><span class="line"></span><br><span class="line">		int32 RequestID = <span class="built_in">LoadPackageAsync</span>(InName, <span class="literal">nullptr</span>, *InPackageName);</span><br><span class="line"></span><br><span class="line">		<span class="keyword">if</span> (RequestID != INDEX_NONE)</span><br><span class="line">		&#123;</span><br><span class="line">			<span class="built_in">FlushAsyncLoading</span>(RequestID);</span><br><span class="line">		&#125;</span><br><span class="line"></span><br><span class="line">		Result = (InOuter ? InOuter : <span class="built_in">FindObjectFast</span>&lt;UPackage&gt;(<span class="literal">nullptr</span>, PackageFName));</span><br><span class="line">		<span class="keyword">return</span> Result;</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>主要是因为，在我调试 standalone game 的时候，这个 if 一直为真</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> ((FPlatformProperties::<span class="built_in">RequiresCookedData</span>() &amp;&amp; GEventDrivenLoaderEnabled</span><br><span class="line">	&amp;&amp; EVENT_DRIVEN_ASYNC_LOAD_ACTIVE_AT_RUNTIME)</span><br></pre></td></tr></table></figure>
+<p><code>FPlatformProperties::RequiresCookedData()</code> 会为真，它是取 template 参数</p>
+<p><img src="/images/ue4_load_pak_at_runtime/FPlatformProperties_RequiresCookedData.png" alt="alt text"></p>
+<p><code>GEventDrivenLoaderEnabled</code> 等宏也是类似</p>
+<p>我这里查找的 result 总是 null</p>
+<p>在 <code>LoadPackageInternal</code> 开头打断点，正确挂载了 pak file 时，没有触发断点</p>
+<p>尝试加载一个刚刚挂载的 pack pak 中的蓝图类型，一下子就找到了 package</p>
+<p>看来，package 的更新都不是都走的 <code>LoadPackageInternal</code> 的流程</p>
+<h3 id="LoadPackageInternal-的后面的部分">LoadPackageInternal 的后面的部分</h3>
+<p>后面的部分就可以看到，核心是调用 <code>Linker-&gt;LoadAllObjects</code></p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">Linker = <span class="built_in">GetPackageLinker</span>(InOuter, *FileToLoad, LoadFlags, <span class="literal">nullptr</span>, <span class="literal">nullptr</span>, InReaderOverride, &amp;InOutLoadContext, ImportLinker, InstancingContext);</span><br><span class="line"></span><br><span class="line">...</span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> ((LoadFlags &amp; DoNotLoadExportsFlags) == <span class="number">0</span>)</span><br><span class="line">&#123;</span><br><span class="line">	Linker-&gt;<span class="built_in">LoadAllObjects</span>(GEventDrivenLoaderEnabled);</span><br><span class="line"></span><br><span class="line">	...</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p><code>GetPackageLinker</code> 里面就是从 package 查找 linker，如果找不到，就创建 linker，并且把它关联到这个 package</p>
+<p>所以是 package 拥有 linker</p>
+<h3 id="FLinkerLoad-被创建之后立即-Tick-一次">FLinkerLoad 被创建之后立即 Tick 一次</h3>
+<p>看别人博客说是，<code>LoadPackageIntenal()</code> 中会根据路径创建一个对应的 <code>FLinkerLoad</code>，它被创建完后会马上执行自身的 <code>Tick()</code></p>
+<p>在哪里？</p>
+<p>于是看到 <code>GetPackageLinker</code> -&gt; <code>FLinkerLoad::CreateLinker</code></p>
+<p>这里确实是，先 <code>FLinkerLoad::CreateLinkerAsync</code> 再 <code>Linker-&gt;Tick</code></p>
+<h2 id="FLinkerLoad">FLinkerLoad</h2>
+<h3 id="导入导出表">导入导出表</h3>
+<p><code>FLinkerLoad</code> 继承自 <code>FLinkerTables</code>，<code>FLinkerTables</code> 里面就有网上教程里面经常提到的 uasset 结构中的导入表导出表</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title class_">FLinkerTables</span></span><br><span class="line">&#123;</span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">	<span class="comment">/** The list of FObjectImports found in the package */</span></span><br><span class="line">	TArray&lt;FObjectImport&gt; ImportMap;</span><br><span class="line">	<span class="comment">/** The list of FObjectExports found in the package */</span></span><br><span class="line">	TArray&lt;FObjectExport&gt; ExportMap;</span><br><span class="line">	<span class="comment">/** List of dependency lists for each export */</span></span><br><span class="line">	TArray&lt;TArray&lt;FPackageIndex&gt; &gt; DependsMap;</span><br><span class="line">	<span class="comment">/** List of packages that are soft referenced by this package */</span></span><br><span class="line">	TArray&lt;FName&gt; SoftPackageReferenceList;</span><br><span class="line">	<span class="comment">/** List of Searchable Names, by object containing them. Not in MultiMap to allow sorting, and sizes are usually small enough where TArray makes sense */</span></span><br><span class="line">	TMap&lt;FPackageIndex, TArray&lt;FName&gt; &gt; SearchableNamesMap;</span><br></pre></td></tr></table></figure>
+<h3 id="FLinkerLoad-Tick">FLinkerLoad::Tick</h3>
+<p>因为是创建之后先调用一次 Tick 所以先看这个</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br><span class="line">134</span><br><span class="line">135</span><br><span class="line">136</span><br><span class="line">137</span><br><span class="line">138</span><br><span class="line">139</span><br><span class="line">140</span><br><span class="line">141</span><br><span class="line">142</span><br><span class="line">143</span><br><span class="line">144</span><br><span class="line">145</span><br><span class="line">146</span><br><span class="line">147</span><br><span class="line">148</span><br><span class="line">149</span><br><span class="line">150</span><br><span class="line">151</span><br><span class="line">152</span><br><span class="line">153</span><br><span class="line">154</span><br><span class="line">155</span><br><span class="line">156</span><br><span class="line">157</span><br><span class="line">158</span><br><span class="line">159</span><br><span class="line">160</span><br><span class="line">161</span><br><span class="line">162</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * Ticks an in-flight linker and spends InTimeLimit seconds on creation. This is a soft time limit used</span></span><br><span class="line"><span class="comment"> * if bInUseTimeLimit is true.</span></span><br><span class="line"><span class="comment"> *</span></span><br><span class="line"><span class="comment"> * @param	InTimeLimit		Soft time limit to use if bInUseTimeLimit is true</span></span><br><span class="line"><span class="comment"> * @param	bInUseTimeLimit	Whether to use a (soft) timelimit</span></span><br><span class="line"><span class="comment"> * @param	bInUseFullTimeLimit	Whether to use the entire time limit, even if blocked on I/O</span></span><br><span class="line"><span class="comment"> * </span></span><br><span class="line"><span class="comment"> * @return	true if linker has finished creation, false if it is still in flight</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="function">FLinkerLoad::ELinkerStatus <span class="title">FLinkerLoad::Tick</span><span class="params">( <span class="type">float</span> InTimeLimit, <span class="type">bool</span> bInUseTimeLimit, <span class="type">bool</span> bInUseFullTimeLimit, TMap&lt;TPair&lt;FName, FPackageIndex&gt;, FPackageIndex&gt;* ObjectNameWithOuterToExportMap)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">	ELinkerStatus Status = LINKER_Loaded;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">if</span>( bHasFinishedInitialization == <span class="literal">false</span> )</span><br><span class="line">	&#123;</span><br><span class="line">		<span class="comment">// Store variables used by functions below.</span></span><br><span class="line">		TickStartTime		= FPlatformTime::<span class="built_in">Seconds</span>();</span><br><span class="line">		bTimeLimitExceeded	= <span class="literal">false</span>;</span><br><span class="line">		bUseTimeLimit		= bInUseTimeLimit;</span><br><span class="line">		bUseFullTimeLimit	= bInUseFullTimeLimit;</span><br><span class="line">		TimeLimit			= InTimeLimit;</span><br><span class="line"></span><br><span class="line">		<span class="keyword">do</span></span><br><span class="line">		&#123;</span><br><span class="line">			<span class="type">bool</span> bCanSerializePackageFileSummary = <span class="literal">false</span>;</span><br><span class="line">			<span class="keyword">if</span> (GEventDrivenLoaderEnabled)</span><br><span class="line">			&#123;</span><br><span class="line">				<span class="built_in">check</span>(Loader || bDynamicClassLinker);</span><br><span class="line">				bCanSerializePackageFileSummary = <span class="literal">true</span>;</span><br><span class="line">			&#125;</span><br><span class="line">			<span class="keyword">else</span></span><br><span class="line">			&#123;</span><br><span class="line">				<span class="comment">// Create loader, aka FArchive used for serialization and also precache the package file summary.</span></span><br><span class="line">				<span class="comment">// false is returned until any precaching is complete.</span></span><br><span class="line">				<span class="built_in">SCOPED_LOADTIMER</span>(LinkerLoad_CreateLoader);</span><br><span class="line">				Status = <span class="built_in">CreateLoader</span>(<span class="built_in">TFunction</span>&lt;<span class="built_in">void</span>()&gt;([]() &#123;&#125;));</span><br><span class="line"></span><br><span class="line">				bCanSerializePackageFileSummary = (Status == LINKER_Loaded);</span><br><span class="line">			&#125;</span><br><span class="line"></span><br><span class="line">			<span class="comment">// Serialize the package file summary and presize the various arrays (name, import &amp; export map)</span></span><br><span class="line">			<span class="keyword">if</span> (bCanSerializePackageFileSummary)</span><br><span class="line">			&#123;</span><br><span class="line">				<span class="built_in">SCOPED_LOADTIMER</span>(LinkerLoad_SerializePackageFileSummary);</span><br><span class="line">				Status = <span class="built_in">SerializePackageFileSummary</span>();</span><br><span class="line">			&#125;</span><br><span class="line"></span><br><span class="line">			<span class="comment">// Serialize the name map and register the names.</span></span><br><span class="line">			<span class="keyword">if</span>( Status == LINKER_Loaded )</span><br><span class="line">			&#123;</span><br><span class="line">				<span class="built_in">SCOPED_LOADTIMER</span>(LinkerLoad_SerializeNameMap);</span><br><span class="line">				Status = <span class="built_in">SerializeNameMap</span>();</span><br><span class="line">			&#125;</span><br><span class="line"></span><br><span class="line">			<span class="comment">// Serialize the gatherable text data map.</span></span><br><span class="line">			<span class="keyword">if</span>( Status == LINKER_Loaded )</span><br><span class="line">			&#123;</span><br><span class="line">				<span class="built_in">SCOPED_LOADTIMER</span>(LinkerLoad_SerializeGatherableTextDataMap);</span><br><span class="line">				Status = <span class="built_in">SerializeGatherableTextDataMap</span>();</span><br><span class="line">			&#125;</span><br><span class="line"></span><br><span class="line">			<span class="comment">// Serialize the import map.</span></span><br><span class="line">			<span class="keyword">if</span>( Status == LINKER_Loaded )</span><br><span class="line">			&#123;</span><br><span class="line">				<span class="built_in">SCOPED_LOADTIMER</span>(LinkerLoad_SerializeImportMap);</span><br><span class="line">				Status = <span class="built_in">SerializeImportMap</span>();</span><br><span class="line">			&#125;</span><br><span class="line"></span><br><span class="line">			<span class="comment">// Serialize the export map.</span></span><br><span class="line">			<span class="keyword">if</span>( Status == LINKER_Loaded )</span><br><span class="line">			&#123;</span><br><span class="line">				<span class="built_in">SCOPED_LOADTIMER</span>(LinkerLoad_SerializeExportMap);</span><br><span class="line">				Status = <span class="built_in">SerializeExportMap</span>();</span><br><span class="line">			&#125;</span><br><span class="line"></span><br><span class="line"><span class="meta">#<span class="keyword">if</span> WITH_TEXT_ARCHIVE_SUPPORT</span></span><br><span class="line">			<span class="comment">// Reconstruct the import and export maps for text assets</span></span><br><span class="line">			<span class="keyword">if</span> (Status == LINKER_Loaded)</span><br><span class="line">			&#123;</span><br><span class="line">				<span class="built_in">SCOPED_LOADTIMER</span>(LinkerLoad_ReconstructImportAndExportMap);</span><br><span class="line">				Status = <span class="built_in">ReconstructImportAndExportMap</span>();</span><br><span class="line">			&#125;</span><br><span class="line"><span class="meta">#<span class="keyword">endif</span></span></span><br><span class="line"></span><br><span class="line">			<span class="comment">// Fix up import map for backward compatible serialization.</span></span><br><span class="line">			<span class="keyword">if</span>( Status == LINKER_Loaded )</span><br><span class="line">			&#123;	</span><br><span class="line">				<span class="built_in">SCOPED_LOADTIMER</span>(LinkerLoad_FixupImportMap);</span><br><span class="line">				Status = <span class="built_in">FixupImportMap</span>();</span><br><span class="line">			&#125;</span><br><span class="line"></span><br><span class="line">			<span class="comment">// Populate the linker instancing context for instance loading if needed.</span></span><br><span class="line">			<span class="keyword">if</span> (Status == LINKER_Loaded)</span><br><span class="line">			&#123;</span><br><span class="line">				<span class="built_in">SCOPED_LOADTIMER</span>(LinkerLoad_PopulateInstancingContext);</span><br><span class="line">				Status = <span class="built_in">PopulateInstancingContext</span>();</span><br><span class="line">			&#125;</span><br><span class="line"></span><br><span class="line">			<span class="comment">// Fix up export map for object class conversion </span></span><br><span class="line">			<span class="keyword">if</span>( Status == LINKER_Loaded )</span><br><span class="line">			&#123;	</span><br><span class="line">				<span class="built_in">SCOPED_LOADTIMER</span>(LinkerLoad_FixupExportMap);</span><br><span class="line">				Status = <span class="built_in">FixupExportMap</span>();</span><br><span class="line">			&#125;</span><br><span class="line"></span><br><span class="line">			<span class="comment">// Serialize the dependency map.</span></span><br><span class="line">			<span class="keyword">if</span>( Status == LINKER_Loaded )</span><br><span class="line">			&#123;</span><br><span class="line">				<span class="built_in">SCOPED_LOADTIMER</span>(LinkerLoad_SerializeDependsMap);</span><br><span class="line">				Status = <span class="built_in">SerializeDependsMap</span>();</span><br><span class="line">			&#125;</span><br><span class="line"></span><br><span class="line">			<span class="comment">// Hash exports.</span></span><br><span class="line">			<span class="keyword">if</span>( Status == LINKER_Loaded )</span><br><span class="line">			&#123;</span><br><span class="line">				<span class="built_in">SCOPED_LOADTIMER</span>(LinkerLoad_CreateExportHash);</span><br><span class="line">				Status = <span class="built_in">CreateExportHash</span>();</span><br><span class="line">			&#125;</span><br><span class="line"></span><br><span class="line">			<span class="comment">// Find existing objects matching exports and associate them with this linker.</span></span><br><span class="line">			<span class="keyword">if</span>( Status == LINKER_Loaded )</span><br><span class="line">			&#123;</span><br><span class="line">				<span class="built_in">SCOPED_LOADTIMER</span>(LinkerLoad_FindExistingExports);</span><br><span class="line">				Status = <span class="built_in">FindExistingExports</span>();</span><br><span class="line">			&#125;</span><br><span class="line"></span><br><span class="line">			<span class="keyword">if</span> (Status == LINKER_Loaded)</span><br><span class="line">			&#123;</span><br><span class="line">				<span class="built_in">SCOPED_LOADTIMER</span>(LinkerLoad_SerializePreloadDependencies);</span><br><span class="line">				Status = <span class="built_in">SerializePreloadDependencies</span>();</span><br><span class="line">			&#125;</span><br><span class="line"></span><br><span class="line">			<span class="comment">// Finalize creation process.</span></span><br><span class="line">			<span class="keyword">if</span>( Status == LINKER_Loaded )</span><br><span class="line">			&#123;</span><br><span class="line">				<span class="built_in">SCOPED_LOADTIMER</span>(LinkerLoad_FinalizeCreation);</span><br><span class="line">				Status = <span class="built_in">FinalizeCreation</span>(ObjectNameWithOuterToExportMap);</span><br><span class="line">			&#125;</span><br><span class="line">		&#125;</span><br><span class="line">		<span class="comment">// Loop till we are done if no time limit is specified, or loop until the real time limit is up if we want to use full time</span></span><br><span class="line">		<span class="keyword">while</span> (Status == LINKER_TimedOut &amp;&amp; </span><br><span class="line">			(!bUseTimeLimit || (bUseFullTimeLimit &amp;&amp; !<span class="built_in">IsTimeLimitExceeded</span>(<span class="built_in">TEXT</span>(<span class="string">&quot;Checking Full Timer&quot;</span>))))</span><br><span class="line">			);</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">if</span> (Status == LINKER_Failed)</span><br><span class="line">	&#123;</span><br><span class="line">		LinkerRoot-&gt;LinkerLoad = <span class="literal">nullptr</span>;</span><br><span class="line"><span class="meta">#<span class="keyword">if</span> WITH_EDITOR</span></span><br><span class="line"></span><br><span class="line">		<span class="keyword">if</span> (LoadProgressScope)</span><br><span class="line">		&#123;</span><br><span class="line">		<span class="keyword">delete</span> LoadProgressScope;</span><br><span class="line">		LoadProgressScope = <span class="literal">nullptr</span>;	</span><br><span class="line">		&#125;</span><br><span class="line"><span class="meta">#<span class="keyword">endif</span></span></span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="comment">// Return whether we completed or not.</span></span><br><span class="line">	<span class="keyword">return</span> Status;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>这个看得就很爽，每一步要做什么都很清楚</p>
+<h3 id="FLinkerLoad-LoadAllObjects">FLinkerLoad::LoadAllObjects</h3>
+<p>于是看到 <code>FLinkerLoad::LoadAllObjects</code> 预期这里是实现了怎么从磁盘加载内容到内存中</p>
+<p>他的核心部分</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">UObject* LoadedObject = <span class="built_in">CreateExportAndPreload</span>(ExportIndex, bForcePreload);</span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span>(!GEventDrivenLoaderEnabled || !EVENT_DRIVEN_ASYNC_LOAD_ACTIVE_AT_RUNTIME)</span><br><span class="line">&#123;</span><br><span class="line">	<span class="comment">// DynamicClass could be created without calling CreateImport. The imported objects will be required later when a CDO is created.</span></span><br><span class="line">	<span class="keyword">if</span> (UDynamicClass* DynamicClass = <span class="built_in">Cast</span>&lt;UDynamicClass&gt;(LoadedObject))</span><br><span class="line">	&#123;</span><br><span class="line">		<span class="keyword">for</span> (int32 ImportIndex = <span class="number">0</span>; ImportIndex &lt; ImportMap.<span class="built_in">Num</span>(); ++ImportIndex)</span><br><span class="line">		&#123;</span><br><span class="line">			<span class="built_in">CreateImport</span>(ImportIndex);</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>就很短，但是这里居然没有一个函数名明显地写从磁盘加载</p>
+<p>于是还是要挨个函数看</p>
+<h3 id="FLinkerLoad-CreateExportAndPreload">FLinkerLoad::CreateExportAndPreload</h3>
+<p>也很短</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="function">UObject* <span class="title">FLinkerLoad::CreateExportAndPreload</span><span class="params">(int32 ExportIndex, <span class="type">bool</span> bForcePreload <span class="comment">/* = false */</span>)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">	UObject *Object = <span class="built_in">CreateExport</span>(ExportIndex);</span><br><span class="line">	<span class="keyword">if</span> (Object &amp;&amp; (bForcePreload || <span class="built_in">dynamic_cast</span>&lt;UClass*&gt;(Object) || Object-&gt;<span class="built_in">IsTemplate</span>() || <span class="built_in">dynamic_cast</span>&lt;UObjectRedirector*&gt;(Object)))</span><br><span class="line">	&#123;</span><br><span class="line">		<span class="built_in">Preload</span>(Object);</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">return</span> Object;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>第一印象是首先创建导出表，然后 load 一些东西</p>
+<p>于是进来看到 <code>FLinkerLoad::Preload</code></p>
+<h3 id="FLinkerLoad-Preload">FLinkerLoad::Preload</h3>
+<p>前面一些检查就不说了</p>
+<p>定位并读取对象数据</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">int32 <span class="type">const</span> ExportIndex = Object-&gt;<span class="built_in">GetLinkerIndex</span>();</span><br><span class="line">FObjectExport&amp; Export = ExportMap[ExportIndex];</span><br><span class="line"><span class="built_in">check</span>(Export.Object==Object);</span><br><span class="line"></span><br><span class="line"><span class="type">const</span> int64 SavedPos = Loader-&gt;<span class="built_in">Tell</span>();</span><br><span class="line"><span class="built_in">Seek</span>(Export.SerialOffset);</span><br></pre></td></tr></table></figure>
+<p>这部分的内容是</p>
+<p>获取对象在导出表中的索引和导出信息</p>
+<p>保存当前文件读取位置</p>
+<p>定位到对象数据在文件中的偏移</p>
+<p>然后有一些预缓存数据</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">FAsyncArchive* AsyncLoader = <span class="built_in">GetAsyncLoader</span>();</span><br><span class="line"><span class="keyword">if</span> (AsyncLoader)</span><br><span class="line">&#123;</span><br><span class="line">    AsyncLoader-&gt;<span class="built_in">PrecacheWithTimeLimit</span>(...);</span><br><span class="line">&#125;</span><br><span class="line"><span class="keyword">else</span></span><br><span class="line">&#123;</span><br><span class="line">    Loader-&gt;<span class="built_in">Precache</span>(...);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>暂时不知道是干什么的</p>
+<p>然后应该就是反序列化对象数据的部分</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> (Object-&gt;<span class="built_in">HasAnyFlags</span>(RF_ClassDefaultObject))</span><br><span class="line">&#123;</span><br><span class="line">	<span class="comment">// Maintain the current SerializedObjects.</span></span><br><span class="line">	UObject* PrevSerializedObject = CurrentLoadContext-&gt;SerializedObject;</span><br><span class="line">	CurrentLoadContext-&gt;SerializedObject = Object;</span><br><span class="line">	Object-&gt;<span class="built_in">GetClass</span>()-&gt;<span class="built_in">SerializeDefaultObject</span>(Object, *<span class="keyword">this</span>);</span><br><span class="line">&#125;</span><br><span class="line"><span class="keyword">else</span></span><br><span class="line">&#123;</span><br><span class="line">	<span class="comment">// Maintain the current SerializedObjects.</span></span><br><span class="line">	UObject* PrevSerializedObject = CurrentLoadContext-&gt;SerializedObject;</span><br><span class="line">	CurrentLoadContext-&gt;SerializedObject = Object;</span><br><span class="line">	Object-&gt;<span class="built_in">Serialize</span>(*<span class="keyword">this</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>这其中还区分了是否是 CDO</p>
+<p>这里还涉及到递归调用 Preload，也就是递归加载</p>
+<p>涉及到通过延迟加载来解决循环依赖的问题，就不看了</p>
+<p>总之，这里最终调用到 <code>UObject::Serialize</code></p>
+<h2 id="UObject-Serialize">UObject::Serialize</h2>
+<p>各个博客已经讲得很清楚，<code>UObject::Serialize</code> 实现了访问者模式</p>
+<p>也就是它只调用一个算子，各个访问者重载这个算子，就可以实现不同的访问者有不同的逻辑</p>
+<p>这里应该是，输入 FLinkerLoad 就是读取 uasset（磁盘）到内存，输入 FLinkerSave 就是从内存保存到 uasset（磁盘）</p>
+<p>该函数内部最主要的就是调用了 <code>UObject::SerializeScriptProperties</code>，其他的逻辑比如确保预加载，事务（Undo/Redo）支持等，就不看了</p>
+<p>于是看 <code>UObject::SerializeScriptProperties</code></p>
+<h2 id="回顾">回顾</h2>
+<p>看到别人对相关代码的反序列化分析</p>
+<p><a target="_blank" rel="noopener" href="https://zhuanlan.zhihu.com/p/96870468">深入理解UE4：反序列化流程详细分析</a></p>
+<p>我之后也不想自己看实际 <code>FMemory::Memcpy</code> 读数据的部分了，就看这篇文章大概了解，在 <code>FArchiveFileReaderGeneric::Serialize</code></p>
+<p>因为感觉到这里，已经和 pak 加载相隔很远了</p>
+<p>而且其实我前面看代码，虽然大概看了每个函数都在干什么，但是不是很懂整体关系</p>
+<p>看了这个文章，大概知道，回顾 <code>FLinkerLoad::LoadAllObjects</code> 他的核心部分</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">UObject* LoadedObject = <span class="built_in">CreateExportAndPreload</span>(ExportIndex, bForcePreload);</span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span>(!GEventDrivenLoaderEnabled || !EVENT_DRIVEN_ASYNC_LOAD_ACTIVE_AT_RUNTIME)</span><br><span class="line">&#123;</span><br><span class="line">	<span class="comment">// DynamicClass could be created without calling CreateImport. The imported objects will be required later when a CDO is created.</span></span><br><span class="line">	<span class="keyword">if</span> (UDynamicClass* DynamicClass = <span class="built_in">Cast</span>&lt;UDynamicClass&gt;(LoadedObject))</span><br><span class="line">	&#123;</span><br><span class="line">		<span class="keyword">for</span> (int32 ImportIndex = <span class="number">0</span>; ImportIndex &lt; ImportMap.<span class="built_in">Num</span>(); ++ImportIndex)</span><br><span class="line">		&#123;</span><br><span class="line">			<span class="built_in">CreateImport</span>(ImportIndex);</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>先创建 export 对象，为 export 对象预先加载一些值，这个时候所有的 export 对象就是摸具就创建完了</p>
+<p>这个时候再遍历模具，对每一个模具 import，就完成了对象最终的加载</p>
+<p>我大概的概念是这样，但是我还是不知道 pak 加载之后对象是怎么被加载的</p>
+<h2 id="先尝试-ReloadPackages">先尝试 ReloadPackages</h2>
+<p>我一开始看的是</p>
+<p>Engine/Source/Editor/UnrealEd/Private/PackageTools.cpp</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="type">bool</span> <span class="title">UPackageTools::ReloadPackages</span><span class="params">( <span class="type">const</span> TArray&lt;UPackage*&gt;&amp; TopLevelPackages, FText&amp; OutErrorMessage, <span class="type">const</span> EReloadPackagesInteractionMode InteractionMode )</span></span></span><br></pre></td></tr></table></figure>
+<p>一开始只是想不求甚解直接用，但是发现它是 UnrealEd 模块，不可以编译到非 Editor 的模块中</p>
+<p>于是仔细看他的函数，发现他也只是把传入的 package 列表放在一起，然后把 in memory 的 package 挑出来不重载</p>
+<p>然后再判断要处理的包是否在当前世界中，如果在的话，当前世界就要先卸载，等包 reload 之后，世界再重新加载</p>
+<p>之后就是具体处理 package reload 的逻辑</p>
+<p>Engine/Source/Runtime/CoreUObject/Private/UObject/PackageReload.cpp</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="type">void</span> <span class="title">ReloadPackages</span><span class="params">(<span class="type">const</span> TArrayView&lt;FReloadPackageData&gt;&amp; InPackagesToReload, TArray&lt;UPackage*&gt;&amp; OutReloadedPackages, int32 InNumPackagesPerBatch)</span></span></span><br></pre></td></tr></table></figure>
+<p>这个函数在 CoreUObject 模块，所以还是可以在游戏中使用的！</p>
+<p>这里面只传入了一个 package 对象，但是代码里面是明显有新旧包的概念</p>
+<p>要被替换的旧包被 <code>PackageReloadInternal::ValidateAndPreparePackageForReload</code> 处理。</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">for</span> (<span class="type">const</span> FReloadPackageData&amp; PackageToReloadData : InPackagesToReload)</span><br><span class="line">&#123;</span><br><span class="line">	PreparingPackagesForReloadSlowTask.<span class="built_in">EnterProgressFrame</span>(<span class="number">1.0f</span>);</span><br><span class="line">	ExistingPackages.Refs.<span class="built_in">Emplace</span>(PackageReloadInternal::<span class="built_in">ValidateAndPreparePackageForReload</span>(PackageToReloadData.PackageToReload));</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>该函数首先对 package 做 validation：如果这个 package 是 in memory only 的，也就是仅存在内存中的，那么就没有从磁盘重新加载这一说了</p>
+<p>然后把 package 的 <code>FLinkerLoad</code> 成员重置，相当于断开了这个 package 和旧的磁盘数据之间的桥梁</p>
+<p>新包概念出现的位置在</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">PackageReloadInternal::FNewPackageReferences NewPackages;</span><br><span class="line">NewPackages.Refs.<span class="built_in">Reserve</span>(ExistingPackages.Refs.<span class="built_in">Num</span>());</span><br><span class="line"></span><br><span class="line"><span class="keyword">for</span> (; PackageIndex &lt; ExistingPackages.Refs.<span class="built_in">Num</span>(); ++PackageIndex)</span><br><span class="line">&#123;</span><br><span class="line">    UPackage* ExistingPackage = ExistingPackages.Refs[PackageIndex].RawRef;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// ...</span></span><br><span class="line"></span><br><span class="line">    NewPackages.Refs.<span class="built_in">Emplace</span>(PackageReloadInternal::<span class="built_in">LoadReplacementPackage</span>(ExistingPackage, InPackagesToReload[PackageIndex].LoadFlags));</span><br><span class="line"></span><br><span class="line">    UPackage* NewPackage = NewPackages.Refs[PackageIndex].Package;</span><br><span class="line">    NewPackages.Refs[PackageIndex].EventData = PackageReloadInternal::<span class="built_in">GeneratePackageReloadEvent</span>(ExistingPackage, NewPackage);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p><code>PackageReloadInternal::LoadReplacementPackage</code> 里面涉及到替换的逻辑，主要是两个</p>
+<p>一个是把旧包重命名</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">const</span> ERenameFlags PkgRenameFlags = REN_ForceNoResetLoaders | REN_DoNotDirty | REN_DontCreateRedirectors | REN_NonTransactional | REN_SkipGeneratedClasses;</span><br><span class="line">InExistingPackage-&gt;<span class="built_in">Rename</span>(</span><br><span class="line">    *<span class="built_in">MakeUniqueObjectName</span>(</span><br><span class="line">        <span class="built_in">Cast</span>&lt;UPackage&gt;(InExistingPackage-&gt;<span class="built_in">GetOuter</span>()), </span><br><span class="line">        UPackage::<span class="built_in">StaticClass</span>(), </span><br><span class="line">        *FString::<span class="built_in">Printf</span>(<span class="built_in">TEXT</span>(<span class="string">&quot;%s_DEADPACKAGE&quot;</span>), *InExistingPackage-&gt;<span class="built_in">GetName</span>())</span><br><span class="line">    ).<span class="built_in">ToString</span>(), </span><br><span class="line">    <span class="literal">nullptr</span>, </span><br><span class="line">    PkgRenameFlags</span><br><span class="line">);</span><br><span class="line"><span class="built_in">MarkPackageReplaced</span>(InExistingPackage);</span><br></pre></td></tr></table></figure>
+<p>一个是加载新包</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">UPackage* NewPackage = <span class="built_in">LoadPackage</span>(<span class="built_in">Cast</span>&lt;UPackage&gt;(InExistingPackage-&gt;<span class="built_in">GetOuter</span>()), *ExistingPackageName, InLoadFlags);</span><br></pre></td></tr></table></figure>
+<p>此外还有逻辑来处理加载新包时的失败逻辑，这里就不看了</p>
+<p>重新反序列化对象的逻辑</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// Main pass to go through and fix-up any references pointing to data from the old package to point to data from the new package</span></span><br><span class="line"><span class="comment">// todo: multi-thread this like FHotReloadModule::ReplaceReferencesToReconstructedCDOs?</span></span><br><span class="line"><span class="keyword">for</span> (FThreadSafeObjectIterator <span class="built_in">ObjIter</span>(UObject::<span class="built_in">StaticClass</span>(), <span class="literal">false</span>, RF_NoFlags, EInternalObjectFlags::PendingKill); ObjIter; ++ObjIter)</span><br><span class="line">&#123;</span><br><span class="line">	UObject* PotentialReferencer = *ObjIter;</span><br><span class="line"></span><br><span class="line">	<span class="comment">// Mutating the old versions of classes can result in us replacing the SuperStruct pointer, which results</span></span><br><span class="line">	<span class="comment">// in class layout change and subsequently crashes because instances will not match this new class layout:</span></span><br><span class="line">	UClass* AsClass = <span class="built_in">Cast</span>&lt;UClass&gt;(PotentialReferencer);</span><br><span class="line">	<span class="keyword">if</span> (!AsClass)</span><br><span class="line">	&#123;</span><br><span class="line">		AsClass = PotentialReferencer-&gt;<span class="built_in">GetTypedOuter</span>&lt;UClass&gt;();</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">if</span>(AsClass)</span><br><span class="line">	&#123;</span><br><span class="line">		<span class="keyword">if</span>( AsClass-&gt;<span class="built_in">HasAnyClassFlags</span>(CLASS_NewerVersionExists) || </span><br><span class="line">			AsClass-&gt;<span class="built_in">HasAnyFlags</span>(RF_NewerVersionExists))</span><br><span class="line">		&#123;</span><br><span class="line">			<span class="keyword">continue</span>;</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="function">PackageReloadInternal::FReplaceObjectReferencesArchive <span class="title">ReplaceRefsArchive</span><span class="params">(PotentialReferencer, OldObjectToNewData, ExistingPackages.Refs, NewPackages.Refs)</span></span>;</span><br><span class="line">	PotentialReferencer-&gt;<span class="built_in">Serialize</span>(ReplaceRefsArchive); <span class="comment">// Deal with direct references during Serialization</span></span><br><span class="line">	PotentialReferencer-&gt;<span class="built_in">GetClass</span>()-&gt;<span class="built_in">CallAddReferencedObjects</span>(PotentialReferencer, ReplaceRefsArchive); <span class="comment">// Deal with indirect references via AddReferencedObjects</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>这里是遍历所有的 UObject</p>
+<p>这个迭代器是构造的时候指向一个全局变量，它是一个存储了 UObject 的数组（内部实现还是有一些说法的，但是这里先跳过）</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// Engine/Source/Runtime/CoreUObject/Private/UObject/UObjectHash.cpp</span></span><br><span class="line"></span><br><span class="line"><span class="comment">// Global UObject array instance</span></span><br><span class="line">FUObjectArray GUObjectArray;</span><br></pre></td></tr></table></figure>
+<p>首先判断对象所属的类是否标记为“有新版本存在”（CLASS_NewerVersionExists或RF_NewerVersionExists）。</p>
+<p>这类对象通常是热重载或重新构建的类的旧版本实例，跳过它们避免因类布局变化导致崩溃。</p>
+<p>之后的逻辑就是对于当前遍历到的 UObject 替换引用，然后反序列化</p>
+<p>试用了一下，简直完美！直接就成功了！</p>
+<h2 id="运行时替换纹理导致的偶发性问题">运行时替换纹理导致的偶发性问题</h2>
+<p>这是一个偶发性的问题</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">FRHIResource::Release() RHIResources.h:54</span><br><span class="line">TArray::~TArray&lt;…&gt;() Array.h:621</span><br><span class="line">FD3D11UniformBuffer::~FD3D11UniformBuffer() D3D11UniformBuffer.cpp:381</span><br><span class="line">&lt;lambda_84e30748...&gt;::operator()(TArray&lt;…&gt; &amp;) RHI.cpp:599</span><br><span class="line">FRHIResource::FlushPendingDeletes(bool) RHI.cpp:629</span><br><span class="line">FlushPendingDeleteRHIResources_RenderThread() RenderingThread.cpp:1303</span><br><span class="line">&lt;lambda_83aa676a...&gt;::operator()(FRHICommandListImmediate &amp;) SceneRendering.cpp:4008</span><br><span class="line">TEnqueueUniqueRenderCommandType&lt;`FRendererModule::BeginRenderingViewFamily&#x27;::`43&#x27;::FDrawSceneCommandName,&lt;lambda_83aa676af25f62e876425d334fdfc6e4&gt; &gt;::DoTask(Type,const TRefCountPtr&lt;FGraphEvent&gt; &amp;) RenderingThread.h:183</span><br><span class="line">TGraphTask&lt;TEnqueueUniqueRenderCommandType&lt;`FRendererModule::BeginRenderingViewFamily&#x27;::`43&#x27;::FDrawSceneCommandName,&lt;lambda_83aa676af25f62e876425d334fdfc6e4&gt; &gt; &gt;::ExecuteTask(TArray&lt;FBaseGraphTask *,TSizedDefaultAllocator&lt;32&gt; &gt; &amp;,Type) TaskGraphInterfaces.h:886</span><br><span class="line">FNamedTaskThread::ProcessTasksNamedThread(int, bool) TaskGraph.cpp:710</span><br><span class="line">FNamedTaskThread::ProcessTasksUntilQuit(int) TaskGraph.cpp:601</span><br><span class="line">FTaskGraphImplementation::ProcessThreadUntilRequestReturn(Type) TaskGraph.cpp:1480</span><br><span class="line">RenderingThreadMain(FEvent *) RenderingThread.cpp:372</span><br><span class="line">FRenderingThread::Run() RenderingThread.cpp:526</span><br><span class="line">FRunnableThreadWin::Run() WindowsRunnableThread.cpp:84</span><br><span class="line">FRunnableThreadWin::GuardedRun() WindowsRunnableThread.cpp:27</span><br><span class="line">FRunnableThreadWin::_ThreadProc(void *) WindowsRunnableThread.h:37</span><br></pre></td></tr></table></figure>
+<p>这段报错的原因是，在 <code>FD3D11UniformBuffer</code> 中，有一个存储资源的 table</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/** Resource table containing RHI references. */</span></span><br><span class="line">TArray&lt;TRefCountPtr&lt;FRHIResource&gt; &gt; ResourceTable;</span><br></pre></td></tr></table></figure>
+<p>在 <code>FD3D11UniformBuffer</code> 销毁时，这个 TArray 也一起销毁</p>
+<p>TArray 析构时，对每一个成员先调用析构</p>
+<p>在这里，一个 <code>TRefCountPtr&lt;FRHIResource&gt;</code> 已经是野指针了</p>
+<p>这个是 delete 队列里面去调用 <code>FD3D11UniformBuffer</code> 的析构的，于是还是要看谁发起了这个析构 <code>FD3D11UniformBuffer</code></p>
+<p>因为看到 release 方法是把 RHI 资源放入删除队列中，并且 <code>class FD3D11UniformBuffer : public FRHIUniformBuffer</code>, <code>class FRHIUniformBuffer : public FRHIResource</code> 所以应该是有人调用了 <code>FRHIUniformBuffer</code> 的 <code>Release()</code></p>
+<p>我在 <code>FRHIUniformBuffer::Release</code> 这里加上 Log，这个 <code>FRHIUniformBuffer::Release()</code> 调用非常频繁，有来自 <code>FRHICommandSetShaderUniformBuffer</code>, <code>FRHICommandSetGraphicsPipelineState</code></p>
+<p>但是我还是不知道 <code>ResourceTable</code> 的成员为什么变成野指针了，所以我还不知道这个问题怎么解决</p>
+<script src="https://utteranc.es/client.js"
+        repo="CheapMeow/cheapmeow.github.io"
+        issue-term="pathname"
+        theme="github-light"
+        crossorigin="anonymous"
+        async>
+</script>
+      </div>
+      
+        <div class="prev-or-next">
+          <div class="post-foot-next">
+            
+              <a href="/2025/05/13/2025-05-13-ue4_UnrealPAK_repack/" target="_self">
+                <i class="iconfont icon-chevronleft"></i>
+                <span>Prev</span>
+              </a>
+            
+          </div>
+          <div class="post-attach">
+            <span class="post-pubtime">
+              <i class="iconfont icon-updatetime mr-10" title="Update time"></i>
+              2025-06-01 10:52:45
+            </span>
+            
+                  <span class="post-tags">
+                    <i class="iconfont icon-tags mr-10" title="Tags"></i>
+                    
+                    <span class="span--tag mr-8">
+                      <a href="/tags/Cpp/" title="Cpp">
+                        #Cpp
+                      </a>
+                    </span>
+                    
+                    <span class="span--tag mr-8">
+                      <a href="/tags/Unreal-Engine-4/" title="Unreal Engine 4">
+                        #Unreal Engine 4
+                      </a>
+                    </span>
+                    
+                    <span class="span--tag mr-8">
+                      <a href="/tags/Package/" title="Package">
+                        #Package
+                      </a>
+                    </span>
+                    
+                    <span class="span--tag mr-8">
+                      <a href="/tags/PAK/" title="PAK">
+                        #PAK
+                      </a>
+                    </span>
+                    
+                  </span>
+              
+          </div>
+          <div class="post-foot-prev">
+            
+              <a href="/2025/05/14/2025-05-14-ue4_debug_standalone_game/" target="_self">
+                <span>Next</span>
+                <i class="iconfont icon-chevronright"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+    </div>
+    
+  <div id="btn-catalog" class="btn-catalog">
+    <i class="iconfont icon-catalog"></i>
+  </div>
+  <div class="post-catalog hidden" id="catalog">
+    <div class="title">Contents</div>
+    <div class="catalog-content">
+      
+        <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%88%86%E6%9E%90%E7%9B%AE%E6%A0%87%EF%BC%9A%E6%8C%82%E8%BD%BD%E4%BA%86-pak-%E4%B9%8B%E5%90%8E%E6%80%8E%E4%B9%88%E5%8A%A0%E8%BD%BD%E5%85%B6%E4%B8%AD%E7%9A%84%E8%B5%84%E4%BA%A7%EF%BC%9F"><span class="toc-text">分析目标：挂载了 pak 之后怎么加载其中的资产？</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%8C%82%E8%BD%BD-PAK-%E6%96%87%E4%BB%B6"><span class="toc-text">挂载 PAK 文件</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#LoadObject"><span class="toc-text">LoadObject</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#LoadPackage"><span class="toc-text">LoadPackage</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%8C%A3%E6%89%8E%E4%BA%8E-LoadPackageInternal-%E7%9A%84%E5%89%8D%E5%8D%8A%E9%83%A8%E5%88%86"><span class="toc-text">挣扎于 LoadPackageInternal 的前半部分</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%B8%BA%E4%BB%80%E4%B9%88%E4%B8%80%E7%9B%B4%E7%95%99%E5%9C%A8-LoadPackageInternal-%E5%89%8D%E5%8D%8A%E9%83%A8%E5%88%86"><span class="toc-text">为什么一直留在 LoadPackageInternal 前半部分</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#LoadPackageInternal-%E7%9A%84%E5%90%8E%E9%9D%A2%E7%9A%84%E9%83%A8%E5%88%86"><span class="toc-text">LoadPackageInternal 的后面的部分</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#FLinkerLoad-%E8%A2%AB%E5%88%9B%E5%BB%BA%E4%B9%8B%E5%90%8E%E7%AB%8B%E5%8D%B3-Tick-%E4%B8%80%E6%AC%A1"><span class="toc-text">FLinkerLoad 被创建之后立即 Tick 一次</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#FLinkerLoad"><span class="toc-text">FLinkerLoad</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%AF%BC%E5%85%A5%E5%AF%BC%E5%87%BA%E8%A1%A8"><span class="toc-text">导入导出表</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#FLinkerLoad-Tick"><span class="toc-text">FLinkerLoad::Tick</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#FLinkerLoad-LoadAllObjects"><span class="toc-text">FLinkerLoad::LoadAllObjects</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#FLinkerLoad-CreateExportAndPreload"><span class="toc-text">FLinkerLoad::CreateExportAndPreload</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#FLinkerLoad-Preload"><span class="toc-text">FLinkerLoad::Preload</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#UObject-Serialize"><span class="toc-text">UObject::Serialize</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%9B%9E%E9%A1%BE"><span class="toc-text">回顾</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%85%88%E5%B0%9D%E8%AF%95-ReloadPackages"><span class="toc-text">先尝试 ReloadPackages</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E8%BF%90%E8%A1%8C%E6%97%B6%E6%9B%BF%E6%8D%A2%E7%BA%B9%E7%90%86%E5%AF%BC%E8%87%B4%E7%9A%84%E5%81%B6%E5%8F%91%E6%80%A7%E9%97%AE%E9%A2%98"><span class="toc-text">运行时替换纹理导致的偶发性问题</span></a></li></ol>
+      
+    </div>
+  </div>
+
+  
+<script src="/js/catalog.js"></script>
+
+
+
+
+    
+      <div class="comments-container">
+        
+
+
+
+
+
+
+
+      </div>
+    
+  </div>
+
+
+        
+<div class="footer">
+  <div class="social">
+    <ul>
+      
+        <li>
+          
+              <a title="github" target="_blank" rel="noopener" href="https://github.com/zchengsite/hexo-theme-oranges">
+                <i class="iconfont icon-github"></i>
+              </a>
+              
+        </li>
+        
+    </ul>
+  </div>
+  
+    
+    <div class="footer-more">
+      
+        <a target="_blank" rel="noopener" href="https://github.com/zchengsite/hexo-theme-oranges">Copyright © 2025 Oranges</a>
+        
+    </div>
+  
+    
+    <div class="footer-more">
+      
+        <a target="_blank" rel="noopener" href="https://github.com/zchengsite/hexo-theme-oranges">Theme by Oranges | Powered by Hexo</a>
+        
+    </div>
+  
+  
+</div>
+
+      </div>
+
+      <div class="tools-bar">
+        <div class="back-to-top tools-bar-item hidden">
+  <a href="javascript: void(0)">
+    <i class="iconfont icon-chevronup"></i>
+  </a>
+</div>
+
+
+<script src="/js/backtotop.js"></script>
+
+
+
+        
+  <div class="search-icon tools-bar-item" id="search-icon">
+    <a href="javascript: void(0)">
+      <i class="iconfont icon-search"></i>
+    </a>
+  </div>
+
+  <div class="search-overlay hidden">
+    <div class="search-content" tabindex="0">
+      <div class="search-title">
+        <span class="search-icon-input">
+          <a href="javascript: void(0)">
+            <i class="iconfont icon-search"></i>
+          </a>
+        </span>
+        
+          <input type="text" class="search-input" id="search-input" placeholder="搜索...">
+        
+        <span class="search-close-icon" id="search-close-icon">
+          <a href="javascript: void(0)">
+            <i class="iconfont icon-close"></i>
+          </a>
+        </span>
+      </div>
+      <div class="search-result" id="search-result"></div>
+    </div>
+  </div>
+
+  <script type="text/javascript">
+    var inputArea = document.querySelector("#search-input")
+    var searchOverlayArea = document.querySelector(".search-overlay")
+
+    inputArea.onclick = function() {
+      getSearchFile()
+      this.onclick = null
+    }
+
+    inputArea.onkeydown = function() {
+      if(event.keyCode == 13)
+        return false
+    }
+
+    function openOrHideSearchContent() {
+      let isHidden = searchOverlayArea.classList.contains('hidden')
+      if (isHidden) {
+        searchOverlayArea.classList.remove('hidden')
+        document.body.classList.add('hidden')
+        // inputArea.focus()
+      } else {
+        searchOverlayArea.classList.add('hidden')
+        document.body.classList.remove('hidden')
+      }
+    }
+
+    function blurSearchContent(e) {
+      if (e.target === searchOverlayArea) {
+        openOrHideSearchContent()
+      }
+    }
+
+    document.querySelector("#search-icon").addEventListener("click", openOrHideSearchContent, false)
+    document.querySelector("#search-close-icon").addEventListener("click", openOrHideSearchContent, false)
+    searchOverlayArea.addEventListener("click", blurSearchContent, false)
+
+    var searchFunc = function (path, search_id, content_id) {
+      'use strict';
+      var $input = document.getElementById(search_id);
+      var $resultContent = document.getElementById(content_id);
+      $resultContent.innerHTML = "<ul><span class='local-search-empty'>First search, index file loading, please wait...<span></ul>";
+      $.ajax({
+        // 0x01. load xml file
+        url: path,
+        dataType: "xml",
+        success: function (xmlResponse) {
+          // 0x02. parse xml file
+          var datas = $("entry", xmlResponse).map(function () {
+            return {
+              title: $("title", this).text(),
+              content: $("content", this).text(),
+              url: $("url", this).text()
+            };
+          }).get();
+          $resultContent.innerHTML = "";
+
+          $input.addEventListener('input', function () {
+            // 0x03. parse query to keywords list
+            var str = '<ul class=\"search-result-list\">';
+            var keywords = this.value.trim().toLowerCase().split(/[\s\-]+/);
+            $resultContent.innerHTML = "";
+            if (this.value.trim().length <= 0) {
+              return;
+            }
+            // 0x04. perform local searching
+            datas.forEach(function (data) {
+              var isMatch = true;
+              var content_index = [];
+              if (!data.title || data.title.trim() === '') {
+                data.title = "Untitled";
+              }
+              var orig_data_title = data.title.trim();
+              var data_title = orig_data_title.toLowerCase();
+              var orig_data_content = data.content.trim().replace(/<[^>]+>/g, "");
+              var data_content = orig_data_content.toLowerCase();
+              var data_url = data.url;
+              var index_title = -1;
+              var index_content = -1;
+              var first_occur = -1;
+              // only match artiles with not empty contents
+              if (data_content !== '') {
+                keywords.forEach(function (keyword, i) {
+                  index_title = data_title.indexOf(keyword);
+                  index_content = data_content.indexOf(keyword);
+
+                  if (index_title < 0 && index_content < 0) {
+                    isMatch = false;
+                  } else {
+                    if (index_content < 0) {
+                      index_content = 0;
+                    }
+                    if (i == 0) {
+                      first_occur = index_content;
+                    }
+                    // content_index.push({index_content:index_content, keyword_len:keyword_len});
+                  }
+                });
+              } else {
+                isMatch = false;
+              }
+              // 0x05. show search results
+              if (isMatch) {
+                str += "<li><a href='" + data_url + "' class='search-result-title'>" + orig_data_title + "</a>";
+                var content = orig_data_content;
+                if (first_occur >= 0) {
+                  // cut out 100 characters
+                  var start = first_occur - 20;
+                  var end = first_occur + 80;
+
+                  if (start < 0) {
+                    start = 0;
+                  }
+
+                  if (start == 0) {
+                    end = 100;
+                  }
+
+                  if (end > content.length) {
+                    end = content.length;
+                  }
+
+                  var match_content = content.substr(start, end);
+
+                  // highlight all keywords
+                  keywords.forEach(function (keyword) {
+                    var regS = new RegExp(keyword, "gi");
+                    match_content = match_content.replace(regS, "<span class=\"search-keyword\">" + keyword + "</span>");
+                  });
+
+                  str += "<p class=\"search-result-abstract\">" + match_content + "...</p>"
+                }
+                str += "</li>";
+              }
+            });
+            str += "</ul>";
+            if (str.indexOf('<li>') === -1) {
+              return $resultContent.innerHTML = "<ul><span class='local-search-empty'>No result<span></ul>";
+            }
+            $resultContent.innerHTML = str;
+          });
+        },
+        error: function(xhr, status, error) {
+          $resultContent.innerHTML = ""
+          if (xhr.status === 404) {
+            $resultContent.innerHTML = "<ul><span class='local-search-empty'>The search.xml file was not found, please refer to：<a href='https://github.com/zchengsite/hexo-theme-oranges#configuration' target='_black'>configuration</a><span></ul>";
+          } else {
+            $resultContent.innerHTML = "<ul><span class='local-search-empty'>The request failed, Try to refresh the page or try again later.<span></ul>";
+          }
+        }
+      });
+      $(document).on('click', '#search-close-icon', function() {
+        $('#search-input').val('');
+        $('#search-result').html('');
+      });
+    }
+
+    var getSearchFile = function() {
+        var path = "/search.xml";
+        searchFunc(path, 'search-input', 'search-result');
+    }
+  </script>
+
+
+
+
+        
+  <div class="tools-bar-item theme-icon" id="switch-color-scheme">
+    <a href="javascript: void(0)">
+      <i id="theme-icon" class="iconfont icon-moon"></i>
+    </a>
+  </div>
+
+  
+<script src="/js/colorscheme.js"></script>
+
+
+
+
+
+        
+  
+    <div class="share-icon tools-bar-item">
+      <a href="javascript: void(0)" id="share-icon">
+        <i class="iconfont iconshare"></i>
+      </a>
+      <div class="share-content hidden">
+        
+          <a class="share-item" href="https://twitter.com/intent/tweet?text=' + UE4.27.2%20PAK%20%E6%96%87%E4%BB%B6%E8%BF%90%E8%A1%8C%E6%97%B6%E5%8A%A0%E8%BD%BD%E7%9A%84%E8%B0%83%E8%AF%95%E5%88%86%E6%9E%90 + '&url=' + https%3A%2F%2Fcheapmeow.github.io%2F2025%2F05%2F14%2F2025-05-14-ue4_load_pak_at_runtime%2F + '" target="_blank" title="Twitter">
+            <i class="iconfont icon-twitter"></i>
+          </a>
+        
+        
+          <a class="share-item" href="https://www.facebook.com/sharer.php?u=https://cheapmeow.github.io/2025/05/14/2025-05-14-ue4_load_pak_at_runtime/" target="_blank" title="Facebook">
+            <i class="iconfont icon-facebooksquare"></i>
+          </a>
+        
+      </div>
+    </div>
+  
+  
+<script src="/js/shares.js"></script>
+
+
+
+      </div>
+    </div>
+  </body>
+</html>

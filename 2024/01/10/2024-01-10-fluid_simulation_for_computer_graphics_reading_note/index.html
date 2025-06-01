@@ -1,0 +1,1278 @@
+<!DOCTYPE html>
+<html lang="en" color-mode="light">
+
+  <head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="author" content="John Doe" />
+  <!-- Open Graph Description 简短摘要-->
+  
+  <!-- 用于搜索引擎的文章摘要 -->
+  
+  
+  
+  <title>
+    
+      Fluid Simulation for Computer Graphics Reading Note 
+      
+      
+      |
+    
+     CheapMeow
+  </title>
+
+  
+    <link rel="apple-touch-icon" href="/images/avatar.png">
+    <link rel="icon" href="/images/avatar.png">
+  
+
+  <!-- Raleway-Font -->
+  <link href="https://fonts.googleapis.com/css?family=Raleway&display=swap" rel="stylesheet">
+
+  <!-- hexo site css -->
+  <link rel="stylesheet" href="/css/main.css" />
+  <link rel="stylesheet" href="//at.alicdn.com/t/font_1886449_67xjft27j1l.css" />
+  <!-- 代码块风格 -->
+  
+    
+<link rel="stylesheet" href="/css/figcaption/mac-block.css">
+
+  
+
+  <!-- jquery3.3.1 -->
+  
+    <script defer type="text/javascript" src="/plugins/jquery.min.js"></script>
+  
+
+  <!-- fancybox -->
+  
+    <link href="/plugins/jquery.fancybox.min.css" rel="stylesheet">
+    <script defer type="text/javascript" src="/plugins/jquery.fancybox.min.js"></script>
+  
+  
+<script src="/js/fancybox.js"></script>
+
+
+  
+
+  
+
+  <script>
+    var html = document.documentElement
+    const colorMode = localStorage.getItem('color-mode')
+    if (colorMode) {
+      document.documentElement.setAttribute('color-mode', colorMode)
+    }
+  </script>
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+
+  <body>
+    <div id="app">
+      <div class="header">
+  <div class="avatar">
+    <a href="/">
+      <!-- 头像取消懒加载，添加no-lazy -->
+      
+        <img src="/images/avatar.png" alt="">
+      
+    </a>
+    <div class="nickname"><a href="/">CheapMeow</a></div>
+  </div>
+  <div class="navbar">
+    <ul>
+      
+        <li class="nav-item" data-path="/">
+          <a href="/">Home</a>
+        </li>
+      
+        <li class="nav-item" data-path="/archives/">
+          <a href="/archives/">Archives</a>
+        </li>
+      
+        <li class="nav-item" data-path="/tags/">
+          <a href="/tags/">Tags</a>
+        </li>
+      
+        <li class="nav-item" data-path="/friends/">
+          <a href="/friends/">Friends</a>
+        </li>
+      
+        <li class="nav-item" data-path="/about/">
+          <a href="/about/">About</a>
+        </li>
+      
+    </ul>
+  </div>
+</div>
+
+
+<script src="/js/activeNav.js"></script>
+
+
+
+      <div class="flex-container">
+        <!-- 文章详情页，展示文章具体内容，url形式：https://yoursite/文章标题/ -->
+<!-- 同时为「标签tag」，「朋友friend」，「分类categories」，「关于about」页面的承载页面，具体展示取决于page.type -->
+
+
+  <!-- LaTex Display -->
+
+  
+    <script async type="text/javascript" src="/plugins/mathjax/tex-chtml.js"></script>
+  
+  <script>
+    MathJax = {
+      tex: {
+        inlineMath: [['$', '$'], ['\\(', '\\)']]
+      }
+    }
+  </script>
+
+
+
+
+
+  <!-- clipboard -->
+
+  
+    <script async type="text/javascript" src="/plugins/clipboard.min.js"></script>
+  
+  
+<script src="/js/codeCopy.js"></script>
+
+
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  <!-- 文章内容页 url形式：https://yoursite/文章标题/ -->
+  <div class="container post-details" id="post-details">
+    <div class="post-content">
+      <div class="post-title">Fluid Simulation for Computer Graphics Reading Note</div>
+      <div class="post-attach">
+        <span class="post-pubtime">
+          <i class="iconfont icon-updatetime mr-10" title="Update time"></i>
+          2025-06-01 10:52:45
+        </span>
+        
+              <span class="post-tags">
+                <i class="iconfont icon-tags mr-10" title="Tags"></i>
+                
+                <span class="span--tag mr-8">
+                  <a href="/tags/Fluid-Simulation/" title="Fluid Simulation">
+                    #Fluid Simulation
+                  </a>
+                </span>
+                
+                <span class="span--tag mr-8">
+                  <a href="/tags/Graphics/" title="Graphics">
+                    #Graphics
+                  </a>
+                </span>
+                
+              </span>
+          
+      </div>
+      <div class="markdown-body">
+        <p>It is an reading note of “Fluid Simulation for Computer Graphics”, related about fluid simulation coding, such as SPH, Level Set, PIC/FLIP and so on.</p>
+<p>The article can’t cover all details, it just a reading note. Implementation details are so complex that it is recommended to have a look on original source.</p>
+<p>Also see:</p>
+<p><a target="_blank" rel="noopener" href="http://rlguy.com/gridfluidsim/">http://rlguy.com/gridfluidsim/</a></p>
+<script type="text/javascript" async
+  src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-MML-AM_CHTML">
+</script>
+<h2 id="Chapter-1-The-Equations-of-Fluids">Chapter 1: The Equations of Fluids</h2>
+<h3 id="Force">Force</h3>
+<p>What is the pressure? Whatever it takes to keep the fluid at constant volume.</p>
+<p>It measures the imbalance in pressure at the position of the particle is simply to take the negative gradient of pressure <img src="https://math.now.sh?inline=-%5Cnabla%20p" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/></p>
+<p>Viscosity force tries to resist deforming. It tries to make our particle move at the average velocity of the nearby particle.</p>
+<p>The differential operator that measures how far a quantity is from the average around it is Laplacian operator <img src="https://math.now.sh?inline=%5Cnabla%20%5Ccdot%20%5Cnabla" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/>, so viscosity force is <img src="https://math.now.sh?inline=%5Cnabla%20%5Ccdot%20%5Cnabla%20u" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/></p>
+<h3 id="Incompressibility">Incompressibility</h3>
+<p>Incompressibility means volume doesn’t change. It is <img src="https://math.now.sh?inline=%5Ciiint_%7B%5COmega%7D%20%5Cnabla%20%5Ccdot%20u%20%3D%200" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/>. How to get NS eq <img src="https://math.now.sh?inline=%5Cnabla%20%5Ccdot%20u%20%3D%200" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/>?</p>
+<p>The integration should be true for any choice of <img src="https://math.now.sh?inline=%5COmega" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/>, any region of fluid. The only continuous function that integrates to zero independent of the region of integration is zero itself. Thus the integrand has to be zero everywhere.</p>
+<p>One of the tricky parts of simulating incompressible fluids is making sure that the velocity field stays divergence-free. This is where the pressure comes in.</p>
+<p>Optimization View: think of the incompressibility condition as a constraint and the pressure field as the Lagrange multiplier.</p>
+<h3 id="Dropping-Viscosity">Dropping Viscosity</h3>
+<p>Most numerical methods for simulating fluids unavoidably introduce errors that can be physically reinterpreted as viscosity, so even if we drop viscosity in the equations, we will still get something that looks like it.</p>
+<h3 id="Boundary-Conditions">Boundary Conditions</h3>
+<h4 id="Wall-condition">Wall condition</h4>
+<p>…</p>
+<h4 id="Free-surface">Free surface</h4>
+<p>Fluid area and air area can’t share same update process, because air is 700 times lighter than water, it’s not able to have that big of an effect on the water anyhow.</p>
+<p>Bubbles are another topic.</p>
+<p>So instead we make the modeling simplification that the air can be represented as a region with constant atmospheric pressure. In actual fact, since only differences in pressure matter (in incompressible flow), we can set the air pressure to be any arbitrary constant: zero is the most convenient. Thus a free surface is one where p = 0, and we don’t control the velocity in any particular way.</p>
+<p>The other case in which free surfaces arise is where we are trying to simulate a bit of fluid that is part of a much larger domain. We obviously can’t afford to simulate the entire atmosphere of the Earth, so we will just make a grid that covers the region we expect to be &quot;interesting.</p>
+<p>For smaller-scale liquids, surface tension can be very important. So curvature of free surfaces is important.</p>
+<h4 id="Bubbles">Bubbles</h4>
+<p>For normal water, we consider volume and momentum. For bubbles, we only condsider volume. Because air is much lighter than water, and so usually might not be able to transfer much momentum to water.</p>
+<p>But bubbles may immediately collapse (there’s no pressure inside to stop them losing their volume). To handle this kind of situation, you need either hacks based on adding bubble particles to a free surface flow, or more generally a simulation of both air and water (called two-phase flow, because there are two phases or types of fluid involved).</p>
+<h2 id="Chapter-2-Overview-of-Numerical-Simulation">Chapter 2: Overview of Numerical Simulation</h2>
+<h3 id="Splitting">Splitting</h3>
+<p>Split <img src="https://math.now.sh?inline=%5Cdfrac%7B%5Cmathrm%7Bd%7Dq%7D%7B%5Cmathrm%7Bd%7Dt%7D%20%3D%20f%28q%29%20%2B%20g(q)" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/> into:</p>
+<p><img src="https://math.now.sh?inline=%5Cbegin%7Baligned%7D%0A%20%20%5Cwidetilde%7Bq%7D%20%26%20%3D%20q%5En%20%2B%20%5CDelta%20t%20f%28q%5En%29%20%5C%5C%0A%20%20q%5E%7Bn%2B1%7D%20%26%20%3D%20%5Cwidetilde%7Bq%7D%20%2B%20%5CDelta%20t%20g(%5Cwidetilde%7Bq%7D)%0A%5Cend%7Baligned%7D" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/></p>
+<p>Use Taylor series to prove firse-order-accurate.</p>
+<p>Simpler equation has simpler method.</p>
+<p><img src="https://math.now.sh?inline=%5Cbegin%7Baligned%7D%0A%20%20%5Cwidetilde%7Bq%7D%20%26%20%3D%20F%28%5CDelta%20t%2C%20q%5En%29%20%5C%5C%0A%20%20q%5E%7Bn%2B1%7D%20%26%20%3D%20G(%5CDelta%20t%2C%20%5Cwidetilde%7Bq%7D)%0A%5Cend%7Baligned%7D" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/></p>
+<p>We have better method <img src="https://math.now.sh?inline=F%2CG" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/>.</p>
+<p><img src="https://math.now.sh?inline=F%2CG" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/> may be in parallel or not.</p>
+<h3 id="Splitting-the-Fluid-Equations">Splitting the Fluid Equations</h3>
+<p><img src="https://math.now.sh?inline=%5Cbegin%7Baligned%7D%0A%20%20%5Cdfrac%7B%5Cmathrm%7BD%7Dq%7D%7B%5Cmathrm%7BD%7Dt%7D%20%3D%200%20%26%2C%20advection%20%5C%5C%0A%20%20%5Cdfrac%7B%5Cpartial%7Bu%7D%7D%7B%5Cpartial%7Bt%7D%7D%20%3D%20g%20%26%2C%20body%5C%20force%20%5C%5C%0A%20%20%5Cdfrac%7B%5Cpartial%7Bu%7D%7D%7B%5Cpartial%7Bt%7D%7D%20%2B%20%5Cdfrac%7B1%7D%7B%5Crho%7D%5Cnabla%20p%20%3D0%20%26%2C%20pressure%2Fincompressibility%0A%5Cend%7Baligned%7D" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/></p>
+<p>In advection part, quantity <img src="https://math.now.sh?inline=q" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/> is anything, not just velocity <img src="https://math.now.sh?inline=v" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/>.</p>
+<p>For body force part, forward euler <img src="https://math.now.sh?inline=u%20%3D%20u%20%2B%20%5CDelta%20t%20g" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/> is fine.</p>
+<p>Pressure part is to make sure <img src="https://math.now.sh?inline=%5Cnabla%20%5Ccdot%20u%20%3D%200" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/>. Here we will project velocity and enforce the solid wall boundary conditions.</p>
+<p>Advection should only be done in a divergence-free velocity field. So sequence matters.</p>
+<ol>
+<li>
+<p>advect</p>
+</li>
+<li>
+<p>add body force</p>
+</li>
+<li>
+<p>project</p>
+</li>
+</ol>
+<h3 id="Time-Steps">Time Steps</h3>
+<p>Find a minimal time step that suits all steps: advect, add body force, project.</p>
+<p>If frame interval <img src="https://math.now.sh?inline=t_%7Bframe%7D" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/> &gt; simulation delta time <img src="https://math.now.sh?inline=%5CDelta%20t" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/>, then run simulation multiple times, until total simulation time &gt;= <img src="https://math.now.sh?inline=t_%7Bframe%7D" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/>.</p>
+<h3 id="MAC-Grid">MAC Grid</h3>
+<h4 id="Problem-of-central-difference">Problem of central difference</h4>
+<p>First-order central difference:</p>
+<p><img src="https://math.now.sh?inline=%28%5Cdfrac%7B%5Cpartial%7Bq%7D%7D%7B%5Cpartial%7Bx%7D%7D%29_%7Bi%7D%20%5Capprox%20%5Cdfrac%7Bq_%7Bi%2B1%7D-q_%7Bi-1%7D%7D%7B2%5CDelta%20x%7D" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/></p>
+<p>First-order forward or backward difference:</p>
+<p><img src="https://math.now.sh?inline=%28%5Cdfrac%7B%5Cpartial%7Bq%7D%7D%7B%5Cpartial%7Bx%7D%7D%29_%7Bi%7D%20%5Capprox%20%5Cdfrac%7Bq_%7Bi%2B1%7D-q_%7Bi%7D%7D%7B%5CDelta%20x%7D" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/></p>
+<p>First-order central difference has a major problem in that the derivative estimate at grid point i completely ignores the value qi sampled there.</p>
+<p>Why ignoring qi is terrible: jagged function has more probability to be estimate as constant function. For example, <img src="https://math.now.sh?inline=q_i%20%3D%20%7B%28-1%29%7D%5E%7Bi%7D" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/> to produce <img src="https://math.now.sh?inline=%28%5Cdfrac%7B%5Cpartial%7Bq%7D%7D%7B%5Cpartial%7Bx%7D%7D%29_%7Bi%7D%20%3D%200" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/> using first-order central difference, but not using first-order forward or backward difference.</p>
+<p>I think it is similar with Undersampling. Nyquist-Shannon sample Theorem says that for an accurate representation of the baseband signal, the sample rate must be at least twice the highest frequency component. Aliasing happens when the sampling rate falls below this limit (the Nyquist Rate).</p>
+<p>Here you can analogize aliasing to <img src="https://math.now.sh?inline=%28%5Cdfrac%7B%5Cpartial%7Bq%7D%7D%7B%5Cpartial%7Bx%7D%7D%29_%7Bi%7D" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/> becoming close to 0.</p>
+<figure style="width: 300px" class="align-center">
+<img src="/images/fluid_sim_reading_note/Undersampling.svg">
+<figcaption align = "center">Fig: Undersampling</figcaption>
+</figure>
+<h4 id="MAC-Velocity-Grid">MAC Velocity Grid</h4>
+<p>MAC Grid is a staggered grid designed to solve incompressibility.</p>
+<p>Why to use MAC Grid: we can use accurate central differences for the pressure gradient and for the divergence of the velocity field without the usual disadvantages of central differences</p>
+<p>Pressure is defined at center of cell.</p>
+<p><img src="https://math.now.sh?inline=u" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/> is defined at center of X plane of cell.</p>
+<p><img src="https://math.now.sh?inline=v" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/> is defined at center of Y plane of cell.</p>
+<p><img src="https://math.now.sh?inline=w" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/> is defined at center of Z plane of cell.</p>
+<figure style="width: 700px" class="align-center">
+<img src="/images/fluid_sim_reading_note/mac_velocity_diagram-large-1.png">
+<figcaption align = "center">Fig: MAC Grid Veocity u</figcaption>
+</figure>
+<figure style="width: 700px" class="align-center">
+<img src="/images/fluid_sim_reading_note/mac_velocity_diagram-large-2.png">
+<figcaption align = "center">Fig: MAC Grid Veocity v</figcaption>
+</figure>
+<figure style="width: 700px" class="align-center">
+<img src="/images/fluid_sim_reading_note/mac_velocity_diagram-large-3.png">
+<figcaption align = "center">Fig: MAC Grid Veocity w</figcaption>
+</figure>
+<figure style="width: 592px" class="align-center">
+<img src="/images/fluid_sim_reading_note/One_cell_from_the_three-dimensional_MAC grid.png">
+<figcaption align = "center">Fig: One cell from the three-dimensional MAC grid</figcaption>
+</figure>
+<p>If pressure grid has dimensions <img src="https://math.now.sh?inline=nx%20%5Ctimes%20ny%20%5Ctimes%20nz" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/>, then <img src="https://math.now.sh?inline=u" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/> grid has dimensions <img src="https://math.now.sh?inline=%28nx%20%2B%201%29%20%5Ctimes%20ny%20%5Ctimes%20nz" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/>, <img src="https://math.now.sh?inline=v" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/> grid has dimensions <img src="https://math.now.sh?inline=nx%20%5Ctimes%20%28ny%20%2B%201%29%20%5Ctimes%20nz" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/>, <img src="https://math.now.sh?inline=w" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/> grid has dimensions <img src="https://math.now.sh?inline=nx%20%5Ctimes%20ny%20%5Ctimes%20%28nz%20%2B%201%29" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/>.</p>
+<p>The half-index notation works well for describing velocity components in this document, but does not translate well into a programming implementation where arrays use integer indexing. The following table demonstrates how half-index notation will be translated into classic array integer indexing:</p>
+<table>
+<thead>
+<tr>
+<th style="text-align:center">Half Index</th>
+<th style="text-align:center">Integer Index</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:center"><img src="https://math.now.sh?inline=u_%7Bi-1%2F2%2Cj%2Ck%7D" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/></td>
+<td style="text-align:center"><img src="https://math.now.sh?inline=u%28i%2Cj%2Ck%29" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/></td>
+</tr>
+<tr>
+<td style="text-align:center"><img src="https://math.now.sh?inline=u_%7Bi%2B1%2F2%2Cj%2Ck%7D" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/></td>
+<td style="text-align:center"><img src="https://math.now.sh?inline=u%28i%2B1%2Cj%2Ck%29" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/></td>
+</tr>
+<tr>
+<td style="text-align:center"><img src="https://math.now.sh?inline=v_%7Bi%2Cj-1%2F2%2Ck%7D" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/></td>
+<td style="text-align:center"><img src="https://math.now.sh?inline=v%28i%2Cj%2Ck%29" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/></td>
+</tr>
+<tr>
+<td style="text-align:center"><img src="https://math.now.sh?inline=v_%7Bi%2Cj%2B1%2F2%2Ck%7D" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/></td>
+<td style="text-align:center"><img src="https://math.now.sh?inline=v%28i%2Cj%2B1%2Ck%29" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/></td>
+</tr>
+<tr>
+<td style="text-align:center"><img src="https://math.now.sh?inline=w_%7Bi%2Cj%2Ck-1%2F2%7D" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/></td>
+<td style="text-align:center"><img src="https://math.now.sh?inline=w%28i%2Cj%2Ck%29" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/></td>
+</tr>
+<tr>
+<td style="text-align:center"><img src="https://math.now.sh?inline=w_%7Bi%2Cj%2Ck%2B1%2F2%7D" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/></td>
+<td style="text-align:center"><img src="https://math.now.sh?inline=w%28i%2Cj%2Ck%2B1%29" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/></td>
+</tr>
+</tbody>
+</table>
+<p>Using staggered grid, we can get unbiased second-order accuracy of a central difference:</p>
+<p style="filter: opacity(90%);transform:scale(0.85);text-align:center;"><img src="https://math.now.sh?from=%5Cbegin%7Balign*%7D%20%20%0A%20%20%20%20%5Cleft%28%20%5Cfrac%7B%5Cpartial%20u%7D%7B%5Cpartial%20x%7D%20%5Cright%29_%7Bi%2C%5C%20j%2C%5C%20k%20%7D%20%5Capprox%20%26%20%5C%20%0A%20%20%20%20%5Cfrac%7Bu_%7Bi%7B%2B%7D1%2F2%2C%5C%20j%2C%5C%20k%7D%20-%20u_%7Bi%7B-%7D1%2F2%2C%5C%20j%2C%5C%20k%7D%7D%7B%5CDelta%20x%7D%2C%20%5C%5C%5B1.5ex%5D%0A%20%20%20%20%5Cleft(%20%5Cfrac%7B%5Cpartial%20v%7D%7B%5Cpartial%20y%7D%20%5Cright)_%7Bi%2C%5C%20j%2C%5C%20k%20%7D%20%5Capprox%20%26%20%5C%20%0A%20%20%20%20%5Cfrac%7Bv_%7Bi%2C%5C%20j%7B%2B%7D1%2F2%2C%5C%20k%7D%20-%20v_%7Bi%2C%5C%20j%7B-%7D1%2F2%2C%5C%20k%7D%7D%7B%5CDelta%20x%7D%2C%20%5C%5C%5B1.5ex%5D%0A%20%20%20%20%5Cleft(%20%5Cfrac%7B%5Cpartial%20w%7D%7B%5Cpartial%20z%7D%20%5Cright)_%7Bi%2C%5C%20j%2C%5C%20k%20%7D%20%5Capprox%20%26%20%5C%20%0A%20%20%20%20%5Cfrac%7Bw_%7Bi%2C%5C%20j%2C%5C%20k%7B%2B%7D1%2F2%7D%20-%20w_%7Bi%2C%5C%20j%2C%5C%20k%7B-%7D1%2F2%7D%7D%7B%5CDelta%20x%7D%0A%5Cend%7Balign*%7D%0A" /></p><p>The staggered MAC grid is perfectly suited for handling pressure and incompressibility, but it’s frankly a pain for other uses. For example, if we actually want to evaluate the full velocity vector somewhere, we will always need to use some kind of interpolation even if we’re looking at a grid point.</p>
+<p>For an arbitrary location:</p>
+<p style="filter: opacity(90%);transform:scale(0.85);text-align:center;"><img src="https://math.now.sh?from=%5Cbegin%7Balign%7D%0A%20%20%20%20%5Cvec%7Bu%7D_%7Bi%2C%5C%20j%2C%5C%20k%7D%5C%20%3D%20%26%20%5C%20%20%5Cleft%28%20%5Cfrac%7Bu_%7Bi%7B-%7D1%2F2%2C%5C%20j%2C%5C%20k%7D%20%2B%20u_%7Bi%7B%2B%7D1%2F2%2C%5C%20j%2C%5C%20k%7D%7D%7B2%7D%2C%20%5C%20%0A%20%20%20%20%5Cfrac%7Bv_%7Bi%2C%5C%20j%7B-%7D1%2F2%2C%5C%20k%7D%20%2B%20v_%7Bi%2C%5C%20j%7B%2B%7D1%2F2%2C%5C%20k%7D%7D%7B2%7D%2C%20%5C%20%0A%20%20%20%20%5Cfrac%7Bw_%7Bi%2C%5C%20j%2C%5C%20k%7B-%7D1%2F2%7D%20%2B%20w_%7Bi%2C%5C%20j%2C%5C%20k%7B%2B%7D1%2F2%7D%7D%7B2%7D%20%0A%20%20%20%20%5Cright%29%20%5C%5C%5B1.5ex%5D%0A%0A%20%20%20%20%5Cvec%7Bu%7D_%7Bi%7B%2B%7D1%2F2%2C%5C%20j%2C%5C%20k%7D%5C%20%3D%20%26%20%5C%20%20%5Cleft(%20u_%7Bi%7B%2B%7D1%2F2%2C%5C%20j%2C%5C%20k%7D%2C%20%5C%20%0A%20%20%20%20%5Cfrac%7B%0A%20%20%20%20%5Cbegin%7Balign%7D%0A%20%20%20%20%20%20%20%20v_%7Bi%2C%5C%20j%7B-%7D1%2F2%2C%5C%20k%7D%20%5C%20%2B%26%20%5C%20v_%7Bi%2C%5C%20j%7B%2B%7D1%2F2%2C%5C%20k%7D%20%5C%5C%5C%20%2B%20%5C%20v_%7Bi%7B%2B%7D1%2C%5C%20j%7B-%7D1%2F2%2C%5C%20k%7D%20%5C%20%2B%26%20%5C%20v_%7Bi%7B%2B%7D1%2C%5C%20j%7B%2B%7D1%2F2%2C%5C%20k%7D%0A%20%20%20%20%5Cend%7Balign%7D%7D%7B4%7D%2C%20%5C%20%0A%20%20%20%20%5Cfrac%7B%0A%20%20%20%20%5Cbegin%7Balign%7D%0A%20%20%20%20%20%20%20%20w_%7Bi%2C%5C%20j%2C%5C%20k%7B-%7D1%2F2%7D%20%5C%20%2B%26%20%5C%20w_%7Bi%2C%5C%20j%2C%5C%20k%7B%2B%7D1%2F2%7D%20%5C%5C%20%5C%20%2B%20%5C%20w_%7Bi%7B%2B%7D1%2C%5C%20j%2C%5C%20k%7B-%7D1%2F2%7D%20%5C%20%2B%26%20%5C%20w_%7Bi%7B%2B%7D1%2C%5C%20j%2C%5C%20k%7B%2B%7D1%2F2%7D%0A%20%20%20%20%5Cend%7Balign%7D%7D%7B4%7D%20%0A%20%20%20%20%5Cright)%20%5C%5C%5B1.5ex%5D%0A%0A%20%20%20%20%5Cvec%7Bu%7D_%7Bi%2C%5C%20j%7B%2B%7D1%2F2%2C%5C%20k%7D%5C%20%3D%20%26%20%5C%20%20%5Cleft(%20%5Cfrac%7B%0A%20%20%20%20%5Cbegin%7Balign%7D%0A%20%20%20%20%20%20%20%20u_%7Bi%7B-%7D1%2F2%2C%5C%20j%2C%5C%20k%7D%20%5C%20%2B%26%20%5C%20u_%7Bi%7B%2B%7D1%2F2%2C%5C%20j%2C%5C%20k%7D%20%5C%5C%20%5C%20%2B%20%5C%20u_%7Bi%7B-%7D1%2F2%2C%5C%20j%7B%2B%7D1%2C%5C%20k%7D%20%5C%20%2B%20%26%20%5C%20%20u_%7Bi%7B%2B%7D1%2F2%2C%5C%20j%7B%2B%7D1%2C%5C%20k%7D%0A%20%20%20%20%5Cend%7Balign%7D%7D%7B4%7D%2C%20%5C%20%0A%20%20%20%20v_%7Bi%2C%5C%20j%7B%2B%7D1%2F2%2C%5C%20k%7D%2C%20%5C%20%0A%20%20%20%20%5Cfrac%7B%0A%20%20%20%20%5Cbegin%7Balign%7D%0A%20%20%20%20%20%20%20%20w_%7Bi%2C%5C%20j%2C%5C%20k%7B-%7D1%2F2%7D%20%5C%20%2B%26%20%5C%20w_%7Bi%2C%5C%20j%2C%5C%20k%7B%2B%7D1%2F2%7D%20%5C%5C%20%5C%20%2B%20%5C%20w_%7Bi%2C%5C%20j%7B%2B%7D1%2C%5C%20k%7B-%7D1%2F2%7D%20%5C%20%2B%26%20%5C%20w_%7Bi%2C%5C%20j%7B%2B%7D1%2C%5C%20k%7B-%7D1%2F2%7D%0A%20%20%20%20%5Cend%7Balign%7D%7D%7B4%7D%0A%20%20%20%20%5Cright)%20%5C%5C%5B1.5ex%5D%0A%0A%20%20%20%20%5Cvec%7Bu%7D_%7Bi%2C%5C%20j%2C%5C%20k%7B%2B%7D1%2F2%7D%5C%20%3D%20%26%20%5C%20%20%5Cleft(%20%5Cfrac%7B%0A%20%20%20%20%5Cbegin%7Balign%7D%0A%20%20%20%20%20%20%20%20u_%7Bi%7B-%7D1%2F2%2C%5C%20j%2C%5C%20k%7D%20%5C%20%2B%26%20%5C%20u_%7Bi%7B%2B%7D1%2F2%2C%5C%20j%2C%5C%20k%7D%20%5C%5C%20%5C%20%2B%20%5C%20u_%7Bi%7B-%7D1%2F2%2C%5C%20j%2C%5C%20k%7B%2B%7D1%7D%20%5C%20%2B%26%20%5C%20u_%7Bi%7B%2B%7D1%2F2%2C%5C%20j%2C%5C%20k%7B%2B%7D1%7D%0A%20%20%20%20%5Cend%7Balign%7D%7D%7B4%7D%2C%20%5C%20%0A%20%20%20%20%5Cfrac%7B%0A%20%20%20%20%5Cbegin%7Balign%7D%0A%20%20%20%20%20%20%20%20v_%7Bi%2C%5C%20j%7B-%7D1%2F2%2C%5C%20k%7D%20%5C%20%2B%26%20%5C%20v_%7Bi%2C%5C%20j%7B%2B%7D1%2F2%2C%5C%20k%7D%20%5C%5C%20%5C%20%2B%20%5C%20v_%7Bi%2C%5C%20j%7B-%7D1%2F2%2C%5C%20k%7B%2B%7D1%7D%20%5C%20%2B%26%20%5C%20v_%7Bi%2C%5C%20j%7B%2B%7D1%2F2%2C%5C%20k%7B%2B%7D1%7D%0A%20%20%20%20%5Cend%7Balign%7D%7D%7B4%7D%2C%20%5C%20%0A%20%20%20%20w_%7Bi%2C%5C%20j%2C%5C%20k%7B%2B%7D1%2F2%7D%0A%20%20%20%20%5Cright)%20%5C%5C%5B1.5ex%5D%0A%5Cend%7Balign%7D%0A" /></p><h3 id="Dynamic-Sparse-Grids">Dynamic Sparse Grids</h3>
+<p>Problem:</p>
+<ol>
+<li>
+<p>If fluid region change over time, using a static grid that covers the entire region can be wasteful</p>
+<p>Solution: Adjust the grid dimensions and where it lies in space at every time step</p>
+<ul>
+<li>
+<p>For fluid: water surface with padding</p>
+</li>
+<li>
+<p>For smoke: smoke can extends into whole space. So calc SDF according smoke concentration.</p>
+</li>
+</ul>
+</li>
+<li>
+<p>Memory access efficiency on modren hardware</p>
+<p>Assume that grid is row-major layout, and row order is <img src="https://math.now.sh?inline=i%2Cj%2Ck" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/>. Distance between <img src="https://math.now.sh?inline=%28i%2Cj%2Ck%29" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/> and <img src="https://math.now.sh?inline=%28i%2B1%2Cj%2Ck%29" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/> will be <img src="https://math.now.sh?inline=ny%20%5Ctimes%20nz" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/></p>
+<p>So we can expect more page faults and cache misses.</p>
+</li>
+<li>
+<p>Fluid occupies only a small fraction of the volume of its bounding box</p>
+<p>For example: river, waterfall, pouring water…</p>
+</li>
+</ol>
+<p>Using hash table to map index to a large virtual grid (such as <img src="https://math.now.sh?inline=2%5E%7B32%7D" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/> along each dimension by signed 32-bit integers in each coordinate). The grid is large enough so you don’t need to move grid origin.</p>
+<p>Since we only store the blocks of the grid we care about, this is a sparse structure and we don’t waste storage or processing on voxels far from the action…</p>
+<p>Because we map blocks of voxels rather than individual voxels, the overhead of the associative data structure can be minimized; meanwhile operations inside a block have extremely good data locality.</p>
+<h3 id="Code-2D-before-3D">Code 2D before 3D</h3>
+<p>Bug about copying and pasting</p>
+<h2 id="Chapter-3-Advection-Algorithms">Chapter 3: Advection Algorithms</h2>
+<p>Advection should only be called with a divergence-free velocity field</p>
+<h3 id="Semi-Lagrangian-Advection">Semi-Lagrangian Advection</h3>
+<h4 id="Forward-Euler">Forward Euler</h4>
+<p>Forward Euler is unconditionally unstable.</p>
+<p>About stability region of forward Euler. The eigenvalues of the Jacobian generated by the central difference are pure imaginary, thus always outside the region of stability.</p>
+<h4 id="Problem-of-spatial-discretization">Problem of spatial discretization</h4>
+<p>Difference seems like pretty accurate estimate of the derivative, but it has dispersion problem.</p>
+<p>High-frequency jagged components of quantity, like <img src="https://math.now.sh?inline=%28%E2%88%921%29%5Ei" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/>, erroneously register as having zero or near-zero spatial derivative, and so don’t get evolved forward in time or at least move much more slowly than the velocity u they should move at.</p>
+<p>Meanwhile the low frequency components are handled accurately and move at almost exactly the right speed u. Thus the low frequency components end up separating out from the high-frequency components, and you are left with all sorts of strange high-frequency wiggles and oscillations appearing and persisting that shouldn’t be there!</p>
+<blockquote>
+<p>I have known two kinds of problem in discretization: dissipation and dispersion, but I think the view of frequency is novel. When I learnt compute fluid, I had no concept about it.</p>
+</blockquote>
+<h4 id="Semi-Lagrangian-Advection-2">Semi-Lagrangian Advection</h4>
+<p>…</p>
+<blockquote>
+<p>I have learnt it when reading Stable Fluid.</p>
+</blockquote>
+<p>If you are using MAC Grid, then your advence velocity should be interpolated from MAC Grid.</p>
+<h3 id="Boundary-Conditions-2">Boundary Conditions</h3>
+<p>When backtrace the start point of particle, it may locate outside of boundary.</p>
+<p>Two reasons:</p>
+<ol>
+<li>
+<p>The start point is in inlet</p>
+</li>
+<li>
+<p>The start point shouldn’t be outside, it is about numerical error about forward Euler or Runge-Kutta step when calculate the position of start point</p>
+</li>
+</ol>
+<p>The first reason is artificially designed, we have known inlet condition to solve it.</p>
+<p>For the second reason, the appropriate strategy is to extrapolate the quantity from the nearest point on the boundary. So the start point outside can use the extrapolated quantity.</p>
+<p>If the quantity outside is known, then extrapolation will be easy.</p>
+<p>If the quantity outside is unknown, there is two ways:</p>
+<ol>
+<li>
+<p>Extrapolation</p>
+</li>
+<li>
+<p>For fluid:</p>
+<p>Find nearest point in fluid surface, which means minimize the distance from surface to start point, then interpolate quantity at the nearest point found.</p>
+<p>For solid wall:</p>
+<p>Normal velocity condition, or for viscous flow, take the shortcut of just using the solid’s velocity.</p>
+</li>
+</ol>
+<h3 id="Time-Step-Size">Time Step Size</h3>
+<p>Semi-Lagrangian Advection is unconditionally stable, becuase new value is copied from old value, so new value will never be larger than old value.</p>
+<blockquote>
+<p>To avoid artifacts, time step still has limit? I haven’t try it.</p>
+</blockquote>
+<h4 id="CFL-condition">CFL condition</h4>
+<p>From view of domain of dependence, the numerical domain of dependence, at least in the limit, must contain the true domain of dependence if we want to get the correct answer.</p>
+<p>CFL condition depicts how small your <img src="https://math.now.sh?inline=%5CDelta%20t%2C%20%5CDelta%20x" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/> is can you say close to limit.</p>
+<p>CFL condition: to make result accurate</p>
+<p>stability condition: to make update stable</p>
+<p>CFL number: a parameter in CFL condition</p>
+<p>CFL number represents the maximum number of grid cells the information can propagate</p>
+<p>If a method unconditionally unstable but fit CFL condition, it will still covergence to accurate result.</p>
+<h4 id="Diffusion">Diffusion</h4>
+<p>Assume that we have find start point of particle, then we should know the quantity at start point, so we use interpolation. It introduces diffusion, or in signal-processing terminology, we have a low-pass filter.</p>
+<p>Prove the Semi-Lagrangian Advection introduce dissipation</p>
+<p>…</p>
+<h4 id="Reducing-Numerical-Diffusion">Reducing Numerical Diffusion</h4>
+<p>As we saw in the last section, the problem mainly lies with the excessive averaging induced by linear interpolation (of the quantity being<br>
+; linearly interpolating the velocity field in which we trace is not the main culprit and can be used as is).</p>
+<p>Solution: use sharper interpolation</p>
+<p>Cubic Interpolation:</p>
+<p style="filter: opacity(90%);transform:scale(0.85);text-align:center;"><img src="https://math.now.sh?from=%5Cbegin%7Balign%7D%0A%20%20%20%20f%28q_%7Bi-1%7D%2C%5C%20q_%7Bi%7D%2C%5C%20q_%7Bi%2B1%7D%2C%5C%20q_%7Bi%2B2%7D%2C%5C%20x%29%20%3D%20%5C%20%26%5B-%5Cdfrac%7B1%7D%7B3%7Ds%2B%5Cdfrac%7B1%7D%7B2%7Ds%5E2-%5Cdfrac%7B1%7D%7B6%7Ds%5E3%5Dq_%7Bi-1%7D%20%5C%5C%0A%20%20%20%20%26%2B%20%5B1-s%5E2%2B%5Cdfrac%7B1%7D%7B2%7D(s%5E3-s)%5Dq_%7Bi%7D%20%5C%5C%0A%20%20%20%20%26%2B%20%5Bs%2B%5Cdfrac%7B1%7D%7B2%7D(s%5E2-s%5E3)%5Dq_%7Bi%2B1%7D%20%5C%5C%0A%20%20%20%20%26%2B%20%5B%5Cdfrac%7B1%7D%7B6%7D(s%5E3-s)%5Dq_%7Bi%2B2%7D%0A%5Cend%7Balign%7D%0A" /></p><p>Where <img src="https://math.now.sh?inline=s" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/> means fraction between grid points <img src="https://math.now.sh?inline=x_i" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/> and <img src="https://math.now.sh?inline=x_%7Bi%2B1%7D" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/>. So <img src="https://math.now.sh?inline=s%3D-1" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/> means <img src="https://math.now.sh?inline=x_%7Bi-1%7D" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/>, <img src="https://math.now.sh?inline=s%3D0" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/> means <img src="https://math.now.sh?inline=x_%7Bi%7D" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/>, <img src="https://math.now.sh?inline=s%3D1" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/> means <img src="https://math.now.sh?inline=x_%7Bi%2B1%7D" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/>, <img src="https://math.now.sh?inline=s%3D2" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/> means <img src="https://math.now.sh?inline=x_%7Bi%2B2%7D" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/>.</p>
+<p>It can be derived from Lagrange Interpolation, base point are <img src="https://math.now.sh?inline=%28-1%2C%20q_%7Bi-1%7D%29" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/>, <img src="https://math.now.sh?inline=%280%2C%20q_%7Bi%7D%29" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/>, <img src="https://math.now.sh?inline=%281%2C%20q_%7Bi%2B1%7D%29" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/>, <img src="https://math.now.sh?inline=%282%2C%20q_%7Bi%2B2%7D%29" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/>.</p>
+<p>This algorithm also has another form. Derived from another way <a target="_blank" rel="noopener" href="http://www.paulinternet.nl/?page=bicubic">Paul Bourke’s Cubic Interpolation Page</a></p>
+<p style="filter: opacity(90%);transform:scale(0.85);text-align:center;"><img src="https://math.now.sh?from=%5Cbegin%7Balign%7D%0A%20%20%20%20f%28p_0%2C%5C%20p_1%2C%5C%20p_2%2C%5C%20p_3%2C%5C%20x%29%20%3D%20%5C%20%26(-%5Ctfrac%7B1%7D%7B2%7Dp_0%20%2B%20%5Ctfrac%7B3%7D%7B2%7Dp_1%20-%20%5Ctfrac%7B3%7D%7B2%7Dp_2%20%2B%20%5Ctfrac%7B1%7D%7B2%7Dp_3)x%5E3%20%5C%5C%0A%20%20%20%20%26%2B%20(p_0%20-%20%5Ctfrac%7B5%7D%7B2%7Dp_1%20%2B%202p_2%20-%20%5Ctfrac%7B1%7D%7B2%7Dp_3)x%5E2%20%5C%5C%0A%20%20%20%20%26%2B%20(-%5Ctfrac%7B1%7D%7B2%7Dp_0%20%2B%20%5Ctfrac%7B1%7D%7B2%7Dp_2)x%20%5C%5C%0A%20%20%20%20%26%2B%20p_1%0A%5Cend%7Balign%7D%0A" /></p><p>Where <img src="https://math.now.sh?inline=x" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/> is same as <img src="https://math.now.sh?inline=s" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/> below.</p>
+<p>In two or three dimensions, you can cubic interpolation sequentially.</p>
+<p>Code example for 3D:</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="type">double</span> <span class="title">cubicInterpolate</span><span class="params">(<span class="type">double</span> p[<span class="number">4</span>], <span class="type">double</span> x)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">return</span> p[<span class="number">1</span>] + <span class="number">0.5</span> * x*(p[<span class="number">2</span>] - p[<span class="number">0</span>] + </span><br><span class="line">                           x*(<span class="number">2.0</span>*p[<span class="number">0</span>] - <span class="number">5.0</span>*p[<span class="number">1</span>] + <span class="number">4.0</span>*p[<span class="number">2</span>] - p[<span class="number">3</span>] + </span><br><span class="line">                              x*(<span class="number">3.0</span>*(p[<span class="number">1</span>] - p[<span class="number">2</span>]) + p[<span class="number">3</span>] - p[<span class="number">0</span>])));</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="type">double</span> <span class="title">bicubicInterpolate</span><span class="params">(<span class="type">double</span> p[<span class="number">4</span>][<span class="number">4</span>], <span class="type">double</span> x, <span class="type">double</span> y)</span> </span>&#123;</span><br><span class="line">    <span class="type">double</span> arr[<span class="number">4</span>];</span><br><span class="line">    arr[<span class="number">0</span>] = <span class="built_in">cubicInterpolate</span>(p[<span class="number">0</span>], x);</span><br><span class="line">    arr[<span class="number">1</span>] = <span class="built_in">cubicInterpolate</span>(p[<span class="number">1</span>], x);</span><br><span class="line">    arr[<span class="number">2</span>] = <span class="built_in">cubicInterpolate</span>(p[<span class="number">2</span>], x);</span><br><span class="line">    arr[<span class="number">3</span>] = <span class="built_in">cubicInterpolate</span>(p[<span class="number">3</span>], x);</span><br><span class="line">    <span class="keyword">return</span> <span class="built_in">cubicInterpolate</span>(arr, y);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="type">double</span> <span class="title">tricubicInterpolate</span><span class="params">(<span class="type">double</span> p[<span class="number">4</span>][<span class="number">4</span>][<span class="number">4</span>], <span class="type">double</span> x, <span class="type">double</span> y, <span class="type">double</span> z)</span> </span>&#123;</span><br><span class="line">    <span class="type">double</span> arr[<span class="number">4</span>];</span><br><span class="line">    arr[<span class="number">0</span>] = <span class="built_in">bicubicInterpolate</span>(p[<span class="number">0</span>], x, y);</span><br><span class="line">    arr[<span class="number">1</span>] = <span class="built_in">bicubicInterpolate</span>(p[<span class="number">1</span>], x, y);</span><br><span class="line">    arr[<span class="number">2</span>] = <span class="built_in">bicubicInterpolate</span>(p[<span class="number">2</span>], x, y);</span><br><span class="line">    arr[<span class="number">3</span>] = <span class="built_in">bicubicInterpolate</span>(p[<span class="number">3</span>], x, y);</span><br><span class="line">    <span class="keyword">return</span> <span class="built_in">cubicInterpolate</span>(arr, z);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>The weighting coefficients may be negative.</p>
+<h2 id="Chapter-4-Level-Set-Geometry">Chapter 4: Level Set Geometry</h2>
+<ol>
+<li>
+<p>when is a point inside a solid? (the point may be where we traced back to during semi-Lagrangian)</p>
+</li>
+<li>
+<p>what is the closest point on the surface of some geometry?</p>
+</li>
+<li>
+<p>how do we extrapolate values from one region into another?</p>
+</li>
+</ol>
+<h3 id="SDF">SDF</h3>
+<figure style="width: 567px" class="align-center">
+<img src="/images/fluid_sim_reading_note/sdf_field.png">
+<figcaption align = "center">Fig: SDF Field. Taken from "Fluid Engine Development"</figcaption>
+</figure>
+<p><img src="https://math.now.sh?inline=%5Cvert%5Cvert%20%5Cnabla%20%5Cphi%28x%29%20%5Cvert%5Cvert%20%3D%201" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/>.</p>
+<ul>
+<li>
+<p>outside the geometry, <img src="https://math.now.sh?inline=-%5Cnabla%20%5Cphi%28x%29" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/> is the unit-length vector pointing towards the closest point on the surface</p>
+</li>
+<li>
+<p>inside the geometry, <img src="https://math.now.sh?inline=%5Cnabla%20%5Cphi%28x%29" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/> is the unit-length vector pointing towards the closest point on the surface</p>
+</li>
+<li>
+<p>and on the surface, <img src="https://math.now.sh?inline=%5Cnabla%20%5Cphi%28x%29" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/> is the unit-length outward-pointing normal.</p>
+</li>
+</ul>
+<p>This means <img src="https://math.now.sh?inline=x%20-%20%5Cphi%28x%29%5Cnabla%20%5Cphi(x)" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/> is the closest point on the surface for any point <img src="https://math.now.sh?inline=x" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/>.</p>
+<p>SDF can also be defined as <img src="https://math.now.sh?inline=%5Cphi%28x%29%20%3D%200" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/> at boundary.</p>
+<p>SDF can handle topological change easily. To merge two surface, just get minimum value of two SDF.</p>
+<figure style="width: 595px" class="align-center">
+<img src="/images/fluid_sim_reading_note/sdf_topology.png">
+<figcaption align = "center">Fig: SDF Topology. Taken from "Fluid Engine Development"</figcaption>
+</figure>
+<h4 id="Reinitializing-SDF">Reinitializing SDF</h4>
+<p>After advection, the SDF field can not keep its distance property. So we should recover it. Luckily, only the SDF value on the surface is correct. So the reinitializeing can start from surface.</p>
+<figure style="width: 626px" class="align-center">
+<img src="/images/fluid_sim_reading_note/sdf_reinitialize.png">
+<figcaption align = "center">Fig: SDF Reinitializing. Taken from "Fluid Engine Development"</figcaption>
+</figure>
+<p>Here we prove why the value on the surface is correct.</p>
+<p>We can use the advection equation (Equation 3.23) with extra source term to model this propagation problem.</p>
+<p><img src="https://math.now.sh?inline=%5Cdfrac%7B%5Cpartial%7B%5Cphi%7D%7D%7B%5Cpartial%7B%5Ctau%7D%7D%2B%5Cmathbf%7Bu%7D%20%5Ccdot%20%5Cnabla%20%5Cphi%20%3D%201" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/></p>
+<p><img src="https://math.now.sh?inline=%5Ctau" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/> is pseudo-time, because it is not physics simulation but more like a geometric postprocessing.</p>
+<p>If source term in right hand side is 0, it means <img src="https://math.now.sh?inline=%5Cphi" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/> is only carried by the vector field <img src="https://math.now.sh?inline=%5Cmathbf%7Bu%7D" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/>. If a constant <img src="https://math.now.sh?inline=c" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/> is assigned, it means <img src="https://math.now.sh?inline=c" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/> is added to <img src="https://math.now.sh?inline=%5Cphi" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/> when it travels one distance unit along <img src="https://math.now.sh?inline=%5Cmathbf%7Bu%7D" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/>.</p>
+<p>Thus, setting the right-hand side to 1 means we will assign the traveled distance to <img src="https://math.now.sh?inline=%5Cphi" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/>.</p>
+<p>We have discuss the gredient of <img src="https://math.now.sh?inline=%5Cphi" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/> before, we know that if we assign <img src="https://math.now.sh?inline=%5Cphi" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/> as distance, then the gredient is 1, it means when <img src="https://math.now.sh?inline=%5Cphi" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/> travels one distance unit in space along the steepest direction, the value of <img src="https://math.now.sh?inline=%5Cphi" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/> increase 1.</p>
+<p>So if we assign gredient of <img src="https://math.now.sh?inline=%5Cphi" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/> as direction of reinitializing velocity, then the advection equation will fit its physical meaning.</p>
+<p>In other word, substitute</p>
+<p><img src="https://math.now.sh?inline=%5Cmathbf%7Bu%7D%20%3D%20%5Cdfrac%7B%5Cnabla%20%5Cphi%7D%7B%5Cvert%20%5Cnabla%20%5Cphi%20%5Cvert%7D" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/></p>
+<p>into advection equation, get</p>
+<p><img src="https://math.now.sh?inline=%5Cdfrac%7B%5Cpartial%7B%5Cphi%7D%7D%7B%5Cpartial%7B%5Ctau%7D%7D%2B%5Cdfrac%7B%5Cnabla%20%5Cphi%7D%7B%5Cvert%20%5Cnabla%20%5Cphi%20%5Cvert%7D%20%5Ccdot%20%5Cnabla%20%5Cphi%20%3D%201" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/></p>
+<p>which can be further simplified to</p>
+<p><img src="https://math.now.sh?inline=%5Cdfrac%7B%5Cpartial%7B%5Cphi%7D%7D%7B%5Cpartial%7B%5Ctau%7D%7D%2B%28%5Cvert%20%5Cnabla%20%5Cphi%20%5Cvert%20-%201%29%20%3D%200" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/></p>
+<p>Reinitialize outward from the surface, the direction is the same as the gradient, <img src="https://math.now.sh?inline=%5Cmathbf%7Bu%7D%20%3D%20%5Cdfrac%7B%5Cnabla%20%5Cphi%7D%7B%5Cvert%20%5Cnabla%20%5Cphi%20%5Cvert%7D" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/>.</p>
+<p>On the contrary, reinitialize inward from the surface, we have <img src="https://math.now.sh?inline=%5Cmathbf%7Bu%7D%20%3D%20-%5Cdfrac%7B%5Cnabla%20%5Cphi%7D%7B%5Cvert%20%5Cnabla%20%5Cphi%20%5Cvert%7D" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/>. Similarly, we have</p>
+<p><img src="https://math.now.sh?inline=%5Cdfrac%7B%5Cpartial%7B%5Cphi%7D%7D%7B%5Cpartial%7B%5Ctau%7D%7D-%28%5Cvert%20%5Cnabla%20%5Cphi%20%5Cvert%20-%201%29%20%3D%200" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/></p>
+<p>In summary, reinitializing equation is</p>
+<p><img src="https://math.now.sh?inline=%5Cdfrac%7B%5Cpartial%7B%5Cphi%7D%7D%7B%5Cpartial%7B%5Ctau%7D%7D%2Bsign%28%5Cphi%29(%5Cvert%20%5Cnabla%20%5Cphi%20%5Cvert%20-%201)%20%3D%200" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/></p>
+<h4 id="Medial-Axis">Medial Axis</h4>
+<p>SDF is smooth everywhere except on the medial axis</p>
+<p>The medial axis is exactly where there isn’t a unique closest point, such as the center of a sphere and the middle plane inside a flat slab.</p>
+<p>Discussion about the gradient <img src="https://math.now.sh?inline=%5Cnabla%20%5Cphi%28x%29" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/> breaks down on the medial axis, because the function isn’t differentiable there.</p>
+<h4 id="Discretizing-Signed-Distance-Functions">Discretizing Signed Distance Functions</h4>
+<p>Level set method: signed distance function that has been sampled on a grid</p>
+<p>How to get <img src="https://math.now.sh?inline=%5Cdfrac%7B%5Cpartial%7B%5Cphi%7D%7D%7B%5Cpartial%7Bx%7D%7D" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/> at any point? There are two ways:</p>
+<ol>
+<li>
+<p>Interpolate <img src="https://math.now.sh?inline=%5Cphi" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/> nearby the given point, then differentiate the interpolant of <img src="https://math.now.sh?inline=%5Cphi" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/></p>
+</li>
+<li>
+<p>Differentiate <img src="https://math.now.sh?inline=%5Cphi" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/> at the grid point nearby the given point, then interpolate between <img src="https://math.now.sh?inline=%5Cdfrac%7B%5Cpartial%7B%5Cphi%7D%7D%7B%5Cpartial%7Bx%7D%7D" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/> which lie in grid.</p>
+</li>
+</ol>
+<p>Usually use thel later way, because if interpolate first, interpolant of <img src="https://math.now.sh?inline=%5Cphi" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/> may have discontinuities in their derivative between grid cells.</p>
+<h4 id="Computing-Signed-Distance">Computing Signed Distance</h4>
+<ol>
+<li>
+<p>from geom etry (finding closest points and measuring the distance to them).</p>
+<p>geometry is explicitly known</p>
+</li>
+<li>
+<p>from PDEs (solving the Eikonal equation <img src="https://math.now.sh?inline=%5Cvert%5Cvert%20%5Cnabla%20%5Cphi%28x%29%20%5Cvert%5Cvert%20%3D%201" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/>).</p>
+<p>geometry isn’t explicitly known</p>
+</li>
+</ol>
+<h5 id="Distance-to-Points">Distance to Points</h5>
+<p>This is algorithm 4 in:</p>
+<p>Y.-H. R. Tsai. Rapid and accurate computation of the distance function using grids. J. Comput. Phys., 178(1):175–195, 2002</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(nx):</span><br><span class="line">    <span class="keyword">for</span> j <span class="keyword">in</span> <span class="built_in">range</span>(ny):</span><br><span class="line">        <span class="keyword">for</span> k <span class="keyword">in</span> <span class="built_in">range</span>(nz):</span><br><span class="line">            phi[i][j][k] = infty  <span class="comment"># A 3D array of distances</span></span><br><span class="line">            t[i][j][k] = -<span class="number">1</span>  <span class="comment"># A 3D array of integer indices for the closest point</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># Initialize the arrays near the input geometry</span></span><br><span class="line"><span class="keyword">for</span> e <span class="keyword">in</span> <span class="built_in">range</span>(<span class="built_in">len</span>(all_input_points)):</span><br><span class="line">    pe = all_input_points[e]</span><br><span class="line">    (i,j,k) = get_grid_index_from_position(pe)</span><br><span class="line"></span><br><span class="line">    d = length(vec3(i,j,k) - pe)</span><br><span class="line">    <span class="keyword">if</span> d &lt; phi[i][j][k]:</span><br><span class="line">        phi[i][j][k] = d</span><br><span class="line">        t[i][j][k] = e</span><br><span class="line"></span><br><span class="line"><span class="comment"># Propagate closest point and distance estimates to the rest of the grid</span></span><br><span class="line">loop (i,j,k) <span class="keyword">in</span> a chosen order:</span><br><span class="line">    foreach neighboring grid point (i2,j2,k2) worth considering:</span><br><span class="line">        e = t[i2][j2][k2]</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> e != -<span class="number">1</span>:</span><br><span class="line">            pe = all_input_points[e]</span><br><span class="line"></span><br><span class="line">            d = length(vec3(i,j,k) - pe)</span><br><span class="line">            <span class="keyword">if</span> d &lt; phi[i][j][k]:</span><br><span class="line">                phi[i][j][k] = d</span><br><span class="line">                t[i][j][k] = e</span><br></pre></td></tr></table></figure>
+<p>In the first stage we compute exact distance and closest point information directly in the grid cells that surrounding the input points.</p>
+<p>The second stage can efficiently propagate information from neighbor to neighbor through the grid.</p>
+<p>Both stages don’t need extra data structures.</p>
+<h5 id="Loop-Order">Loop Order</h5>
+<p>Two kinds of loop order when propagating information</p>
+<ol>
+<li>
+<p>fast marching method</p>
+</li>
+<li>
+<p>fast sweeping method</p>
+</li>
+</ol>
+<h6 id="Fast-Marching-Method">Fast Marching Method</h6>
+<p>Grid points should get information about the distance to the geometry from points that are closer, not the other way around</p>
+<p>So loop over the grid points going from the closest to the furthest</p>
+<p>Facilitated by storing unknown grid points in a priority queue (typically implemented as a heap) keyed by the current estimate of their distance.</p>
+<p>Each update, remove the minimum</p>
+<p>O(nlogn)</p>
+<h6 id="Fast-Sweeping-Method">Fast Sweeping Method</h6>
+<p>For any grid point, in the end its closest point information is going to come to it from one particular direction in the grid—e.g., from (i + 1, j, k), or maybe from (i, j − 1, k), and so on. To ensure that the information can propagate in the right direction, we thus sweep through the grid points in all possible loop orders: i ascending or descending, j ascending or descending, k ascending or descending.</p>
+<p>8 combinations in 3D.</p>
+<p>For more accuracy, we can repeat the sweeps again; in practice two times through the sweep gives excellent results</p>
+<p>O(n), no extra data structures</p>
+<h6 id="When-using-sparse-tiled-grids">When using sparse tiled grids</h6>
+<p>In this case, a hybrid approach is possible. We can run fast sweeping efficiently inside a tile to update distances based on information in the tile and its neighbors, but we can choose the order in which to solve tiles (and re-solve them when neighbors are updated) in a fast marching style. Begin with the tiles containing input points as the set to “redistance”. Whenever a tile has been redistanced with fast sweeping, check to see if the distance value in any face neighbor is more than ∆x larger than the distance stored in this tile: if so, add the neighboring tile to the set needing redistancing.</p>
+<blockquote>
+<p>I can’t understand it.</p>
+</blockquote>
+<h5 id="Finding-Signed-Distance-for-a-Triangle-Mesh">Finding Signed Distance for a Triangle Mesh</h5>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(nx):</span><br><span class="line">    <span class="keyword">for</span> j <span class="keyword">in</span> <span class="built_in">range</span>(ny):</span><br><span class="line">        <span class="keyword">for</span> k <span class="keyword">in</span> <span class="built_in">range</span>(nz):</span><br><span class="line">            phi[i][j][k] = infty  <span class="comment"># A 3D array of distances</span></span><br><span class="line">            t[i][j][k] = -<span class="number">1</span>  <span class="comment"># A 3D array of integer indices for the closest point</span></span><br><span class="line">            c[i][j][k] = <span class="number">0</span>  <span class="comment"># A 3D array of integers to keep intersection counts along grid edges</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># Initialize the arrays near the input geometry</span></span><br><span class="line"><span class="keyword">for</span> e <span class="keyword">in</span> <span class="built_in">range</span>(<span class="built_in">len</span>(all_input_triangles)):</span><br><span class="line">    Te = all_input_triangles[e]</span><br><span class="line">    loop grid edges (i,j,k)-(i+<span class="number">1</span>,j,k) which exactly intersect triangle Te  <span class="comment"># consistently breaking ties at endpoints</span></span><br><span class="line">        c[i][j][k]++</span><br><span class="line"></span><br><span class="line">        d = distance_to_triangle(vec3(i,j,k), Te)</span><br><span class="line">        <span class="keyword">if</span> d &lt; phi[i][j][k]:</span><br><span class="line">            phi[i][j][k] = d</span><br><span class="line">            t[i][j][k] = e</span><br><span class="line"></span><br><span class="line"><span class="comment"># Propagate closest triangle and distance estimates to the rest of the grid</span></span><br><span class="line">loop (i,j,k) <span class="keyword">in</span> a chosen order:</span><br><span class="line">    foreach neighboring grid point (i2,j2,k2) worth considering:</span><br><span class="line">        e = t[i2][j2][k2]</span><br><span class="line">        <span class="keyword">if</span> e != -<span class="number">1</span>:</span><br><span class="line">            Te = all_input_triangles[e]</span><br><span class="line"></span><br><span class="line">            d = distance_to_triangle(vec3(i,j,k), Te)</span><br><span class="line">            <span class="keyword">if</span> d &lt; phi[i][j][k]:</span><br><span class="line">                phi[i][j][k] = d</span><br><span class="line">                t[i][j][k] = e</span><br><span class="line"></span><br><span class="line"><span class="comment"># Determine signs for inside/outside</span></span><br><span class="line">foreach horizontal grid line (j,k):</span><br><span class="line">    C = <span class="number">0</span></span><br><span class="line">    <span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(nx):</span><br><span class="line">        <span class="keyword">if</span> C % <span class="number">2</span> == <span class="number">1</span>:</span><br><span class="line">            phi[i][j][k] = -phi[i][j][k]</span><br><span class="line">        C += c[i][j][k]</span><br></pre></td></tr></table></figure>
+<p>Fast sweeping, fast marching, or a hybrid tiled combination can also be used.</p>
+<h6 id="Computing-the-distance-between-a-point-and-a-triangle">Computing the distance between a point and a triangle</h6>
+<p>Mark W. Jones. 3d distance from a point to a triangle. Technical report, Department of Computer Science, University of Wales, 1995</p>
+<p>Assume we are computing the distance between point pe and triangle Te. Firstly, we should find closest point for pe in the triangle,</p>
+<p>…</p>
+<h2 id="Chapter-5-Making-Fluids-Incompressible">Chapter 5: Making Fluids Incompressible</h2>
+<h3 id="Project">Project</h3>
+<p>To solve <img src="https://math.now.sh?inline=%5Cfrac%7B%5Cmathrm%7BD%7D%5Cmathbf%7Bu%7D%7D%7B%5Cmathrm%7BD%7Dt%7D%2B%5Cfrac%7B1%7D%7B%5Crho%7D%5Cnabla%20p%3D0" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/>, use forward euler:</p>
+<p><img src="https://math.now.sh?inline=%5Cmathbf%7Bu%7D_%7Bn%2B1%7D%20%3D%20%5Cmathbf%7Bu%7D%20-%20%5CDelta%20t%20%5Cdfrac%7B1%7D%7B%5Crho%7D%5Cnabla%20p" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/></p>
+<p>The solving result should met divergence-free condition:</p>
+<p><img src="https://math.now.sh?inline=%5Cnabla%5Ccdot%5Cmathbf%7Bu%7D%5E%7Bn%2B1%7D%3D0" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/></p>
+<p>These two equations should be combined to solve pressure, we will see how to discrete them next, and how to substitute one into another.</p>
+<p>For the first equation:</p>
+<p><img src="https://math.now.sh?inline=u_%7Bi%2B1%2F2%2Cj%2Ck%7D%5E%7Bn%2B1%7D%3Du_%7Bi%2B1%2F2%2Cj%2Ck%7D-%5CDelta%20t%20%5Cdfrac%7B1%7D%7B%5Crho%7D%20%5Cdfrac%7Bp_%7Bi%2B1%2Cj%2Ck%7D-p_%7Bi%2Cj%2Ck%7D%7D%7B%5CDelta%20x%7D" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/></p>
+<p><img src="https://math.now.sh?inline=v_%7Bi%2Cj%2B1%2F2%2Ck%7D%5E%7Bn%2B1%7D%3Dv_%7Bi%2Cj%2B1%2F2%2Ck%7D-%5CDelta%20t%20%5Cdfrac%7B1%7D%7B%5Crho%7D%20%5Cdfrac%7Bp_%7Bi%2Cj%2B1%2Ck%7D-p_%7Bi%2Cj%2Ck%7D%7D%7B%5CDelta%20y%7D" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/></p>
+<p><img src="https://math.now.sh?inline=w_%7Bi%2Cj%2Ck%2B1%2F2%7D%5E%7Bn%2B1%7D%3Dw_%7Bi%2Cj%2Ck%2B1%2F2%7D-%5CDelta%20t%20%5Cdfrac%7B1%7D%7B%5Crho%7D%20%5Cdfrac%7Bp_%7Bi%2Cj%2Ck%2B1%7D-p_%7Bi%2Cj%2Ck%7D%7D%7B%5CDelta%20z%7D" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/></p>
+<p>For the second equation:</p>
+<p><img src="https://math.now.sh?inline=%5Cdfrac%7Bu%5E%7Bn%2B1%7D_%7Bi%2B1%2F2%2Cj%2Ck%7D-u%5E%7Bn%2B1%7D_%7Bi-1%2F2%2Cj%2Ck%7D%7D%7B%5CDelta%20x%7D%20%2B%20%5Cdfrac%7Bv%5E%7Bn%2B1%7D_%7Bi%2Cj%2B1%2F2%2Ck%7D-v%5E%7Bn%2B1%7D_%7Bi%2Cj-1%2F2%2Ck%7D%7D%7B%5CDelta%20y%7D%20%2B%20%5Cdfrac%7Bw%5E%7Bn%2B1%7D_%7Bi%2Cj%2Ck%2B1%2F2%7D-w%5E%7Bn%2B1%7D_%7Bi%2Cj%2Ck-1%2F2%7D%7D%7B%5CDelta%20z%7D%20%3D%200" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/></p>
+<p>Assume <img src="https://math.now.sh?inline=%5CDelta%20x%20%3D%20%5CDelta%20y%20%3D%20%5CDelta%20z" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/>, substitute the <img src="https://math.now.sh?inline=u%5E%7Bn%2B1%7D%2Cv%5E%7Bn%2B1%7D%2Cw%5E%7Bn%2B1%7D" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/>:</p>
+<p style="filter: opacity(90%);transform:scale(0.85);text-align:center;"><img src="https://math.now.sh?from=%5Cbegin%7Balign*%7D%0A%20%20%20%26%20%5Cdfrac%7B%5CDelta%20t%7D%7B%5Crho%5CDelta%20x%5E2%7D%286p_%7Bi%2Cj%2Ck%7D-p_%7Bi%2B1%2Cj%2Ck%7D-p_%7Bi%2Cj%2B1%2Ck%7D-p_%7Bi%2Cj%2Ck%2B1%7D-p_%7Bi-1%2Cj%2Ck%7D-p_%7Bi%2Cj-1%2Ck%7D-p_%7Bi%2Cj%2Ck-1%7D%29%20%3D%20%5C%5C%0A%20%20%20%20%26%20-(%5Cdfrac%7Bu_%7Bi%2B1%2F2%2Cj%2Ck%7D-u_%7Bi-1%2F2%2Cj%2Ck%7D%7D%7B%5CDelta%20x%7D%20%2B%20%5Cdfrac%7Bv_%7Bi%2Cj%2B1%2F2%2Ck%7D-v_%7Bi%2Cj-1%2F2%2Ck%7D%7D%7B%5CDelta%20x%7D%20%2B%20%5Cdfrac%7Bw_%7Bi%2Cj%2Ck%2B1%2F2%7D-w_%7Bi%2Cj%2Ck-1%2F2%7D%7D%7B%5CDelta%20x%7D)%0A%5Cend%7Balign*%7D%0A" /></p><p>This equation can be written in matrix form as <img src="https://math.now.sh?inline=Ap%3Db" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/>. It is easy to know that A is a sparse matrix.</p>
+<p>This system of linear algebraic equations can be solved using direct or iterative methods.</p>
+<p>Considering that the fluid domain can be large and the direct method computationally expensive, using an iterative method may be a better option. Commonly, efficient iterative methods such as conjugate gradient method is used, and acceleration algorithms include preconditioner method and regional equilibrium decomposition algorithm is also used.</p>
+<p>When actually constructing Poisson’s equation, boundary conditions also need to be taken into consideration.</p>
+<blockquote>
+<p>It is my understanding when I read the book firstly.</p>
+<p>After I read other’s, I found that forward Euler is to find fucture state <code>n+1</code> with current state <code>n</code>, and backward Euler is to update current state <code>n</code> with known fucture state <code>n+1</code>.</p>
+<p>So that is why each elements in forward Euler can be calcuated parallelly, but each elements in backward Euler are coupled. In forward Euler, if you want to predict a point, you only need to fetch its neighbor points’ old value. These old value are read-only. But in backward Euler, to update a point, the neighbor you fetch is also required to be writed when updating other points.</p>
+<p>Elements are coupled means that you should solve a <img src="https://math.now.sh?inline=Ax%3Db" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/> problem.</p>
+<p>As for pressure solving, The forward-style method would take the current density error to compute pressure. So, in backward sense, we would deduce the pressure by saying that this still-unknown pressure will make the density error to zero. The zero density error means that the density should remain constant, and that leads to <img src="https://math.now.sh?inline=%5Cnabla%5Ccdot%5Cmathbf%7Bu%7D%5E%7Bn%2B1%7D%3D0" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/></p>
+<p>So it is natural to substitute <img src="https://math.now.sh?inline=%5Cmathbf%7Bu%7D_%7Bn%2B1%7D%20%3D%20%5Cmathbf%7Bu%7D%20-%20%5CDelta%20t%20%5Cdfrac%7B1%7D%7B%5Crho%7D%5Cnabla%20p" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/> into <img src="https://math.now.sh?inline=%5Cnabla%5Ccdot%5Cmathbf%7Bu%7D%5E%7Bn%2B1%7D%3D0" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/>.</p>
+</blockquote>
+<h3 id="Why-is-it-called-projection">Why is it called projection?</h3>
+<p>According to Helmholtz-Hodge Decomposition, states that any vector field <img src="https://math.now.sh?inline=%5Cmathrm%7B%5Cmathbf%7Bw%7D%7D" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/> can uniquely be decomposed into a divergence-free vector field adding with a gredient of a scalar field.</p>
+<p><img src="https://math.now.sh?inline=%5Cmathrm%7B%5Cmathbf%7Bw%7D%7D%20%3D%20%5Cmathrm%7B%5Cmathbf%7Bu%7D%7D%20%2B%20%5Cnabla%20q." style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/></p>
+<p>Where <img src="https://math.now.sh?inline=%5Cnabla%20%5Ccdot%20%5Cmathrm%7B%5Cmathbf%7Bu%7D%7D%20%3D%200" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/>.</p>
+<p>Poisson equation can be derived from this equation by multiplying both sides by “<img src="https://math.now.sh?inline=%5Cnabla" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/>”.</p>
+<p><img src="https://math.now.sh?inline=%5Cnabla%20%5Ccdot%20%5Cmathrm%7B%5Cmathbf%7Bw%7D%7D%20%3D%20%5Cnabla%5E2%20q." style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/></p>
+<p>So now we can say the Poisson eq is equivalent to Helmholtz-Hodge Decomposition, while the Helmholtz-Hodge Decomposition can be written as projection:</p>
+<p><img src="https://math.now.sh?inline=%5Cmathrm%7B%5Cmathbf%7Bu%7D%7D%20%3D%20%5Cmathrm%7B%5Cmathbf%7BP%7D%7D%20%5Cmathrm%7B%5Cmathbf%7Bw%7D%7D%20%3D%20%5Cmathrm%7B%5Cmathbf%7Bw%7D%7D%20-%20%5Cnabla%20q." style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/></p>
+<p>Where <img src="https://math.now.sh?inline=%5Cmathrm%7B%5Cmathbf%7BP%7D%7D" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/> satisfies <img src="https://math.now.sh?inline=%5Cmathrm%7B%5Cmathbf%7BP%7D%7D%20%5Cmathrm%7B%5Cmathbf%7Bu%7D%7D%20%3D%20%5Cmathrm%7B%5Cmathbf%7Bu%7D%7D" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/>, <img src="https://math.now.sh?inline=%5Cmathrm%7B%5Cmathbf%7BP%7D%7D%20%5Cnabla%20q%20%3D%200" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/>.</p>
+<p>So you can see, solving Poisson eq is projecting velocity field to pressure field.</p>
+<figure style="width: 513px" class="align-center">
+<img src="/images/fluid_sim_reading_note/velocity_projection.png">
+<figcaption align = "center">Fig: Velocity Projection. Taken from "Stable Fluid"</figcaption>
+</figure>
+<h3 id="Method-without-projection">Method without projection</h3>
+<p>If you don’t project velocity field to pressure filed, only solve the divergence-free condition, there is simpler algorithm.</p>
+<p>Take 2D as an example,</p>
+<p>we need to accomplish <img src="https://math.now.sh?inline=%5Cdfrac%7Bu%5E%7Bn%2B1%7D_%7Bi%2B1%2F2%2Cj%2Ck%7D-u%5E%7Bn%2B1%7D_%7Bi-1%2F2%2Cj%2Ck%7D%7D%7B%5CDelta%20x%7D%20%2B%20%5Cdfrac%7Bv%5E%7Bn%2B1%7D_%7Bi%2Cj%2B1%2F2%2Ck%7D-v%5E%7Bn%2B1%7D_%7Bi%2Cj-1%2F2%2Ck%7D%7D%7B%5CDelta%20y%7D%20%3D%200" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/>.</p>
+<p>It can be shorten as:</p>
+<p><img src="https://math.now.sh?inline=u_%7Bi%2B1%2F2%2Cj%2Ck%7D-u_%7Bi-1%2F2%2Cj%2Ck%7D%20%2B%20v_%7Bi%2Cj%2B1%2F2%2Ck%7D-v_%7Bi%2Cj-1%2F2%2Ck%7D%20%3D%200" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/></p>
+<p>A quick way is calculating the difference, and distribute it onto the four velocity.</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">d = u[i+<span class="number">1</span>][j] - u[i][j] + v[i][j+<span class="number">1</span>] - v[i][j]</span><br><span class="line"></span><br><span class="line">u[i][j] += d/<span class="number">4</span></span><br><span class="line">u[i+<span class="number">1</span>][j] -= d/<span class="number">4</span></span><br><span class="line">v[i][j] += d/<span class="number">4</span></span><br><span class="line">v[i][j+<span class="number">1</span>] -= d/<span class="number">4</span></span><br></pre></td></tr></table></figure>
+<h4 id="Wall-Condition">Wall Condition</h4>
+<p>Considering the wall condition. Wall cell doesn’t have velocity, but if using MAC grid, velocity is defined in cell faces.</p>
+<p>So the border between wall and fluid has velocity.</p>
+<p>Essentially, distributing <code>d</code> is distributing additional flux of the cell to cell face, to make the cell 0 flux.</p>
+<p>But there isn’t flux from wall or to wall, so things change:</p>
+<h5 id="Boolean-flag">Boolean flag</h5>
+<p>Set <img src="https://math.now.sh?inline=s%20%3D%201" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/> represent fluid, <img src="https://math.now.sh?inline=s%20%3D%200" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/> represent wall.</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">d = u[i+<span class="number">1</span>][j] - u[i][j] + v[i][j+<span class="number">1</span>] - v[i][j]</span><br><span class="line">s = s[i+<span class="number">1</span>][j] + s[i-<span class="number">1</span>][j] + s[i][j+<span class="number">1</span>] + s[i][j-<span class="number">1</span>]</span><br><span class="line"></span><br><span class="line">u[i][j] += d * s[i-<span class="number">1</span>][j] / s</span><br><span class="line">u[i+<span class="number">1</span>][j] -= d * s[i+<span class="number">1</span>][j] / s</span><br><span class="line">v[i][j] += d * s[i][j-<span class="number">1</span>] / s</span><br><span class="line">v[i][j+<span class="number">1</span>] -= d * s[i][j+<span class="number">1</span>] / s</span><br></pre></td></tr></table></figure>
+<p>Here we may access cells out of boundary. A solution is adding border cells.</p>
+<p>The current four velocity values being processed, have overlapping value with previous four velocity values. It means that right after you make current four velocity values divergence-free, the previous may get divergence again.</p>
+<p>So you should repeat it over and over again, until the whole field coverge.</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">while</span> velocity field doesn<span class="string">&#x27;t converge:</span></span><br><span class="line"><span class="string">    d = u[i+1][j] - u[i][j] + v[i][j+1] - v[i][j]</span></span><br><span class="line"><span class="string">    s = s[i+1][j] + s[i-1][j] + s[i][j+1] + s[i][j-1]</span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string">    u[i][j] += d * s[i-1][j] / s</span></span><br><span class="line"><span class="string">    u[i+1][j] -= d * s[i+1][j] / s</span></span><br><span class="line"><span class="string">    v[i][j] += d * s[i][j-1] / s</span></span><br><span class="line"><span class="string">    v[i][j+1] -= d * s[i][j+1] / s</span></span><br></pre></td></tr></table></figure>
+<h5 id="Copying-value">Copying value</h5>
+<p>Set <img src="https://math.now.sh?inline=s%20%3D%200" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/> for border cells is one method, another method is copying neighbor fluid cell value to border cell.</p>
+<h4 id="Drift-problem">Drift problem</h4>
+<p>The method has drift problem, it is common problem of velocity based particles method.</p>
+<blockquote>
+<p>It is what I see in other’s tutorial video.</p>
+<p>I didn’t see the related statement about “drift” in other book?</p>
+</blockquote>
+<p>It means that the method can only see collision of opposite motion. It can’t recognize collision of two particles with parallel velocity.</p>
+<figure style="width: 600px" class="align-center">
+<img src="/images/fluid_sim_reading_note/velocity_based_particles_method_drift_problem.svg">
+<figcaption align = "center">Fig: Drift problem</figcaption>
+</figure>
+<blockquote>
+<p>In my personal view, it is because the method only rely on flux to seperate particles. If some particles move in parallel but the flux is 0, then they won’t be affected by divergence-free solving step. But if two particles move in opposite direction, they must result in flux changes.</p>
+</blockquote>
+<h5 id="Solution">Solution</h5>
+<p>There are two solutions.</p>
+<p>One is checking collision of all particles pairs. Obviously, it is very slow.</p>
+<p>Another is computing particles density <img src="https://math.now.sh?inline=d" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/> at the center of each cell.</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">clear rho <span class="keyword">for</span> <span class="built_in">all</span> particles</span><br><span class="line"></span><br><span class="line"><span class="keyword">for</span> <span class="built_in">all</span> particles:</span><br><span class="line">    rho1 += w1</span><br><span class="line">    rho2 += w2</span><br><span class="line">    rho3 += w3</span><br><span class="line">    rho4 += w4</span><br></pre></td></tr></table></figure>
+<p>Then considering density when computing delta flux.</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">d = u[i+<span class="number">1</span>][j] - u[i][j] + v[i][j+<span class="number">1</span>] - v[i][j] + k (rho - rho_rest)</span><br></pre></td></tr></table></figure>
+<blockquote>
+<p>It may be a approximation of Possion equation?</p>
+</blockquote>
+<h2 id="Chapter-7-Particle-Methods">Chapter 7: Particle Methods</h2>
+<h3 id="Advection-Troubles-on-Grids">Advection Troubles on Grids</h3>
+<h4 id="Velocity-Field-with-Distortion">Velocity Field with Distortion</h4>
+<p>Eulerian advection schemes:</p>
+<ol>
+<li>
+<p>Begin with the field sampled on a grid</p>
+</li>
+<li>
+<p>Reconstruct the field as a continuous function from the grid samples</p>
+</li>
+<li>
+<p>Advect the reconstructed field</p>
+</li>
+<li>
+<p>Resample the advected field on the grid</p>
+</li>
+</ol>
+<p>Though incompressible velocity field preserves volumes, at any point in space, the advected field may be stretched out along some axes and squished together along others.</p>
+<p>For rendering, there is a local magnification (stretching out) along some axes and a local minification (squishing together) along the others.</p>
+<p>Resampling a magnified field: doesnt’t lose information</p>
+<p>Resampling a minified field: lose information, cause alias</p>
+<p>Still from view of signal processing technology, minified field increase the frequency of singal.</p>
+<h4 id="Velocity-Field-without-Distortion">Velocity Field without Distortion</h4>
+<p>Even for a pure translation velocity field with no distortion, the Nyquist limit essentially means that, the maximum spatial frequency that can be reliably advected has period <img src="https://math.now.sh?inline=4%20%5CDelta%20x" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/>.</p>
+<blockquote>
+<p>The book says <img src="https://math.now.sh?inline=4%20%5CDelta%20x" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/>? Does it should be <img src="https://math.now.sh?inline=2%20%5CDelta%20x" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/>?</p>
+</blockquote>
+<p>Higher-frequency signals, even though you might resolve them on the grid at a particular instant in time, cannot be handled in general: e.g., just in one dimension the highest-frequency component you can see on the grid, <img src="https://math.now.sh?inline=%5Ccos%7B%5Cpi%20x%20%2F%20%5CDelta%20x%7D" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/>, exactly disappears from the grid once you advect it by a distance of <img src="https://math.now.sh?inline=1%2F2%20%5CDelta%20x" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/>.</p>
+<blockquote>
+<p>Why highest-frequency component of 1D is <img src="https://math.now.sh?inline=%5Ccos%7B%5Cpi%20x%20%2F%20%5CDelta%20x%7D" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/>? Why it disappears by a distance of <img src="https://math.now.sh?inline=1%2F2%20%5CDelta%20x" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/>?</p>
+</blockquote>
+<h4 id="Eulerian-scheme-filtering-ability">Eulerian scheme filtering ability</h4>
+<p>A “perfect” Eulerian scheme would filter out the high-frequency components that can’t be reliably resampled at each time step, even as a bad one will allow them to alias as artifacts. The distortions inherent in non-rigid velocity fields mean that as time progresses, some of the lower-frequency components get transferred to higher frequencies—and thus must be destroyed by a good scheme. But note that the fluid flow, after squeezing the field along some axes at some point, may later stretch it back out—transferring higher frequencies down to lower frequencies. However, it’s too late if the Eulerian scheme has already filtered them out.</p>
+<blockquote>
+<p>Is that what the author wants to express?</p>
+<p>Becuase in non-rigid velocity fields, some of the lower-frequency components get transferred to higher frequencies.</p>
+<p>So researcher that focus on fluid simulation precision should design a eulerian scheme that filter out the high-frequency components.</p>
+<p>But for computer graphics, we need to keep high-frequency components as much as possible.</p>
+<p>So that is why we turn to particles method?</p>
+</blockquote>
+<h4 id="Why-DNS-works-well">Why DNS works well</h4>
+<p>At small enough length scales, viscosity and other molecular diffusion processes end up dominating advection. That means, : if <img src="https://math.now.sh?inline=%5CDelta%20x" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/> is small enough, Eulerian schemes can behave perfectly well since the physics itself is effectively bandlimiting everything, dissipating information at higher frequencies.</p>
+<p>That is why DNS works well.</p>
+<p>But it is expensive for compute graphics.</p>
+<h4 id="Adaptive-Grids">Adaptive Grids</h4>
+<p>We have known that if <img src="https://math.now.sh?inline=%5CDelta%20x" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/> is smaller, the Eulerian scheme will filter higher frequencies and keep higher bandwidth of low frequencies.</p>
+<p>So adaptive grids can be used, where the grid resolution is increased wherever higher resampling density is required to avoid information loss, and decreased where the field is smooth enough that low resolution suffices.</p>
+<p>Data Structure:</p>
+<ul>
+<li>
+<p>Octrees</p>
+</li>
+<li>
+<p>Unstructured tetrahedral meshes</p>
+</li>
+</ul>
+<p>Complex, not really a solution to unwanted grid-caused diffusion</p>
+<h4 id="Store-information-in-Particle">Store information in Particle</h4>
+<p>Store a field on particles that move with the flow</p>
+<p>Then there is no filtering and no information loss</p>
+<p>Particle methods apply best to fields with essentially zero diffusion (or viscosity, or conduction, or whatever other name is appropriate for the quantity in question).</p>
+<h3 id="Particle-Advection">Particle Advection</h3>
+<p>Error in particle advection: accumulated over many time steps</p>
+<p>Error in the semi-Lagrangian method: being reset each time step</p>
+<p>second-order Runge-Kutta</p>
+<p>three-stage third-order Runge-Kutta scheme</p>
+<p style="filter: opacity(90%);transform:scale(0.85);text-align:center;"><img src="https://math.now.sh?from=%5Cbegin%7Balign%7D%0A%20%20%20%20k_1%20%26%3D%20u%28x_n%29%2C%20%5C%5C%0A%20%20%20%20k_2%20%26%3D%20u(x_n%20%2B%20%5Cdfrac%7B1%7D%7B2%7D%5CDelta%20t%20k_1)%2C%20%5C%5C%0A%20%20%20%20k_3%20%26%3D%20u(x_n%20%2B%20%5Cdfrac%7B3%7D%7B4%7D%5CDelta%20t%20k_2)%2C%20%5C%5C%0A%20%20%20%20x_%7Bn%2B1%7D%20%26%3D%20x_n%20%2B%20%5Cdfrac%7B2%7D%7B9%7D%5CDelta%20t%20k_1%20%2B%20%5Cdfrac%7B3%7D%7B9%7D%5CDelta%20t%20k_2%20%2B%20%5Cdfrac%7B4%7D%7B9%7D%5CDelta%20t%20k_3.%0A%5Cend%7Balign%7D%0A" /></p><h3 id="Transferring-Particles-to-the-Grid">Transferring Particles to the Grid</h3>
+<p>Common:</p>
+<p>Particles track secondary field such as smoke concentration, foam, bubbles, or other things that would show up in rendering</p>
+<p>Primary fluid variables like velocity store in grids.</p>
+<blockquote>
+<p>But in PIC it is not…?</p>
+<p>I come up with store velocity on particles firstly but not secondary field.</p>
+<p>Maybe it is a differences in thinking between me and author.</p>
+<p>I think when author says “track secondary field” first, he put PIC section to the next. It explains why author doesn’t say particles track velocity firstly.</p>
+</blockquote>
+<p>Use kernel function to transfer value from particles to the grid.</p>
+<p>Like SPH?</p>
+<h3 id="Particle-Seeding">Particle Seeding</h3>
+<p>Make sure it’s consistent across different time steps and grid sizes.</p>
+<p>My understanding is seeding should be related with delta time and grid size.</p>
+<h3 id="Diffusion-2">Diffusion</h3>
+<h3 id="Particle-in-Cell-Methods">Particle-in-Cell Methods</h3>
+<p>Pressure projection to keep the velocity field divergence-free globally couples all the velocities together.</p>
+<h4 id="From-Grid-to-Particle">From Grid to Particle</h4>
+<p>For 2D, bilinear interpolation</p>
+<p>For 3D, trilinear interpolation</p>
+<p>Caution: For 2D as an example, if one grid velocity is undefined (the cell is not fluid), then in your bilinear interpolation, you only average three points. In other word, if <img src="https://math.now.sh?inline=q_4" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/> is undefined, then right calcuation is <img src="https://math.now.sh?inline=q_p%20%3D%20%5Cdfrac%7Bq_1%20%2B%20q_2%20%2B%20q_3%7D%7Bw_1%20%2B%20w_2%20%2B%20w_3%7D" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/> but not <img src="https://math.now.sh?inline=q_p%20%3D%20%5Cdfrac%7Bq_1%20%2B%20q_2%20%2B%20q_3%20%2B%200%7D%7Bw_1%20%2B%20w_2%20%2B%20w_3%20%2B%20w_4%7D" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/>.</p>
+<p>Because undefined is not 0.</p>
+<p>If you are using MAC grid, then grid position is not integer, it has an offset about h/2 from integer.</p>
+<h4 id="From-Particles-to-Grid">From Particles to Grid</h4>
+<p>Many particles may contributes the same one grid velocity,</p>
+<p>but we are iterating all particles, so we should accumulate q and weight during the loop,</p>
+<p>and calculate result in the last.</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">clear q <span class="keyword">and</span> r <span class="keyword">for</span> all cells</span><br><span class="line"></span><br><span class="line"><span class="keyword">for</span> all particles:</span><br><span class="line">    q1 = q1 + w1 * qp</span><br><span class="line">    q2 = q2 + w2 * qp</span><br><span class="line">    q3 = q3 + w3 * qp</span><br><span class="line">    q4 = q4 + w4 * qp</span><br><span class="line"></span><br><span class="line">    r1 = r1 + w1</span><br><span class="line">    r2 = r2 + w2</span><br><span class="line">    r3 = r3 + w3</span><br><span class="line">    r4 = r4 + w4</span><br><span class="line"></span><br><span class="line"><span class="keyword">for</span> all cells:</span><br><span class="line">    q = q / r</span><br></pre></td></tr></table></figure>
+<h4 id="PIC">PIC</h4>
+<p>PIC:</p>
+<ol>
+<li>
+<p>Velocity from particles to grids</p>
+</li>
+<li>
+<p>Solve Advection in Grid</p>
+</li>
+<li>
+<p>Interpolate back from grid to particles</p>
+</li>
+<li>
+<p>Advect particles by the interpolated grid velocity field</p>
+</li>
+</ol>
+<p>About particles seeding: If too few particles in grid, seeding; if too many particles, delete the excess.</p>
+<p>PIC suffers from severe numerial dissipation, because there is too many interpolation.</p>
+<h4 id="FLIP">FLIP</h4>
+<p>In FLIP, instead of interpolating a quantity back to the particles, the change in the quantity (as computed on the grid) is interpolated.</p>
+<p>So the delta quantity is used to increment the value in particles.</p>
+<p>Each increment is smoothed because of interpolation, of course, but that is all. Smoothing is not accumulated, and thus FLIP is virtually free of numerical diffusion.</p>
+<ol>
+<li>
+<p>Velocity from particles to grids</p>
+<p>It stores a set of quantity <img src="https://math.now.sh?inline=q" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/></p>
+</li>
+<li>
+<p>Solve Advection in Grid</p>
+<p>It stores a set of updated quantity <img src="https://math.now.sh?inline=q_%7Bnew%7D" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/></p>
+</li>
+<li>
+<p>Get delta quantity <img src="https://math.now.sh?inline=%5CDelta%20q%20%3D%20q_%7Bnew%7D%20-%20q" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/> in Grid</p>
+</li>
+<li>
+<p>Interpolate <img src="https://math.now.sh?inline=%5CDelta%20q" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/> back from grid to particles</p>
+</li>
+<li>
+<p>Advect particles by the interpolated grid velocity field</p>
+</li>
+</ol>
+<h4 id="PIC-FLIP">PIC/FLIP</h4>
+<p>Eight particles pre grid cell, meaning there are more degrees of freedom in particles than in grid.</p>
+<p>So FLIP may develop noise because the delta quantity is not enough to represent all degrees of motion.</p>
+<p>Noise means velocity fluctuations on the particles may, on some time steps, average down to zero and vanish from the grid, and on other time steps show up as unexpected perturbations</p>
+<p>But PIC doesn’t have the problem, because quantity is interpolated.</p>
+<p>So a blending is useful, such as 0.01 PIC and 0.99 FLIP</p>
+<h2 id="Chapter-8-Water">Chapter 8: Water</h2>
+<h3 id="Marker-Particles-and-Voxels">Marker Particles and Voxels</h3>
+<p>Determining a cell is fluid or empty when water moves in or out of it. is the tricky part.</p>
+<p>So one possibility is to define an initial level set of water, then advect is using sharp cubic interpolant.</p>
+<p>But it still have problem about thin structures that thinner than about two grid cells. Droplets rarely can travel more than a few grid cells before disappearing.</p>
+<p>This is where we turn instead to marker particles.</p>
+<p>Marker Particles:</p>
+<ol>
+<li>
+<p>Emitting water particles to fill the volume of water</p>
+<p>If simulation has source, emit from it over time</p>
+</li>
+<li>
+<p>Advect the particles</p>
+</li>
+<li>
+<p>Mark the water cell: containing a marker particles is water, and the rest is empty or default</p>
+</li>
+</ol>
+<h4 id="Density-of-marker-particles">Density of marker particles</h4>
+<p>double of resolution: 4 particles in 2D, 8 in 3D</p>
+<p>more may not bring improvement: sampling frequency is limited by grid resolution</p>
+<p>So emitting particles in a random jittered pattern is a good idea. It is still considering about shearing flow that compresses along one axis and stretches along another can turn a regular lattice into weird anisotropic stripe-like patterns, far from a good uniform sampling.</p>
+<h4 id="Rendering">Rendering</h4>
+<p>Need a smooth surface, we only have cells containing marker particles.</p>
+<p>Blobbies</p>
+<p>J. Blinn. A generalization of algebraic surface drawing. ACM Trans. Graph., 1(3):235–256, 1982</p>
+<p><img src="https://math.now.sh?inline=F%28x%29%20%3D%20%5Csum_%7Bi%7D%7Bk(%5Cdfrac%7B%5Cvert%5Cvert%20x%20-%20x_i%5Cvert%5Cvert%7D%7Bh%7D)%7D" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/></p>
+<p><img src="https://math.now.sh?inline=k%28s%29%20%3D%20%5Cleft%5Clbrace%5Cbegin%7Balign*%7D%20%7B(1-s%5E2)%7D%5E3%2C%20s%20%3C%201%20%5C%5C%200%2C%20s%20%5Cgeqslant%201.%20%5Cend%7Balign*%7D%5Cright." style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/></p>
+<p>The blobby surface is implicitly defined as the points <img src="https://math.now.sh?inline=x" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/> where <img src="https://math.now.sh?inline=F%28x%29%20%3D%20%5Ctau" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/></p>
+<p>The blobby surface looks blobby. If using smoothing to mask blobby artifacts, the smoothing will also mask small-scale features.</p>
+<p>An improvement on blobbies is given by Zhu and Bridson</p>
+<p>One exciting direction is to skip the level set construction and directly use a triangle mesh to track the surface of the water.</p>
+<ol>
+<li>
+<p>Mesh may deform significantly, so remeshing is necessary.</p>
+</li>
+<li>
+<p>Mesh spiltting and merging need topology change operation.</p>
+</li>
+<li>
+<p>Numerical errors can cause the mesh to collide with itself.</p>
+</li>
+</ol>
+<h4 id="Combine-marker-particles-and-FLIP">Combine marker particles and FLIP</h4>
+<p>If we have already use particles, why not get th full benefit from them?</p>
+<p>So using FLIP instead of semi-Lagrangian method.</p>
+<blockquote>
+<p>Here you will realize that FLIP is not a solver, it is just a advection method comparing with semi-Largrangian method.</p>
+</blockquote>
+<p>Combination:</p>
+<ol>
+<li>
+<p>From the particles, construct the level set for the liquid.</p>
+</li>
+<li>
+<p>Transfer velocity (and any other additional state) from particles to the grid, and extrapolate from known grid values to at least one grid cell around the fluid, giving a preliminary velocity field <img src="https://math.now.sh?inline=u%5E*" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/></p>
+</li>
+<li>
+<p>Add body forces such as gravity or artistic controls to the velocity field.</p>
+</li>
+<li>
+<p>Construct solid level sets and solid velocity fields.</p>
+</li>
+<li>
+<p>Solve for and apply pressure to get a divergence-free velocity <img src="https://math.now.sh?inline=u%5E%7Bn%2B1%7D" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/> that respects the solid boundaries.</p>
+</li>
+<li>
+<p>Update particle velocities by interpolating the grid update <img src="https://math.now.sh?inline=u%5E%7Bn%2B1%7D%20-%20u%5E*" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/> to add to the existing particle velocities (FLIP), or simply interpolating the grid velocity (PIC), or a mix thereof.</p>
+</li>
+<li>
+<p>Advect the particles through the divergence-free velocity field <img src="https://math.now.sh?inline=u%5E%7Bn%2B1%7D" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/></p>
+</li>
+</ol>
+<blockquote>
+<p>The final step should be advecting the particels through particles velocity? Instead of divergence-free velocity in grid? Or the “divergence-free velocity <img src="https://math.now.sh?inline=u%5E%7Bn%2B1%7D" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/>” means velocity in particles?</p>
+</blockquote>
+<h4 id="Why-we-need-More-Accurate-Pressure-Solves-Voxelized-Surface">Why we need More Accurate Pressure Solves: Voxelized Surface</h4>
+<p>Marker particles method create block voxelized surface in field value.</p>
+<p>Simulation core is pressure solving</p>
+<p>Pressure solving only see a block voxelized surface, so as a solving result, velocity filed cannot avoid significant voxel artifacts.</p>
+<p>For example, small “ripples” less than a grid cell high do not show up at all in the pressure solve, and thus they aren’t evolved correctly but rather persist statically in the form of a strange displacement texture.</p>
+<p>So we need to inform the pressure solver about the location of the water-air interface. Then we modify the pressure solver, about how we compute the gradient of pressure near the water-air interface for updating velocities. It naturally will also changes the matrix in the pressure equations.</p>
+<blockquote>
+<p>We modify pressure solver and add an additional process about water-air interface?</p>
+<p>OK. See the ghost fluid method section, I realize it is about how to determine <img src="https://math.now.sh?inline=p%20%3D%200" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/> location.</p>
+</blockquote>
+<h4 id="Ghost-fluid-Method">Ghost fluid Method</h4>
+<p>Assume that we have known that how to update velocity:</p>
+<p><img src="https://math.now.sh?inline=u_%7Bi%2B1%2F2%2Cj%2Ck%7D%5E%7Bn%2B1%7D%20%3D%20u_%7Bi%2B1%2F2%2Cj%2Ck%7D%20-%20%5Cdfrac%7B%5CDelta%20t%7D%7B%5Crho_%7Bi%2B1%2F2%2Cj%2Ck%7D%7D%5Cdfrac%7Bp_%7Bi%2B1%2Cj%2Ck%7D-p_%7Bi%2Cj%2Ck%7D%7D%7B%5CDelta%20x%7D" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/></p>
+<p>Suppose that <img src="https://math.now.sh?inline=%28i%2Cj%2Ck%29" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/> is in the water, i.e. <img src="https://math.now.sh?inline=%5Cphi_%7Bi%2Cj%2Ck%7D%20%5Cleqslant%200" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/> and <img src="https://math.now.sh?inline=%28i%2B1%2Cj%2Ck%29" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/> is in the air, i.e. <img src="https://math.now.sh?inline=%5Cphi_%7Bi%2B1%2Cj%2Ck%7D%20%3E%200" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/>.</p>
+<p>Simple solver, which causes voxelized surface, set <img src="https://math.now.sh?inline=p_%7Bi%2B1%2Cj%2Ck%7D%20%3D%200" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/>.</p>
+<p>But it would be more accurate to say that <img src="https://math.now.sh?inline=p%20%3D%200" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/> happens at the water-air interface, and <img src="https://math.now.sh?inline=%28i%2B1%2Cj%2Ck%29" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/> doesn’t represent interface.</p>
+<p>So we set a <img src="https://math.now.sh?inline=p%5EG_%7Bi%2B1%2Cj%2Ck%7D" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/> to present the “ghost” pressure in the air. Now the update is:</p>
+<p><img src="https://math.now.sh?inline=u_%7Bi%2B1%2F2%2Cj%2Ck%7D%5E%7Bn%2B1%7D%20%3D%20u_%7Bi%2B1%2F2%2Cj%2Ck%7D%20-%20%5Cdfrac%7B%5CDelta%20t%7D%7B%5Crho_%7Bi%2B1%2F2%2Cj%2Ck%7D%7D%5Cdfrac%7Bp%5EG_%7Bi%2B1%2Cj%2Ck%7D-p_%7Bi%2Cj%2Ck%7D%7D%7B%5CDelta%20x%7D" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/></p>
+<p>Now we should solve the unknown <img src="https://math.now.sh?inline=p%5EG_%7Bi%2B1%2Cj%2Ck%7D" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/>, we know we should use the water-air interface condition that:</p>
+<p><img src="https://math.now.sh?inline=%281-%5Ctheta%29p_%7Bi%2Cj%2Ck%7D%2B%5Ctheta%20p%5EG_%7Bi%2B1%2Cj%2Ck%7D%20%3D%200" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/></p>
+<p>Where <img src="https://math.now.sh?inline=%5Ctheta" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/> means we do linearly interpolating between <img src="https://math.now.sh?inline=%5Cphi_%7Bi%2Cj%2Ck%7D" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/> and <img src="https://math.now.sh?inline=%5Cphi_%7Bi%2B1%2Cj%2Ck%7D" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/> gives the location of the interface at <img src="https://math.now.sh?inline=%28i%20%2B%20%5Ctheta%20%5CDelta%20x%2C%20j%2C%20k%29" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/> where</p>
+<p><img src="https://math.now.sh?inline=%5Ctheta%20%3D%20%5Cdfrac%7B%5Cphi_%7Bi%2Cj%2Ck%7D%7D%7B%5Cphi_%7Bi%2Cj%2Ck%7D%20-%20%5Cphi_%7Bi%2B1%2Cj%2Ck%7D%7D" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/></p>
+<p>Solve <img src="https://math.now.sh?inline=p%5EG_%7Bi%2B1%2Cj%2Ck%7D" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/>:</p>
+<p><img src="https://math.now.sh?inline=p%5EG_%7Bi%2B1%2Cj%2Ck%7D%20%3D%20%5Cdfrac%7B%28%5Ctheta-1%29p_%7Bi%2Cj%2Ck%7D%7D%7B%5Ctheta%7D" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"/></p>
+<p>and then substitute it into update eq:</p>
+<p style="filter: opacity(90%);transform:scale(0.85);text-align:center;"><img src="https://math.now.sh?from=%5Cbegin%7Balign*%7D%0Au_%7Bi%2B1%2F2%2Cj%2Ck%7D%5E%7Bn%2B1%7D%20%26%20%3D%20u_%7Bi%2B1%2F2%2Cj%2Ck%7D%20-%20%5Cdfrac%7B%5CDelta%20t%7D%7B%5Crho_%7Bi%2B1%2F2%2Cj%2Ck%7D%7D%5Cdfrac%7B%5Cdfrac%7B%28%5Ctheta-1%29p_%7Bi%2Cj%2Ck%7D%7D%7B%5Ctheta%7D-p_%7Bi%2Cj%2Ck%7D%7D%7B%5CDelta%20x%7D%20%5C%5C%0A%26%20%3D%20u_%7Bi%2B1%2F2%2Cj%2Ck%7D%20%2B%20%5Cdfrac%7B%5CDelta%20t%7D%7B%5Crho%7D%5Cdfrac%7B1%7D%7B%5Ctheta%7D%5Cdfrac%7Bp_%7Bi%2Cj%2Ck%7D%7D%7B%5CDelta%20x%7D%0A%5Cend%7Balign*%7D%0A" /></p><p>that is all.</p>
+<figure style="width: 600px" class="align-center">
+<img src="/images/fluid_sim_reading_note/ghost_fluid_method.svg">
+<figcaption align = "center">Fig: Ghost fluid Method</figcaption>
+</figure>
+<p>Other methods …</p>
+<h3 id="Topology-Change-and-Wall-Separation">Topology Change and Wall Separation</h3>
+<h4 id="How-does-Separation-happen">How does Separation happen</h4>
+<p>Why water will separation?</p>
+<p>Only considering numerical scheme, if water is path-connected, then after advection, it must remain path-connected. In other word, in theory, if velocity field path-connected, then it will never separate.</p>
+<p>But in real simulation, if you use level set or marker particles method, you will find the separation happens natually. But it may just caused by numerical error.</p>
+<h4 id="Lose-volume-when-merging-water">Lose volume when merging water</h4>
+<p>A water drop can penetrate quite deeply into a solid wall or into another water region during advection, effectively losing volume in the process.</p>
+<h4 id="How-Liquid-can-Separate-from-Solid-Walls">How Liquid can Separate from Solid Walls</h4>
+<p>In fact, exactly what happens at the moving contact line where air, water, and solid meet is again not fully understood. Complicated physical chemistry, including the influence of past wetting (leaving a nearly invisible film of water on a solid), is at play.</p>
+<p>Other searcher …</p>
+<h3 id="Volume-Control">Volume Control</h3>
+<p>Because of pressure solving error, truncation error in level set representation, advection error, as well as the topology issues noted above, it is not surprising that fluid volume can’t be conserve.</p>
+<p>Other searcher …</p>
+<h3 id="Surface-Tension">Surface Tension</h3>
+<p>Both graphics and scientific computing, are studying how to add surface tension.</p>
+<p>Other searcher …</p>
+<script src="https://utteranc.es/client.js"
+        repo="CheapMeow/cheapmeow.github.io"
+        issue-term="pathname"
+        theme="github-light"
+        crossorigin="anonymous"
+        async>
+</script>
+      </div>
+      
+        <div class="prev-or-next">
+          <div class="post-foot-next">
+            
+              <a href="/2023/12/19/2023-12-19-ue5_niagara_sph/" target="_self">
+                <i class="iconfont icon-chevronleft"></i>
+                <span>Prev</span>
+              </a>
+            
+          </div>
+          <div class="post-attach">
+            <span class="post-pubtime">
+              <i class="iconfont icon-updatetime mr-10" title="Update time"></i>
+              2025-06-01 10:52:45
+            </span>
+            
+                  <span class="post-tags">
+                    <i class="iconfont icon-tags mr-10" title="Tags"></i>
+                    
+                    <span class="span--tag mr-8">
+                      <a href="/tags/Fluid-Simulation/" title="Fluid Simulation">
+                        #Fluid Simulation
+                      </a>
+                    </span>
+                    
+                    <span class="span--tag mr-8">
+                      <a href="/tags/Graphics/" title="Graphics">
+                        #Graphics
+                      </a>
+                    </span>
+                    
+                  </span>
+              
+          </div>
+          <div class="post-foot-prev">
+            
+              <a href="/2024/05/13/2024-05-13-cpp_static_reflection/" target="_self">
+                <span>Next</span>
+                <i class="iconfont icon-chevronright"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+    </div>
+    
+  <div id="btn-catalog" class="btn-catalog">
+    <i class="iconfont icon-catalog"></i>
+  </div>
+  <div class="post-catalog hidden" id="catalog">
+    <div class="title">Contents</div>
+    <div class="catalog-content">
+      
+        <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#Chapter-1-The-Equations-of-Fluids"><span class="toc-text">Chapter 1: The Equations of Fluids</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Force"><span class="toc-text">Force</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Incompressibility"><span class="toc-text">Incompressibility</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Dropping-Viscosity"><span class="toc-text">Dropping Viscosity</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Boundary-Conditions"><span class="toc-text">Boundary Conditions</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#Wall-condition"><span class="toc-text">Wall condition</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Free-surface"><span class="toc-text">Free surface</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Bubbles"><span class="toc-text">Bubbles</span></a></li></ol></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Chapter-2-Overview-of-Numerical-Simulation"><span class="toc-text">Chapter 2: Overview of Numerical Simulation</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Splitting"><span class="toc-text">Splitting</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Splitting-the-Fluid-Equations"><span class="toc-text">Splitting the Fluid Equations</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Time-Steps"><span class="toc-text">Time Steps</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#MAC-Grid"><span class="toc-text">MAC Grid</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#Problem-of-central-difference"><span class="toc-text">Problem of central difference</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#MAC-Velocity-Grid"><span class="toc-text">MAC Velocity Grid</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Dynamic-Sparse-Grids"><span class="toc-text">Dynamic Sparse Grids</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Code-2D-before-3D"><span class="toc-text">Code 2D before 3D</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Chapter-3-Advection-Algorithms"><span class="toc-text">Chapter 3: Advection Algorithms</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Semi-Lagrangian-Advection"><span class="toc-text">Semi-Lagrangian Advection</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#Forward-Euler"><span class="toc-text">Forward Euler</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Problem-of-spatial-discretization"><span class="toc-text">Problem of spatial discretization</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Semi-Lagrangian-Advection-2"><span class="toc-text">Semi-Lagrangian Advection</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Boundary-Conditions-2"><span class="toc-text">Boundary Conditions</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Time-Step-Size"><span class="toc-text">Time Step Size</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#CFL-condition"><span class="toc-text">CFL condition</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Diffusion"><span class="toc-text">Diffusion</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Reducing-Numerical-Diffusion"><span class="toc-text">Reducing Numerical Diffusion</span></a></li></ol></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Chapter-4-Level-Set-Geometry"><span class="toc-text">Chapter 4: Level Set Geometry</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#SDF"><span class="toc-text">SDF</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#Reinitializing-SDF"><span class="toc-text">Reinitializing SDF</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Medial-Axis"><span class="toc-text">Medial Axis</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Discretizing-Signed-Distance-Functions"><span class="toc-text">Discretizing Signed Distance Functions</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Computing-Signed-Distance"><span class="toc-text">Computing Signed Distance</span></a><ol class="toc-child"><li class="toc-item toc-level-5"><a class="toc-link" href="#Distance-to-Points"><span class="toc-text">Distance to Points</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#Loop-Order"><span class="toc-text">Loop Order</span></a><ol class="toc-child"><li class="toc-item toc-level-6"><a class="toc-link" href="#Fast-Marching-Method"><span class="toc-text">Fast Marching Method</span></a></li><li class="toc-item toc-level-6"><a class="toc-link" href="#Fast-Sweeping-Method"><span class="toc-text">Fast Sweeping Method</span></a></li><li class="toc-item toc-level-6"><a class="toc-link" href="#When-using-sparse-tiled-grids"><span class="toc-text">When using sparse tiled grids</span></a></li></ol></li><li class="toc-item toc-level-5"><a class="toc-link" href="#Finding-Signed-Distance-for-a-Triangle-Mesh"><span class="toc-text">Finding Signed Distance for a Triangle Mesh</span></a><ol class="toc-child"><li class="toc-item toc-level-6"><a class="toc-link" href="#Computing-the-distance-between-a-point-and-a-triangle"><span class="toc-text">Computing the distance between a point and a triangle</span></a></li></ol></li></ol></li></ol></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Chapter-5-Making-Fluids-Incompressible"><span class="toc-text">Chapter 5: Making Fluids Incompressible</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Project"><span class="toc-text">Project</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Why-is-it-called-projection"><span class="toc-text">Why is it called projection?</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Method-without-projection"><span class="toc-text">Method without projection</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#Wall-Condition"><span class="toc-text">Wall Condition</span></a><ol class="toc-child"><li class="toc-item toc-level-5"><a class="toc-link" href="#Boolean-flag"><span class="toc-text">Boolean flag</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#Copying-value"><span class="toc-text">Copying value</span></a></li></ol></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Drift-problem"><span class="toc-text">Drift problem</span></a><ol class="toc-child"><li class="toc-item toc-level-5"><a class="toc-link" href="#Solution"><span class="toc-text">Solution</span></a></li></ol></li></ol></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Chapter-7-Particle-Methods"><span class="toc-text">Chapter 7: Particle Methods</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Advection-Troubles-on-Grids"><span class="toc-text">Advection Troubles on Grids</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#Velocity-Field-with-Distortion"><span class="toc-text">Velocity Field with Distortion</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Velocity-Field-without-Distortion"><span class="toc-text">Velocity Field without Distortion</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Eulerian-scheme-filtering-ability"><span class="toc-text">Eulerian scheme filtering ability</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Why-DNS-works-well"><span class="toc-text">Why DNS works well</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Adaptive-Grids"><span class="toc-text">Adaptive Grids</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Store-information-in-Particle"><span class="toc-text">Store information in Particle</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Particle-Advection"><span class="toc-text">Particle Advection</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Transferring-Particles-to-the-Grid"><span class="toc-text">Transferring Particles to the Grid</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Particle-Seeding"><span class="toc-text">Particle Seeding</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Diffusion-2"><span class="toc-text">Diffusion</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Particle-in-Cell-Methods"><span class="toc-text">Particle-in-Cell Methods</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#From-Grid-to-Particle"><span class="toc-text">From Grid to Particle</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#From-Particles-to-Grid"><span class="toc-text">From Particles to Grid</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#PIC"><span class="toc-text">PIC</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#FLIP"><span class="toc-text">FLIP</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#PIC-FLIP"><span class="toc-text">PIC&#x2F;FLIP</span></a></li></ol></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Chapter-8-Water"><span class="toc-text">Chapter 8: Water</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Marker-Particles-and-Voxels"><span class="toc-text">Marker Particles and Voxels</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#Density-of-marker-particles"><span class="toc-text">Density of marker particles</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Rendering"><span class="toc-text">Rendering</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Combine-marker-particles-and-FLIP"><span class="toc-text">Combine marker particles and FLIP</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Why-we-need-More-Accurate-Pressure-Solves-Voxelized-Surface"><span class="toc-text">Why we need More Accurate Pressure Solves: Voxelized Surface</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Ghost-fluid-Method"><span class="toc-text">Ghost fluid Method</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Topology-Change-and-Wall-Separation"><span class="toc-text">Topology Change and Wall Separation</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#How-does-Separation-happen"><span class="toc-text">How does Separation happen</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Lose-volume-when-merging-water"><span class="toc-text">Lose volume when merging water</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#How-Liquid-can-Separate-from-Solid-Walls"><span class="toc-text">How Liquid can Separate from Solid Walls</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Volume-Control"><span class="toc-text">Volume Control</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Surface-Tension"><span class="toc-text">Surface Tension</span></a></li></ol></li></ol>
+      
+    </div>
+  </div>
+
+  
+<script src="/js/catalog.js"></script>
+
+
+
+
+    
+      <div class="comments-container">
+        
+
+
+
+
+
+
+
+      </div>
+    
+  </div>
+
+
+        
+<div class="footer">
+  <div class="social">
+    <ul>
+      
+        <li>
+          
+              <a title="github" target="_blank" rel="noopener" href="https://github.com/zchengsite/hexo-theme-oranges">
+                <i class="iconfont icon-github"></i>
+              </a>
+              
+        </li>
+        
+    </ul>
+  </div>
+  
+    
+    <div class="footer-more">
+      
+        <a target="_blank" rel="noopener" href="https://github.com/zchengsite/hexo-theme-oranges">Copyright © 2025 Oranges</a>
+        
+    </div>
+  
+    
+    <div class="footer-more">
+      
+        <a target="_blank" rel="noopener" href="https://github.com/zchengsite/hexo-theme-oranges">Theme by Oranges | Powered by Hexo</a>
+        
+    </div>
+  
+  
+</div>
+
+      </div>
+
+      <div class="tools-bar">
+        <div class="back-to-top tools-bar-item hidden">
+  <a href="javascript: void(0)">
+    <i class="iconfont icon-chevronup"></i>
+  </a>
+</div>
+
+
+<script src="/js/backtotop.js"></script>
+
+
+
+        
+  <div class="search-icon tools-bar-item" id="search-icon">
+    <a href="javascript: void(0)">
+      <i class="iconfont icon-search"></i>
+    </a>
+  </div>
+
+  <div class="search-overlay hidden">
+    <div class="search-content" tabindex="0">
+      <div class="search-title">
+        <span class="search-icon-input">
+          <a href="javascript: void(0)">
+            <i class="iconfont icon-search"></i>
+          </a>
+        </span>
+        
+          <input type="text" class="search-input" id="search-input" placeholder="搜索...">
+        
+        <span class="search-close-icon" id="search-close-icon">
+          <a href="javascript: void(0)">
+            <i class="iconfont icon-close"></i>
+          </a>
+        </span>
+      </div>
+      <div class="search-result" id="search-result"></div>
+    </div>
+  </div>
+
+  <script type="text/javascript">
+    var inputArea = document.querySelector("#search-input")
+    var searchOverlayArea = document.querySelector(".search-overlay")
+
+    inputArea.onclick = function() {
+      getSearchFile()
+      this.onclick = null
+    }
+
+    inputArea.onkeydown = function() {
+      if(event.keyCode == 13)
+        return false
+    }
+
+    function openOrHideSearchContent() {
+      let isHidden = searchOverlayArea.classList.contains('hidden')
+      if (isHidden) {
+        searchOverlayArea.classList.remove('hidden')
+        document.body.classList.add('hidden')
+        // inputArea.focus()
+      } else {
+        searchOverlayArea.classList.add('hidden')
+        document.body.classList.remove('hidden')
+      }
+    }
+
+    function blurSearchContent(e) {
+      if (e.target === searchOverlayArea) {
+        openOrHideSearchContent()
+      }
+    }
+
+    document.querySelector("#search-icon").addEventListener("click", openOrHideSearchContent, false)
+    document.querySelector("#search-close-icon").addEventListener("click", openOrHideSearchContent, false)
+    searchOverlayArea.addEventListener("click", blurSearchContent, false)
+
+    var searchFunc = function (path, search_id, content_id) {
+      'use strict';
+      var $input = document.getElementById(search_id);
+      var $resultContent = document.getElementById(content_id);
+      $resultContent.innerHTML = "<ul><span class='local-search-empty'>First search, index file loading, please wait...<span></ul>";
+      $.ajax({
+        // 0x01. load xml file
+        url: path,
+        dataType: "xml",
+        success: function (xmlResponse) {
+          // 0x02. parse xml file
+          var datas = $("entry", xmlResponse).map(function () {
+            return {
+              title: $("title", this).text(),
+              content: $("content", this).text(),
+              url: $("url", this).text()
+            };
+          }).get();
+          $resultContent.innerHTML = "";
+
+          $input.addEventListener('input', function () {
+            // 0x03. parse query to keywords list
+            var str = '<ul class=\"search-result-list\">';
+            var keywords = this.value.trim().toLowerCase().split(/[\s\-]+/);
+            $resultContent.innerHTML = "";
+            if (this.value.trim().length <= 0) {
+              return;
+            }
+            // 0x04. perform local searching
+            datas.forEach(function (data) {
+              var isMatch = true;
+              var content_index = [];
+              if (!data.title || data.title.trim() === '') {
+                data.title = "Untitled";
+              }
+              var orig_data_title = data.title.trim();
+              var data_title = orig_data_title.toLowerCase();
+              var orig_data_content = data.content.trim().replace(/<[^>]+>/g, "");
+              var data_content = orig_data_content.toLowerCase();
+              var data_url = data.url;
+              var index_title = -1;
+              var index_content = -1;
+              var first_occur = -1;
+              // only match artiles with not empty contents
+              if (data_content !== '') {
+                keywords.forEach(function (keyword, i) {
+                  index_title = data_title.indexOf(keyword);
+                  index_content = data_content.indexOf(keyword);
+
+                  if (index_title < 0 && index_content < 0) {
+                    isMatch = false;
+                  } else {
+                    if (index_content < 0) {
+                      index_content = 0;
+                    }
+                    if (i == 0) {
+                      first_occur = index_content;
+                    }
+                    // content_index.push({index_content:index_content, keyword_len:keyword_len});
+                  }
+                });
+              } else {
+                isMatch = false;
+              }
+              // 0x05. show search results
+              if (isMatch) {
+                str += "<li><a href='" + data_url + "' class='search-result-title'>" + orig_data_title + "</a>";
+                var content = orig_data_content;
+                if (first_occur >= 0) {
+                  // cut out 100 characters
+                  var start = first_occur - 20;
+                  var end = first_occur + 80;
+
+                  if (start < 0) {
+                    start = 0;
+                  }
+
+                  if (start == 0) {
+                    end = 100;
+                  }
+
+                  if (end > content.length) {
+                    end = content.length;
+                  }
+
+                  var match_content = content.substr(start, end);
+
+                  // highlight all keywords
+                  keywords.forEach(function (keyword) {
+                    var regS = new RegExp(keyword, "gi");
+                    match_content = match_content.replace(regS, "<span class=\"search-keyword\">" + keyword + "</span>");
+                  });
+
+                  str += "<p class=\"search-result-abstract\">" + match_content + "...</p>"
+                }
+                str += "</li>";
+              }
+            });
+            str += "</ul>";
+            if (str.indexOf('<li>') === -1) {
+              return $resultContent.innerHTML = "<ul><span class='local-search-empty'>No result<span></ul>";
+            }
+            $resultContent.innerHTML = str;
+          });
+        },
+        error: function(xhr, status, error) {
+          $resultContent.innerHTML = ""
+          if (xhr.status === 404) {
+            $resultContent.innerHTML = "<ul><span class='local-search-empty'>The search.xml file was not found, please refer to：<a href='https://github.com/zchengsite/hexo-theme-oranges#configuration' target='_black'>configuration</a><span></ul>";
+          } else {
+            $resultContent.innerHTML = "<ul><span class='local-search-empty'>The request failed, Try to refresh the page or try again later.<span></ul>";
+          }
+        }
+      });
+      $(document).on('click', '#search-close-icon', function() {
+        $('#search-input').val('');
+        $('#search-result').html('');
+      });
+    }
+
+    var getSearchFile = function() {
+        var path = "/search.xml";
+        searchFunc(path, 'search-input', 'search-result');
+    }
+  </script>
+
+
+
+
+        
+  <div class="tools-bar-item theme-icon" id="switch-color-scheme">
+    <a href="javascript: void(0)">
+      <i id="theme-icon" class="iconfont icon-moon"></i>
+    </a>
+  </div>
+
+  
+<script src="/js/colorscheme.js"></script>
+
+
+
+
+
+        
+  
+    <div class="share-icon tools-bar-item">
+      <a href="javascript: void(0)" id="share-icon">
+        <i class="iconfont iconshare"></i>
+      </a>
+      <div class="share-content hidden">
+        
+          <a class="share-item" href="https://twitter.com/intent/tweet?text=' + Fluid%20Simulation%20for%20Computer%20Graphics%20Reading%20Note + '&url=' + https%3A%2F%2Fcheapmeow.github.io%2F2024%2F01%2F10%2F2024-01-10-fluid_simulation_for_computer_graphics_reading_note%2F + '" target="_blank" title="Twitter">
+            <i class="iconfont icon-twitter"></i>
+          </a>
+        
+        
+          <a class="share-item" href="https://www.facebook.com/sharer.php?u=https://cheapmeow.github.io/2024/01/10/2024-01-10-fluid_simulation_for_computer_graphics_reading_note/" target="_blank" title="Facebook">
+            <i class="iconfont icon-facebooksquare"></i>
+          </a>
+        
+      </div>
+    </div>
+  
+  
+<script src="/js/shares.js"></script>
+
+
+
+      </div>
+    </div>
+  </body>
+</html>
